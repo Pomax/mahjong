@@ -1,0 +1,72 @@
+html, body {
+  height: 100%;
+}
+
+html, body, p, ol, ul, li {
+  margin: 0;
+  padding: 0;
+}
+
+ol, ul {
+  list-style: none;
+}
+
+p + p {
+  margin-top: 1em;
+}
+
+.tile {
+  border: 1px solid black;
+  border-radius: 2px;
+  margin: 1px;
+  background: white;
+}
+
+.tiles { display: block; min-height: 54px; }
+.bonus { display: block; min-height: 54px; }
+
+.log {
+  display: block;
+  height: calc(100vh - 110px);
+  overflow: auto;
+  border: 1px solid black;
+  border-width: 1px 0;
+  background: white;
+}
+
+.log p {
+  margin: 0;
+}
+
+.log p + p {
+  margin-top: 0.1em;
+}
+
+.player { background: inherit; }
+.player.active { background: #FFFFF3; }
+
+.discard {
+  display: block;
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 100px;
+  height: 110px;
+  background: #449944;
+  padding: calc(54px / 2);
+  box-sizing: border-box;
+}
+
+.discard.menu {
+  padding: 0;
+}
+
+.discard.menu button {
+  width: 100%;
+  height: calc(100% / 6);
+  font-size: 85%;
+  border: 1px solid grey;
+}
+.discard.menu button + button {
+  margin-top: 2px;
+}
