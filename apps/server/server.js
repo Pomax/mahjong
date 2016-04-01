@@ -1,5 +1,6 @@
 // A game server
 var fs = require('fs');
+var path = require('path');
 var express = require('express');
 var app = express();
 var gameManager = require('./lib/game/game-manager');
@@ -13,7 +14,7 @@ app.get('/', function(req, res) {
 
 // game interface
 app.get('/game/:gameid', function(req, res) {
-  fs.readFile('./index.html', function(err, data) {
+  fs.readFile(path.join(__dirname, 'index.html'), function(err, data) {
     var html = data.toString().replace(/\{\{gameid\}\}/g, req.params.gameid);
     res.status(200).type('text/html').send(html);
   });

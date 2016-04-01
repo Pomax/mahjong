@@ -22,7 +22,7 @@ Hand.prototype = {
 
     this.log("dealing initial tiles");
     this.players.forEach(player => {
-      // set up protocol handlers
+      // set up protocol handlers for actions taken by players
       player.socket.on("discard", this.handleDiscard.bind(this));
       player.socket.on("claim", this.handleClaim.bind(this));
       player.socket.on("compensate", this.compensateTiles.bind(this));
@@ -65,16 +65,15 @@ Hand.prototype = {
 
     var cpos = this.currentPlayer;
     this.log("dealing",tile,"to",cpos);
-    this.log("wall left:", this.wall.playlength());
+    this.log("tiles left in the wall:", this.wall.playlength());
+    this.players[cpos].deal(tile);
     this.players.forEach((player,pos) => {
-      if (pos===cpos) {
-        this.log("dealing",pos,"tile",tile);
-        player.deal(tile);
-      } else {
-        this.log("notifying",pos,"a tile was dealt");
-        player.drew(cpos);
-      }
+      if (pos===cpos) return;
+      this.log("notifying",pos,"a tile was dealt");
+      player.drew(cpos);
     });
+
+    this.log("player",cpos,"tiles:",this.players[cpos].tiles.sort());
   },
 
   handleDiscard: function(data) {
@@ -83,9 +82,10 @@ Hand.prototype = {
     var tile = data.tile;
     var cpos = this.currentPlayer;
     this.log("player",cpos,"discarded",tile);
+    this.players[cpos].discard(tile);
     this.players.forEach((player,pos) => {
       if (pos !== cpos) {
-        player.discard(tile);
+        player.discarded(cpos,tile);
       }
     });
 
@@ -101,12 +101,29 @@ Hand.prototype = {
 
     // who's claiming this discard, and for what?
     var playerid = data.playerid;
+    var player = this.findPlayer(playerid);
+    var pos = this.players.indexOf(player);
+    var tile = data.tile;
     var claimType = data.claimType;
 
     // is this a legal claim?
-    this.log(playerid, "claims discard as", claimType);
+    this.log(pos,"("+playerid+"/"+player.id+")","claims discard as", claimType);
 
     // FIXME: TODO: actually wait for all claims to come in before awarding a claim.
+    if (player.canClaim(tile, claimType)) {
+      this.log("player",pos,"can claim",tile,"as",claimType);
+      // accept the claim: it is now that player's turn to discard
+      player.acceptClaim(tile, claimType);
+      this.players.forEach((player, idx) => {
+        if (idx===pos) return;
+        player.claimOccurred(pos, tile, claimType);
+      })
+      this.currentPlayer = pos;
+    } else {
+      // decline the claim and advance the game.
+      player.declineClaim(tile, claimType);
+      this.next();
+    }
   },
 
   findPlayer: function(playerid) {
@@ -136,6 +153,8 @@ Hand.prototype = {
 
     var compensationTiles = this.wall.deal(tiles.length);
     player.getCompensation(compensationTiles);
+
+    // FIXME: TODO: notify other players of bonus tiles being revealed
   }
 };
 

@@ -23,7 +23,7 @@ p + p {
 }
 
 .tiles { display: block; min-height: 54px; }
-.bonus { display: block; min-height: 54px; }
+.open { display: block; min-height: 54px; }
 
 .log {
   display: block;
@@ -43,7 +43,7 @@ p + p {
 }
 
 .player { background: inherit; }
-.player.active { background: #FFFFF3; }
+.player.active { background: #449944; }
 
 .discard {
   display: block;

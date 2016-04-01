@@ -3,6 +3,7 @@ var Tile = require('../components/Tile.jsx');
 var ClaimMenu = require('../components/ClaimMenu.jsx');
 var Constants = require('../../../server/lib/constants');
 var classnames = require('classnames');
+var md5 = require('md5');
 
 // external:
 var io = require("io");
@@ -28,6 +29,7 @@ var Player = React.createClass({
       gameid: -1,
       tiles: [],
       bonus: [],
+      revealed: [],
       log: [],
       mode: Player.OUT_OF_TURN,
       discard: false
@@ -78,7 +80,6 @@ var Player = React.createClass({
     socket.on('tile', data => {
       var tile = data.tile;
       var playerid = data.playerid;
-      this.log(this.state.playerid, playerid);
       this.log("received tile", tile);
       this.setState({ discard: false });
       this.addTile(tile);
@@ -97,10 +98,58 @@ var Player = React.createClass({
       this.setState({ discard: tile });
     });
 
+    // a claim by this player was declined
+    socket.on('declined', data => {
+      this.log("claim for", data.tile, "("+data.claimType+")", "was declined");
+    });
+
+    // a claim by this player was accepted
+    socket.on('accepted', data => {
+      var tile = data.tile;
+      this.processClaim(data.tile, data.claimType);
+    });
+
+    // a claim by another player was accepted
+    socket.on('claimed', data => {
+      this.setState({
+        discard: false
+      });
+    });
+
     // wall ran out of tiles, no one won...
     socket.on('finish:draw', data => {
       this.log("hand was a draw...");
-      this.setState({ mode: Player.HAND_OVER });
+      this.setState({ mode: Player.HAND_OVER, discard: false });
+    });
+  },
+
+  /**
+   * Determine which tiles to form a set with.
+   */
+  processClaim(tile, claimType) {
+    // TODO: for now only PUNGs are allowed through
+    this.log("claim for", tile, "("+claimType+")", "was accepted");
+
+    // remove tile from hand twice and form set.
+    var tiles = this.state.tiles;
+    for(var i=0; i<2; i++) {
+      tiles.splice(tiles.indexOf(tile),1);
+    }
+    var set = [tile, tile, tile];
+    console.log(tiles, set);
+    var revealed = this.state.revealed;
+    revealed.push(set);
+    this.setState({ tiles, revealed, discard: false, mode: Player.OWN_TURN }, () => {
+      var list = this.state.tiles.concat(this.state.bonus);
+      this.state.revealed.forEach(set => { list = list.concat(set); });
+      list.sort();
+      var digest = md5(list.join(''));
+      this.log("confirming synchronized state. tiles:",list,"md5:",digest);
+      this.state.socket.emit("validate", {
+        playerid: this.state.playerid,
+        gameid: this.state.gameid,
+        digest: digest
+      });
     });
   },
 
@@ -117,7 +166,10 @@ var Player = React.createClass({
       <div className={classes}>
         <div className={dclasses}>{ this.showDiscard() }</div>
         <div className="tiles">{ this.formTiles(this.state.tiles, this.state.mode === Player.HAND_OVER) }</div>
-        <div className="bonus">{ this.formTiles(this.state.bonus, true) }</div>
+        <div className="open">
+          <span className="bonus">{ this.formTiles(this.state.bonus, true) }</span>
+          <span className="revealed">{ this.showRevealed() }</span>
+        </div>
         <div className="log">{ this.state.log.map((msg,pos) => <p key={pos}>{msg}</p>).reverse() }</div>
       </div>
     );
@@ -169,6 +221,18 @@ var Player = React.createClass({
         tiles: bonus
       });
     }
+  },
+
+  showRevealed() {
+    var tiles = [];
+    this.state.revealed.forEach((set,p1) => {
+      console.log('set', set);
+      set.forEach((tile,p2) => {
+        console.log('tile', tile);
+        tiles.push(<Tile key={`${tile}-${p1}-${p2}`} value={tile}/>);
+      });
+    });
+    return tiles;
   },
 
   formTiles(tiles, inactive) {
