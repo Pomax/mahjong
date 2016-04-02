@@ -1,35 +1,76 @@
 var logger = require('../logger');
 var Constants = require('../constants');
-var Tiles = require('./tiles');
+var md5 = require('md5');
 
 var Player = function(game, id, socket) {
   this.game = game;
   this.id = id;
   this.socket = socket;
   this.tiles = [];
+  this.bonus = [];
   this.revealed = [];
   this.log = logger('game', game.id, 'player', id);
   this.log("created");
+
+  // listen for verification requests
+  this.socket.on("verify", this.verify.bind(this));
 };
 
 Player.prototype = {
+
   /**
    * socket.io interfacing
    */
-  send: function(str, data) {
+  send(str, data) {
     this.socket.emit(str, data);
   },
 
-  reset: function() {
+  /**
+   * Reset this player.
+   */
+  reset() {
     this.socket.disconnect();
   },
 
   /**
-   * when a hand starts, everything resets.
+   * Generate a hash based on this player's tiles, bonus tiles, and revealed tiles.
    */
-  startHand: function(hand) {
+  getDigest() {
+    var list = this.tiles.concat(this.bonus);
+    this.revealed.forEach(set => { list = list.concat(set); });
+    return md5(list.sort().join(''));
+  },
+
+  /**
+   * Verify a client's tile state, because we want to make sure that
+   * the remove and local models match. If they don't, something,
+   * somewhere, went wrong and that's either a bug, an unaccounted-for
+   * synchronisation error, or a intentional remote subversion.
+   */
+  verify: function(data) {
+    this.log("verify called");
+    var passed = true;
+    if (this.id !== data.playerid) {
+      this.log("local id:",this.id,", remote id:",data.playerid);
+      passed = false;
+    }
+    var digest = this.getDigest();
+    if (digest !== data.digest) {
+      this.log("local digest:",digest,", remote id:",data.digest);
+      this.log("local:",this.tiles,this.bonus,this.revealed);
+      this.log("remote:",data.tiles,data.bonus,data.revealed);
+      passed = false;
+    }
+    this.send("verification", { result: passed });
+  },
+
+  /**
+   * When a hand starts, everything resets.
+   */
+  startHand(hand, playerposition) {
     this.hand = hand;
     this.send("ready", {
+      playerposition: playerposition,
       playerid: this.id,
       game: this.game.id,
       hand: this.hand.id
@@ -37,9 +78,9 @@ Player.prototype = {
   },
 
   /**
-   * initial hand deal (usuall 13 tiles)
+   * initial hand deal (usuall 13 tiles).
    */
-  setHand: function(tiles) {
+  setHand(tiles) {
     this.tiles = tiles;
     this.log("received tiles", tiles);
     this.send("sethand", {
@@ -53,14 +94,14 @@ Player.prototype = {
   /**
    * the current hand was drawn.
    */
-  drawOccured: function() {
+  drawOccured() {
     this.send("finish:draw")
   },
 
   /**
-   * game deals a tile to this player
+   * game deals a tile to this player.
    */
-  deal: function(tile) {
+  deal(tile) {
     this.tiles.push(tile);
     this.tiles.sort();
     this.send("tile", {
@@ -72,9 +113,9 @@ Player.prototype = {
   },
 
   /**
-   * game notification that another player drew a tile
+   * Game notification that another player drew a tile.
    */
-  drew: function(cpos) {
+  drew(cpos) {
     this.send("drew", {
       playerid: this.id,
       gameid: this.game.id,
@@ -86,14 +127,14 @@ Player.prototype = {
   /**
    * this player discarded
    */
-  discard: function(tile) {
+  discard(tile) {
     this.tiles.splice(this.tiles.indexOf(tile),1);
   },
 
   /**
-   * game notification that another player discards this tile
+   * Game notification that another player discards this tile.
    */
-  discarded: function(pos, tile) {
+  discarded(pos, tile) {
     this.send("discard", {
       playerpos: pos,
       playerid: this.id,
@@ -104,103 +145,34 @@ Player.prototype = {
   },
 
   /**
-   * request compensation tiles for bonus tiles
+   * Receive compensation tiles for bonus tiles.
    */
-  getCompensation: function(tiles) {
-    tiles.forEach(tile => this.tiles.push(tile));
+  getCompensation(bonus, compensation) {
+    compensation.forEach(tile => this.tiles.push(tile));
+    bonus.forEach(tile => { this.bonus.push(tile); this.tiles.splice(this.tiles.indexOf(tile),1); });
     this.tiles.sort();
-    this.send("compensation", {
-      tiles: tiles
-    });
+    this.send("compensation", { tiles: compensation });
   },
 
   /**
-   * game notification that another player received a compensation tile for a bonus tiles
+   * Receive compensation tile for a kong.
    */
-  gotCompensation: function(pos, tiles) {
+  getKongCompensation(tile) {
+    this.getCompensation([],[tile]);
+  },
+
+  /**
+   * Game notification that another player received a compensation tile for a bonus tiles.
+   */
+  gotCompensation(pos, tiles) {
     tiles = tiles.filter(t => t>=Constants.BONUS);
     this.send("compensated", { pos, tiles });
   },
 
   /**
-   * Can this player claim the tile they want to claim for the purpose they indicated?
-   */
-  canClaim: function(tile, claimType, winType) {
-    this.log("can claim tile:",tile,"? tiles:", this.tiles);
-
-    if (claimType <= Constants.CHOW3) { return this.canClaimChow(tile, claimType); }
-    if (claimType === Constants.PUNG) { return this.canClaimSet(tile, 2); }
-    if (claimType === Constants.KONG) { return this.canClaimSet(tile, 3); }
-    if (claimType === Constants.WIN)  { return this.canClaimWin(tile, winType); }
-    return false
-  },
-
-  /**
-   * check if this player can form a set of size inhandcount+1 given
-   * the tiles that they currently hold.
-   */
-  canClaimSet: function(tile, inhandcount) {
-    var instances=0;
-    this.tiles.forEach((t,idx) => {
-      if(t===tile) instances++;
-    });
-    this.log(instances,"instances of",tile,"found");
-
-    // 1=pair, 2=pung, 3=kong
-    if (instances >= inhandcount) {
-      return true;
-    }
-  },
-
-  /**
-   * check if this player can form a chow with the indicted tile
-   * given the tiles that they currently hold.
-   */
-  canClaimChow: function(tile, claimType) {
-    var suit = Tiles.getTileSuit(tile);
-    if (suit >= Constants.HONOURS) return false;
-
-    // check for connecting tiles in the same suit
-    var fullsuit = Tiles.getSuitTiles(suit);
-    var tpos = fullsuit.indexOf(tile);
-    var tiles = this.tiles;
-    if (claimType === Constants.CHOW1) {
-      this.log("chow1 with tpos",tpos,"in suit",suit,"tiles",tiles);
-      return tpos+2<Constants.NUMMOD && tiles.indexOf(tile+1)>-1 && tiles.indexOf(tile+2)>-1;
-    }
-    if (claimType === Constants.CHOW2) {
-      this.log("chow2 with tpos",tpos,"in suit",suit,"tiles",tiles);
-      return tpos>0 && tpos+1<Constants.NUMMOD && tiles.indexOf(tile-1)>-1 && tiles.indexOf(tile+1)>-1;
-    }
-    if (claimType === Constants.CHOW3) {
-      this.log("chow3 with tpos",tpos,"in suit",suit,"tiles",tiles);
-      return tpos>1 && tiles.indexOf(tile-1)>-1 && tiles.indexOf(tile-2)>-1;
-    }
-  },
-
-  /**
-   * This is a complicated function, and is highly ruleset dependent.
-   */
-  canClaimWin: function(tile, winType) {
-    // FIXME: TODO: implement properly based on rulesets.
-
-    // 1. can we claim this thing, outside of winning?
-    var claimable = this.canClaim(tile, winType);
-
-    // 2. if so, what's left after we resolve that claim?
-    var remainder = [];
-
-    // 3. Can we form any sort of winning pattern with those tiles?
-    var covers = this.checkCoverage(remainder,setsNeeder,pairNeeded);
-
-    // if we can, this is a legal win claim.
-    return covers;
-  },
-
-  /**
    * A declined claim is mostly a matter of notification, no action is requied.
    */
-  declineClaim: function(tile, claimType) {
+  declineClaim(tile, claimType) {
     this.socket.emit("declined", {
       playerid: this.id,
       tile: tile,
@@ -212,54 +184,20 @@ Player.prototype = {
    * An accepted claim will lead to splitting up the tiles into a revealed
    * set, and the remaining tiles still in hand.
    */
-  acceptClaim: function(tile, claimType) {
-    this.processClaim(tile, claimType);
+  acceptClaim(ruleset, tile, claimType, winType) {
+    ruleset.processClaim(this, tile, claimType, winType);
     this.socket.emit("accepted", {
       playerid: this.id,
       tile: tile,
-      claimType: claimType
+      claimType: claimType,
+      winType: winType
     });
   },
 
   /**
-   * Determine which tiles to form a set with.
+   * Another player claimed the discard.
    */
-  processClaim: function(tile, claimType) {
-    if (claimType === Constants.WIN) return
-
-    var set = [];
-    if (claimType === Constants.CHOW1) { set = this.formChow(tile, claimType); }
-    if (claimType === Constants.CHOW2) { set = this.formChow(tile, claimType); }
-    if (claimType === Constants.CHOW3) { set = this.formChow(tile, claimType); }
-    if (claimType === Constants.PUNG) { set = this.formSet(tile, 3); }
-    if (claimType === Constants.KONG) { set = this.formSet(tile, 4); }
-    this.log("set:", set);
-
-    // remove tile from hand twice and form set.
-    set.forEach(tile => this.tiles.splice(this.tiles.indexOf(tile),1));
-
-    // add the set to our revealed bank
-    this.revealed.push(set);
-  },
-
-  // utility function
-  formChow: function(tile, chowtype) {
-    if (chowtype === Constants.CHOW1) return [tile, tile+1, tile+2];
-    if (chowtype === Constants.CHOW2) return [tile-1, tile, tile+1];
-    if (chowtype === Constants.CHOW3) return [tile-2, tile-1, tile];
-  },
-
-  // utility function
-  formSet: function(tile, howmany) {
-    var set = [];
-    while(howmany--) { set.push(tile); }
-    return set;
-  },
-
-  /**
-   * another player claimed the discard
-   */
-  claimOccurred: function(pos, tile, claimType) {
+  claimOccurred(pos, tile, claimType) {
     this.socket.emit("claimed", {
       player: pos,
       tile: tile,
@@ -270,10 +208,11 @@ Player.prototype = {
   /**
    * Someone won this round.
    */
-  winOccurred: function(pos, tile) {
+  winOccurred(pos, tile, winType) {
     this.socket.emit("finish:win", {
       player: pos,
-      tile: tile
+      tile: tile,
+      winType: winType
     });
   }
 };

@@ -3,10 +3,11 @@ var Constants = require('../constants');
 var Player = require('./player');
 var Wall = require('./wall');
 
-var Hand = function(game, handid, players, east) {
+var Hand = function(game, ruleset, handid, players, east) {
   east = east || 0;
   this.id = handid;
   this.game = game;
+  this.ruleset = ruleset;
   this.players = players;
   this.wall = new Wall();
   this.currentPlayer = east;
@@ -16,23 +17,20 @@ var Hand = function(game, handid, players, east) {
 Hand.prototype = {
   start: function() {
     this.log("starting hand");
-    this.players.forEach(player => player.startHand(this));
+    this.players.forEach((player, playerposition) => player.startHand(this, playerposition));
 
     this.log("starting wall:", this.wall.tiles.slice(0).join(','));
-
     this.log("dealing initial tiles");
+
     this.players.forEach(player => {
       // set up protocol handlers for actions taken by players
       player.socket.on("discard", this.handleDiscard.bind(this));
       player.socket.on("claim", this.handleClaim.bind(this));
       player.socket.on("compensate", this.compensateTiles.bind(this));
-
       // deal tiles
       var tiles = this.wall.deal(Constants.HANDSIZE - 1);
       player.setHand(tiles.sort((a,b) => a-b));
     });
-
-    this.log("wall after deal:", this.wall.tiles.slice(0).join(','));
 
     // give east their 14th tile, and take the game from there:
     // 1     - player either declares win or discards a tile
@@ -43,8 +41,8 @@ Hand.prototype = {
     // 3b    - no claims means the next player is dealt a tile, goto:1
     // win   - this hand is over.
     this.deal();
+    this.log("wall after deal:", this.wall.tiles.slice(0).join(','));
   },
-
 
   next: function() {
     var oldplayer = this.currentPlayer;
@@ -111,10 +109,16 @@ Hand.prototype = {
     this.log(pos,"("+playerid+"/"+player.id+")","claims discard as", claimType);
 
     // FIXME: TODO: actually wait for all claims to come in before awarding a claim.
-    if (player.canClaim(tile, claimType, winType)) {
+    if (this.ruleset.canClaim(player, tile, claimType, winType)) {
       this.log("player",pos,"can claim",tile,"as",claimType,"(wintype:"+winType+")");
       // accept the claim: it is now that player's turn to discard
-      player.acceptClaim(tile, claimType, winType);
+      player.acceptClaim(this.ruleset, tile, claimType, winType);
+
+      // if this was a kong, player needs a compesation tile.
+      if(claimType === Constants.KONG) {
+        var tile = this.wall.drawSupplement();
+        player.getKongCompensation(tile);
+      }
 
       // notify players of claim, if it wasn't a winning claim
       if (claimType !== Constants.WIN) {
@@ -128,7 +132,7 @@ Hand.prototype = {
       // if this was a winning claim, the hand is over.
       else {
         this.players.forEach((player, idx) => {
-          player.winOccurred(pos, tile);
+          player.winOccurred(pos, tile, winType);
         });
       }
 
@@ -165,7 +169,7 @@ Hand.prototype = {
     }
 
     var compensationTiles = this.wall.deal(tiles.length);
-    player.getCompensation(compensationTiles);
+    player.getCompensation(tiles, compensationTiles);
 
     var pos = this.players.indexOf(player);
     this.players.forEach(p => {

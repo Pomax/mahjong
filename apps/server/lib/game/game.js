@@ -4,7 +4,8 @@ var Player = require('./player');
 var Hand = require('./hand');
 var Wall = require('./wall');
 
-var Game = function(manager, id) {
+var Game = function(manager, ruleset, id) {
+  this.ruleset = ruleset;
   this.manager = manager;
   this.id = id;
   this.players = [];
@@ -14,11 +15,6 @@ var Game = function(manager, id) {
 };
 
 Game.prototype = {
-  log: function() {
-    var msg = Array.from(arguments).join(' ');
-    console.log(`[${this.id}] ${msg}`);
-  },
-
   reset: function() {
     this.players.forEach(player => player.reset());
     this.players = [];
@@ -35,7 +31,6 @@ Game.prototype = {
 
     socket.emit("joined", {
       gameid: this.id,
-      playerid: playerid,
       pos: pos
     });
 
@@ -46,7 +41,7 @@ Game.prototype = {
 
   startGame: function() {
     this.log("starting game");
-    var hand = new Hand(this, this.hands.length, this.players);
+    var hand = new Hand(this, this.ruleset, this.hands.length, this.players);
     this.hands.push(hand);
     hand.start();
   }
