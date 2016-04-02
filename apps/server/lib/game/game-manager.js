@@ -20,7 +20,7 @@ GameManager.prototype = {
   },
 
   reset: function() {
-    this.log("\nresetting game manager\n");
+    this.log("resetting game manager");
     Object.keys(this.games).forEach(k => this.games[k].reset());
     this.games = {};
   }

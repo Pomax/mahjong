@@ -29,9 +29,15 @@ Game.prototype = {
     if (this.players.length === 4)
       return false;
     var player = new Player(this, playerid, socket);
+    var pos = this.players.length;
     this.players.push(player);
     this.log("added player " + playerid);
-    socket.emit("joined", {gameid: this.id});
+
+    socket.emit("joined", {
+      gameid: this.id,
+      playerid: playerid,
+      pos: pos
+    });
 
     if (this.players.length === 4) {
       this.startGame();

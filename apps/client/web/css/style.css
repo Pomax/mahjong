@@ -51,7 +51,7 @@ p + p {
   top: 0;
   right: 0;
   width: 100px;
-  height: 110px;
+  height: 108px;
   background: #449944;
   padding: calc(54px / 2);
   box-sizing: border-box;
@@ -69,4 +69,15 @@ p + p {
 }
 .discard.menu button + button {
   margin-top: 2px;
+}
+
+.discard.menu button.chow {
+  width: 33%;
+  display: inline-block;
+  padding: 0;
+  font-size: 70%;
+}
+
+.winmenu {
+  background: blue;
 }

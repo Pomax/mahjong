@@ -25,14 +25,20 @@ var Player = React.createClass({
   getInitialState() {
     return {
       socket: io.connect('http://localhost:8081'),
+      // game data
       playerid: -1,
+      playerposition: -1,
       gameid: -1,
+      mode: Player.OUT_OF_TURN,
+      // hand information
       tiles: [],
       bonus: [],
       revealed: [],
-      log: [],
-      mode: Player.OUT_OF_TURN,
-      discard: false
+      // discard information
+      discard: false,
+      discardPlayer: -1,
+      // play log for this player
+      log: []
     };
   },
 
@@ -52,8 +58,9 @@ var Player = React.createClass({
 
     socket.on('joined', data => {
       var gameid = data.gameid;
-      this.log("joined game", gameid);
-      this.setState({ gameid });
+      var playerposition = data.pos;
+      this.log("joined game", gameid, "as player", playerposition);
+      this.setState({ gameid, playerposition });
     });
 
     socket.on('ready', data => {
@@ -76,6 +83,12 @@ var Player = React.createClass({
       this.setState({ tiles: tiles}, this.filterBonus);
     });
 
+    socket.on('compensated', data => {
+      var playerpos = data.pos;
+      var tiles = data.tiles;
+      this.log("player",playerpos,"received compensation for",tiles);
+    });
+
     // player received a tile to play with
     socket.on('tile', data => {
       var tile = data.tile;
@@ -94,8 +107,12 @@ var Player = React.createClass({
     // a discard occurred
     socket.on('discard', data => {
       var tile = data.tile;
-      this.log("saw discard of tile", tile);
-      this.setState({ discard: tile });
+      var pos = data.playerpos;
+      this.log("saw discard of tile", tile,"by player",pos);
+      this.setState({
+        discard: tile,
+        discardPlayer: pos
+      });
     });
 
     // a claim by this player was declined
@@ -121,6 +138,12 @@ var Player = React.createClass({
       this.log("hand was a draw...");
       this.setState({ mode: Player.HAND_OVER, discard: false });
     });
+
+    // someone won this hand.
+    socket.on('finish:win', data => {
+      this.log("hand was a won by", data.player);
+      this.setState({ mode: Player.HAND_OVER, discard: false });
+    });
   },
 
   /**
@@ -131,15 +154,27 @@ var Player = React.createClass({
     this.log("claim for", tile, "("+claimType+")", "was accepted");
 
     // remove tile from hand twice and form set.
+    // FIXME: TODO: synchronize this with server/lib/game/player.js
+    var set = [];
+    if (claimType <= Constants.CHOW3) { set = this.formChow(tile, claimType); }
+    if (claimType === Constants.PUNG) { set = this.formSet(tile, 3); }
+    if (claimType === Constants.KONG) { set = this.formSet(tile, 4); }
+    this.log("set:", set);
+
+    // remove tile from hand twice and form set.
     var tiles = this.state.tiles;
-    for(var i=0; i<2; i++) {
-      tiles.splice(tiles.indexOf(tile),1);
-    }
-    var set = [tile, tile, tile];
-    console.log(tiles, set);
+    // remove tile from hand twice and form set.
+    set.forEach(tile => tiles.splice(tiles.indexOf(tile),1));
+
     var revealed = this.state.revealed;
     revealed.push(set);
-    this.setState({ tiles, revealed, discard: false, mode: Player.OWN_TURN }, () => {
+
+    this.setState({
+      tiles,
+      revealed,
+      discard: false,
+      mode: Player.OWN_TURN
+    }, () => {
       var list = this.state.tiles.concat(this.state.bonus);
       this.state.revealed.forEach(set => { list = list.concat(set); });
       list.sort();
@@ -151,6 +186,20 @@ var Player = React.createClass({
         digest: digest
       });
     });
+  },
+
+  // utility function
+  formChow: function(tile, chowtype) {
+    if (chowtype === Constants.CHOW1) return [tile, tile+1, tile+2];
+    if (chowtype === Constants.CHOW2) return [tile-1, tile, tile+1];
+    if (chowtype === Constants.CHOW3) return [tile-2, tile-1, tile];
+  },
+
+  // utility function
+  formSet: function(tile, howmany) {
+    var set = [];
+    while(howmany--) { set.push(tile); }
+    return set;
   },
 
   render() {
@@ -180,22 +229,28 @@ var Player = React.createClass({
       return null;
     }
     if (this.state.claimMenu) {
-      return <ClaimMenu claim={this.claimDiscard}/>;
+      var chowPos = (this.state.discardPlayer+1) % 4;
+      var mayChow = (chowPos === this.state.playerposition);
+      return <ClaimMenu claim={this.claimDiscard} mayChow={mayChow}/>;
     }
     return <Tile value={this.state.discard} onClick={this.claimMenu}/>;
   },
 
   claimMenu: function() {
     this.setState({ claimMenu: true });
+    // FIXME: TODO: should this interrupt the play? It feels like it shouldn't,
+    //              as that would give players a way to take more time than is
+    //              allotted for a decision.
   },
 
-  claimDiscard: function(claimType) {
+  claimDiscard: function(claimType, winType) {
     this.setState({ claimMenu: false });
     if (claimType !== Constants.NOTILE) {
       this.state.socket.emit("claim", {
         playerid: this.state.playerid,
         tile: this.state.discard,
-        claimType: claimType
+        claimType: claimType,
+        winType: winType
       });
     }
   },

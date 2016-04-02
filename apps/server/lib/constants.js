@@ -15,10 +15,10 @@ var Constants = {
 
   // set types
   NOTHING:        -1,
-  SINGLE:          0,
-  GAPPED:          1,
-  CONNECTED:       2,
-  CHOW:            4,
+  CHOW:            0,
+  CHOW1:           1, // chow, tile is first
+  CHOW2:           2, // chow, tile is second
+  CHOW3:           4, // chow, tile is third
   PAIR:            8,
   PUNG:           16,
   KONG:           32,

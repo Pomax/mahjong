@@ -33,5 +33,10 @@ module.exports = {
     if (Constants.DRAGONS    <= tn  && tn < Constants.FLOWERS)    return Constants.DRAGONS;
     if (Constants.FLOWERS    <= tn  && tn < Constants.SEASONS)    return Constants.FLOWERS;
     return Constants.SEASONS;
+  },
+  getSuitTiles: function(suit) {
+    var set = [];
+    for(var i=suit; i<suit+Constants.NUMMOD; i++) { set.push(i); }
+    return set;
   }
 };

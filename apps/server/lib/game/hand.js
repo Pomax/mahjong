@@ -29,7 +29,7 @@ Hand.prototype = {
 
       // deal tiles
       var tiles = this.wall.deal(Constants.HANDSIZE - 1);
-      player.setHand(tiles);
+      player.setHand(tiles.sort((a,b) => a-b));
     });
 
     this.log("wall after deal:", this.wall.tiles.slice(0).join(','));
@@ -105,20 +105,33 @@ Hand.prototype = {
     var pos = this.players.indexOf(player);
     var tile = data.tile;
     var claimType = data.claimType;
+    var winType = data.winType;
 
     // is this a legal claim?
     this.log(pos,"("+playerid+"/"+player.id+")","claims discard as", claimType);
 
     // FIXME: TODO: actually wait for all claims to come in before awarding a claim.
-    if (player.canClaim(tile, claimType)) {
-      this.log("player",pos,"can claim",tile,"as",claimType);
+    if (player.canClaim(tile, claimType, winType)) {
+      this.log("player",pos,"can claim",tile,"as",claimType,"(wintype:"+winType+")");
       // accept the claim: it is now that player's turn to discard
-      player.acceptClaim(tile, claimType);
-      this.players.forEach((player, idx) => {
-        if (idx===pos) return;
-        player.claimOccurred(pos, tile, claimType);
-      })
-      this.currentPlayer = pos;
+      player.acceptClaim(tile, claimType, winType);
+
+      // notify players of claim, if it wasn't a winning claim
+      if (claimType !== Constants.WIN) {
+        this.players.forEach((player, idx) => {
+          if (idx===pos) return;
+          player.claimOccurred(pos, tile, claimType);
+        })
+        this.currentPlayer = pos;
+      }
+
+      // if this was a winning claim, the hand is over.
+      else {
+        this.players.forEach((player, idx) => {
+          player.winOccurred(pos, tile);
+        });
+      }
+
     } else {
       // decline the claim and advance the game.
       player.declineClaim(tile, claimType);
@@ -153,6 +166,12 @@ Hand.prototype = {
 
     var compensationTiles = this.wall.deal(tiles.length);
     player.getCompensation(compensationTiles);
+
+    var pos = this.players.indexOf(player);
+    this.players.forEach(p => {
+      if (p===player) return;
+      p.gotCompensation(pos, tiles);
+    });
 
     // FIXME: TODO: notify other players of bonus tiles being revealed
   }
