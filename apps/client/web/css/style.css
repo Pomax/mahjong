@@ -22,6 +22,10 @@ p + p {
   background: white;
 }
 
+.tile.owndiscard {
+  opacity: 0.5;
+}
+
 .player .tiles { display: block; min-height: 54px; }
 .player .open { display: block; min-height: 54px; }
 

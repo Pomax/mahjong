@@ -1,6 +1,9 @@
+var md5 = require('md5');
+
 var logger = require('../logger');
 var Constants = require('../constants');
-var md5 = require('md5');
+var Listener = require('./protocol/listener');
+var Emitter = require('./protocol/emitter');
 
 var Player = function(game, id, socket) {
   this.game = game;
@@ -11,9 +14,6 @@ var Player = function(game, id, socket) {
   this.revealed = [];
   this.log = logger('game', game.id, 'player', id);
   this.log("created");
-
-  // listen for verification requests
-  this.socket.on("verify", this.verify.bind(this));
 };
 
 Player.prototype = {
@@ -21,8 +21,14 @@ Player.prototype = {
   /**
    * socket.io interfacing
    */
-  send(str, data) {
-    this.socket.emit(str, data);
+  send(str, payload) {
+    payload.gameid = this.game.id;
+    payload.handid = this.hand.id;
+    payload.playerid = this.id;
+    if (typeof payload.playerposition === 'undefined') {
+      payload.playerposition = this.playerposition;
+    }
+    this.socket.emit(str, payload);
   },
 
   /**
@@ -47,20 +53,9 @@ Player.prototype = {
    * somewhere, went wrong and that's either a bug, an unaccounted-for
    * synchronisation error, or a intentional remote subversion.
    */
-  verify(data) {
-    this.log("verify called");
-    var passed = true;
-    if (this.id !== data.playerid) {
-      this.log("local id:",this.id,", remote id:",data.playerid);
-      passed = false;
-    }
-    var digest = this.getDigest();
-    if (digest !== data.digest) {
-      this.log("local digest:",digest,", remote id:",data.digest);
-      this.log("local:",this.tiles,this.bonus,this.revealed);
-      this.log("remote:",data.tiles,data.bonus,data.revealed);
-      passed = false;
-    }
+  verify(digest) {
+    var localDigest = this.getDigest();
+    var passed = (digest === localDigest);
     this.send("verification", { result: passed });
   },
 
@@ -69,12 +64,9 @@ Player.prototype = {
    */
   startHand(hand, playerposition) {
     this.hand = hand;
-    this.send("ready", {
-      playerposition: playerposition,
-      playerid: this.id,
-      game: this.game.id,
-      hand: this.hand.id
-    });
+    this.playerposition = playerposition;
+    // notify the client that server-bootstrapping is complete.
+    this.send("ready", {});
   },
 
   /**
@@ -83,18 +75,14 @@ Player.prototype = {
   setHand(tiles) {
     this.tiles = tiles;
     this.log("received tiles", tiles);
-    this.send("sethand", {
-      playerid: this.id,
-      game: this.game.id,
-      hand: this.hand.id,
-      tiles: this.tiles
-    });
+    this.send("sethand", { tiles });
   },
 
   /**
    * game dealt X tiles to the indicated player.
    */
   dealtTiles(playerposition, tileCount) {
+    this.log(playerposition,"was dealt",tileCount,"tiles");
     this.send("dealt", { playerposition, tileCount });
   },
 
@@ -102,7 +90,7 @@ Player.prototype = {
    * the current hand was drawn.
    */
   drawOccured() {
-    this.send("finish:draw")
+    this.send("finish:draw", {})
   },
 
   /**
@@ -111,24 +99,14 @@ Player.prototype = {
   deal(tile) {
     this.tiles.push(tile);
     this.tiles.sort();
-    this.send("tile", {
-      playerid: this.id,
-      gameid: this.game.id,
-      handid: this.hand.id,
-      tile: tile
-    });
+    this.send("tile", { tile });
   },
 
   /**
    * Game notification that another player drew a tile.
    */
   drew(playerposition) {
-    this.send("drew", {
-      playerid: this.id,
-      gameid: this.game.id,
-      handid: this.id,
-      playerposition: playerposition
-    });
+    this.send("drew", { playerposition });
   },
 
   /**
@@ -141,14 +119,8 @@ Player.prototype = {
   /**
    * Game notification that another player discards this tile.
    */
-  discarded(pos, tile) {
-    this.send("discard", {
-      playerposition: pos,
-      playerid: this.id,
-      gameid: this.game.id,
-      handid: this.hand.id,
-      tile: tile
-    });
+  discarded(playerposition, tile) {
+    this.send("discarded", { playerposition, tile });
   },
 
   /**
@@ -156,9 +128,7 @@ Player.prototype = {
    * has been moved to the (inaccessible) discard pile
    */
   unclaimed(tile) {
-    this.send("unclaimed", {
-      tile: tile
-    });
+    this.send("unclaimed", { tile });
   },
 
   /**
@@ -190,11 +160,7 @@ Player.prototype = {
    * A declined claim is mostly a matter of notification, no action is requied.
    */
   declineClaim(tile, claimType) {
-    this.send("declined", {
-      playerid: this.id,
-      tile: tile,
-      claimType: claimType
-    });
+    this.send("declined", { tile, claimType });
   },
 
   /**
@@ -203,45 +169,39 @@ Player.prototype = {
    */
   acceptClaim(ruleset, tile, claimType, winType) {
     ruleset.processClaim(this, tile, claimType, winType);
-    this.send("accepted", {
-      playerid: this.id,
-      tile: tile,
-      claimType: claimType,
-      winType: winType
-    });
+    this.send("accepted", { tile, claimType, winType });
+  },
+
+  /**
+   * An accepted win may require we reveal the claimed pair/set
+   */
+  awardWinningClaim(ruleset, tile, claimType) {
+    ruleset.awardWinningClaim(this, tile, claimType);
+    var winType = claimType;
+    claimType = Constants.WIN;
+    this.send("accepted", { tile, claimType, winType });
   },
 
   /**
    * Another player claimed the discard.
    */
-  claimOccurred(pos, tile, claimType) {
-    this.send("claimed", {
-      player: pos,
-      tile: tile,
-      claimType: claimType
-    });
+  claimOccurred(playerposition, tile, claimType) {
+    this.send("claimed", { playerposition, tile, claimType });
   },
 
 
   /**
    * Another player revealed a set of tiles after claiming
    */
-  revealedSet(pos, set) {
-    this.send("revealed", {
-      playerposition: pos,
-      set: set
-    });
+  revealedSet(playerposition, revealed) {
+    this.send("revealed", { playerposition, revealed });
   },
 
   /**
    * Someone won this round.
    */
-  winOccurred(pos, tile, winType) {
-    this.send("finish:win", {
-      player: pos,
-      tile: tile,
-      winType: winType
-    });
+  winOccurred(playerposition, tile, winType) {
+    this.send("finish:win", { playerposition, tile, winType });
   }
 };
 

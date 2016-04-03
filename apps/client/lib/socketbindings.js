@@ -1,4 +1,4 @@
-var Player = require('../react/pages/Player.jsx');
+var Player = require('../react/components/Player.jsx');
 
 /**
  * This object formalises the socket API for a player,
@@ -38,6 +38,7 @@ module.exports = {
     socket.on('ready', data => {
       var gameid = data.gameid;
       var handid = data.handid;
+      var playerid = data.playerid;
       var playerposition = data.playerposition;
       player.log("starting game", gameid);
       player.setState({ handid, playerposition });
@@ -100,7 +101,7 @@ module.exports = {
     /**
      * Received from the server whenever another player discards a tile.
      */
-    socket.on('discard', data => {
+    socket.on('discarded', data => {
       var tile = data.tile;
       var pos = data.playerposition;
       player.log("saw discard of tile", tile,"by player",pos);
@@ -138,8 +139,8 @@ module.exports = {
      */
     socket.on('revealed', data => {
       var playerpos = data.playerposition;
-      var set = data.set;
-      player.log("player",playerpos,"played",set);
+      var revealed = data.revealed;
+      player.log("player",playerpos,"played",revealed);
     });
 
     /**

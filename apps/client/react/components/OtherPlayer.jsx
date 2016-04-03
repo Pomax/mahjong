@@ -17,7 +17,7 @@ var OtherPlayer = React.createClass({
     socket.on("dealt", this.addTiles);
     socket.on("drew", this.addTile);
     socket.on("compensated", this.addBonus);
-    socket.on("discard", this.removeTile);
+    socket.on("discarded", this.removeTile);
     socket.on("revealed", this.revealedSet);
   },
 
@@ -74,11 +74,11 @@ var OtherPlayer = React.createClass({
   revealedSet(data) {
     if(!this.ours(data)) return;
     var playerpos = data.playerposition;
-    var set = data.set;
+    var revealedSet = data.revealed;
     var revealed = this.state.revealed;
-    revealed.push(set);
+    revealed.push(revealedSet);
     var tiles = this.state.tiles;
-    tiles.splice(0, set.length-1);
+    tiles.splice(0, revealedSet.length-1);
     this.setState({ tiles, revealed });
   }
 

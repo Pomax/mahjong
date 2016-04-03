@@ -19,6 +19,10 @@ var Player = React.createClass({
   },
 
   send(evt, payload) {
+    payload.gameid = this.state.gameid;
+    payload.handid = this.state.handid;
+    payload.playerid = this.state.playerid;
+    payload.playerposition = this.state.playerposition;
     this.props.socket.emit(evt, payload);
   },
 
@@ -89,7 +93,9 @@ var Player = React.createClass({
       var mayChow = (chowPos === this.state.playerposition);
       return <ClaimMenu claim={this.claimDiscard} mayChow={mayChow}/>;
     }
-    return <Tile value={this.state.discard} onClick={this.claimMenu}/>;
+    var ownDiscard = this.state.discardPlayer === this.state.playerposition;
+    var onClick = ownDiscard ? null : this.claimMenu;
+    return <Tile value={this.state.discard} ownDiscard={ownDiscard} onClick={onClick}/>;
   },
 
   /**
@@ -177,7 +183,6 @@ var Player = React.createClass({
         // request compensation tiles for any bonus tile found.
         this.log("requesting compensation for", bonus.join(','));
         this.send("compensate", {
-          playerid: this.state.playerid,
           tiles: bonus
         });
       });
@@ -199,7 +204,7 @@ var Player = React.createClass({
   },
 
   /**
-   * Player discardss a tile from their set of playable tiles.
+   * Player discards a tile from their set of playable tiles.
    */
   discardTile(tile) {
     this.log("discarding tile", tile);
@@ -214,7 +219,9 @@ var Player = React.createClass({
       tiles,
       mode: Player.OUT_OF_TURN
     }, () => {
-      this.send("discard", { tile: tile });
+      this.send("discard", {
+        tile: tile
+      });
     });
   },
 
@@ -236,7 +243,6 @@ var Player = React.createClass({
     this.setState({ claimMenu: false }, () => {
       if (claimType !== Constants.NOTILE) {
         this.send("claim", {
-          playerid: this.state.playerid,
           tile: this.state.discard,
           claimType: claimType,
           winType: winType
@@ -278,8 +284,7 @@ var Player = React.createClass({
 
     // notify server of our reveal
     this.send("reveal", {
-      set: set,
-      playerposition: this.state.playerposition
+      set: set
     });
   },
 
@@ -314,13 +319,7 @@ var Player = React.createClass({
    */
   verify() {
     this.send("verify", {
-      playerid: this.state.playerid,
-      gameid: this.state.gameid,
-      handid: this.state.handid,
-      digest: this.getDigest(),
-      tiles: this.state.tiles,
-      bonus: this.state.bonus,
-      revealed: this.state.revealed
+      digest: this.getDigest()
     });
   }
 });

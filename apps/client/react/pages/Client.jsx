@@ -1,8 +1,9 @@
 var React = require('react');
-var Wall = require('./Wall.jsx');
-var Discards = require('./Discards.jsx');
-var Player = require('./Player.jsx');
-var OtherPlayer = require('./OtherPlayer.jsx');
+
+var Wall = require('../Components/Wall.jsx');
+var Discards = require('../Components/Discards.jsx');
+var Player = require('../Components/Player.jsx');
+var OtherPlayer = require('../Components/OtherPlayer.jsx');
 
 // externally loaded:
 var io = require('io');

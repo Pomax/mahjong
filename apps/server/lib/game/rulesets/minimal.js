@@ -1,6 +1,7 @@
 var logger = require('../../logger');
 var Constants = require('../../constants');
 var Tiles = require('../tiles');
+var FSA = require('./minimal-fsa');
 
 var Ruleset = function() {
   this.log = logger("rules");
@@ -13,12 +14,14 @@ Ruleset.prototype = {
    */
   canClaim: function(player, tile, claimType, winType) {
     this.log("can",player.id,"claim tile",tile,"given tiles",player.tiles,"?");
+
     if (claimType === Constants.PAIR && winType === Constants.PAIR) { return this.canClaimSet(player, tile, 1); }
     if (claimType <= Constants.CHOW3) { return this.canClaimChow(player, tile, claimType); }
     if (claimType === Constants.PUNG) { return this.canClaimSet(player, tile, 2); }
     if (claimType === Constants.KONG) { return this.canClaimSet(player, tile, 3); }
-    if (claimType === Constants.WIN)  { return this.canClaimWin(player, tile, winType); }
-    return false
+    if (claimType === Constants.WIN)  { return this.canClaimWin(player, tile, claimType, winType); }
+
+    return false;
   },
 
   /**
@@ -61,20 +64,26 @@ Ruleset.prototype = {
   /**
    * This is a complicated function, and is highly ruleset dependent.
    */
-  canClaimWin: function(player, tile, winType) {
-    // FIXME: TODO: implement properly based on rulesets.
-
+  canClaimWin: function(player, tile, claimType, winType) {
     // 1. can we claim this thing, outside of winning?
-    var claimable = this.canClaim(tile, winType);
+    var claim = (claimType === Constants.WIN && winType === Constants.PAIR) ? winType : claimType;
+    if (!this.canClaim(player, tile, claim, winType)) return false;
+
+    this.log(player.id,"can claim",tile,", but can they win?");
 
     // 2. if so, what's left after we resolve that claim?
-    var remainder = [];
+    player = {
+      tiles: player.tiles.slice(),
+      bonus: player.bonus.slice(),
+      revealed: player.revealed.slice()
+    };
+    this.processClaim(player, tile, claimType, winType);
 
     // 3. Can we form any sort of winning pattern with those tiles?
-    var covers = this.checkCoverage(remainder,setsNeeder,pairNeeded);
-
-    // if we can, this is a legal win claim.
-    return covers;
+    this.log("checking coverage wrt winnning");
+    var covered = this.checkCoverage(player.tiles, player.bonus, player.revealed);
+    this.log("winner?",covered);
+    return covered;
   },
 
   /**
@@ -97,7 +106,22 @@ Ruleset.prototype = {
     });
 
     player.revealed.push(set);
-    this.log("set:", set);
+  },
+
+  awardWinningClaim: function(player, tile, claimType) {
+    this.log("processing winning claim of tile",tile,"by player",player.id);
+    var tiles = player.tiles, set;
+    if (claimType === Constants.PAIR)  { set = this.formSet(tile, 2); }
+    if (claimType  <= Constants.CHOW)  { set = this.formChow(tile, claimType); }
+    if (claimType === Constants.PUNG)  { set = this.formSet(tile, 3); }
+
+    tiles.push(tile);
+    set.forEach(tile => {
+      var pos = tiles.indexOf(tile);
+      tiles.splice(pos,1);
+    });
+
+    player.revealed.push(set);
   },
 
   // utility function
@@ -112,8 +136,27 @@ Ruleset.prototype = {
     var set = [];
     while(howmany--) { set.push(tile); }
     return set;
-  }
+  },
 
+  /**
+   * Check whether a given tiles + bonus + revealed situation grants a win
+   */
+  checkCoverage: function(tiles, bonus, revealed) {
+    var sets = 4;
+    var pair = 1;
+    revealed.forEach(set => {
+      if (set.length >= 3) sets--;
+      if (set.length === 2) pair--;
+    });
+
+    this.log("sets:",sets,"pairs:",pair);
+
+    if (sets<0) { this.log("more than four sets found in", revealed); return false; }
+    if (pair<0) { this.log("multiple pairs found in", revealed); return false; }
+
+    this.log("starting FSA check for this win");
+    return FSA.check(tiles, pair, sets);
+  }
 };
 
 module.exports = Ruleset;

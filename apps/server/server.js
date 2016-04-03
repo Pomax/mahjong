@@ -32,4 +32,6 @@ var server = app.listen(PORT, () => {
 });
 
 // set up socket.io protocol
-require('./lib/server/socket')(server);
+require('socket.io').listen(server).on('connection', function (socket) {
+  gameManager.manageConnection(socket);
+});
