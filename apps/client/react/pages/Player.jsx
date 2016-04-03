@@ -6,9 +6,6 @@ var classnames = require('classnames');
 var socketbindings = require('../../lib/socketbindings');
 var md5 = require('md5');
 
-// externally loaded:
-var io = require('io');
-
 var Player = React.createClass({
   statics: {
     OWN_TURN: "in own turn",
@@ -21,9 +18,13 @@ var Player = React.createClass({
     this.setState({ log: this.state.log.concat([msg]) });
   },
 
+  send(evt, payload) {
+    this.props.socket.emit(evt, payload);
+  },
+
   getInitialState() {
     return {
-      socket: io.connect('http://localhost:8081'),
+      socket: this.props.socket,
       // game data
       playerid: -1,
       gameid: -1,
@@ -42,8 +43,8 @@ var Player = React.createClass({
     };
   },
 
-  componentWillMount() {
-    var socket = this.state.socket;
+  componentDidMount() {
+    var socket = this.props.socket;
     socketbindings.bind(socket, this);
   },
 
@@ -67,7 +68,11 @@ var Player = React.createClass({
           <span className="bonus">{ this.renderTiles(this.state.bonus, true) }</span>
           <span className="revealed">{ this.renderRevealed() }</span>
         </div>
-        <div className="log">{ this.state.log.map((msg,pos) => <p key={pos}>{msg}</p>).reverse() }</div>
+        {
+          /*
+            <div className="log">{ this.state.log.map((msg,pos) => <p key={pos}>{msg}</p>).reverse() }</div>
+          */
+        }
       </div>
     );
   },
@@ -171,7 +176,7 @@ var Player = React.createClass({
       }, () => {
         // request compensation tiles for any bonus tile found.
         this.log("requesting compensation for", bonus.join(','));
-        this.state.socket.emit("compensate", {
+        this.send("compensate", {
           playerid: this.state.playerid,
           tiles: bonus
         });
@@ -209,7 +214,7 @@ var Player = React.createClass({
       tiles,
       mode: Player.OUT_OF_TURN
     }, () => {
-      this.state.socket.emit("discard", { tile: tile });
+      this.send("discard", { tile: tile });
     });
   },
 
@@ -230,7 +235,7 @@ var Player = React.createClass({
   claimDiscard(claimType, winType) {
     this.setState({ claimMenu: false }, () => {
       if (claimType !== Constants.NOTILE) {
-        this.state.socket.emit("claim", {
+        this.send("claim", {
           playerid: this.state.playerid,
           tile: this.state.discard,
           claimType: claimType,
@@ -270,6 +275,12 @@ var Player = React.createClass({
       discard: false,
       mode: Player.OWN_TURN
     }, this.verify);
+
+    // notify server of our reveal
+    this.send("reveal", {
+      set: set,
+      playerposition: this.state.playerposition
+    });
   },
 
   // utility function
@@ -302,7 +313,7 @@ var Player = React.createClass({
    * Ask the server to verify our tile state.
    */
   verify() {
-    this.state.socket.emit("verify", {
+    this.send("verify", {
       playerid: this.state.playerid,
       gameid: this.state.gameid,
       handid: this.state.handid,

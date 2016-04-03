@@ -22,10 +22,10 @@ p + p {
   background: white;
 }
 
-.tiles { display: block; min-height: 54px; }
-.open { display: block; min-height: 54px; }
+.player .tiles { display: block; min-height: 54px; }
+.player .open { display: block; min-height: 54px; }
 
-.log {
+.player .log {
   display: block;
   height: calc(100vh - 110px);
   overflow: auto;
@@ -42,12 +42,18 @@ p + p {
   margin-top: 0.1em;
 }
 
-.player { background: inherit; }
+.player {
+  position: relative;
+  background: inherit;
+  border: 1px solid black;
+  border-width: 1px 0;
+}
+
 .player.active { background: #449944; }
 
 .discard {
   display: block;
-  position: fixed;
+  position: absolute;
   top: 0;
   right: 0;
   width: 100px;
@@ -81,3 +87,14 @@ p + p {
 .winmenu {
   background: blue;
 }
+
+.wall { margin: 0.5em; }
+.wall img { width: 1%; }
+
+.discards { margin: 0.5em; }
+.discards img { width: 4%; }
+
+.others { margin: 0.5em; }
+.others img { width: 4%; }
+.others span + span { margin-left: 1em; }
+.others .name { vertical-align: 14px; }

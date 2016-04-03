@@ -12,9 +12,9 @@ var ClaimMenu = React.createClass({
       return this.renderWinMenu();
     }
     var chowButtons = this.props.mayChow ? [
-      <button className="chow" onClick={this.chow1}>chow</button>,
-      <button className="chow" onClick={this.chow2}>chow</button>,
-      <button className="chow" onClick={this.chow3}>chow</button>
+      <button className="chow" key="chow1" onClick={this.chow1}>chow</button>,
+      <button className="chow" key="chow2" onClick={this.chow2}>chow</button>,
+      <button className="chow" key="chow3" onClick={this.chow3}>chow</button>
     ] : [];
     return (
       <div className="claimmenu">

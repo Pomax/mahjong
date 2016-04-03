@@ -47,7 +47,7 @@ Player.prototype = {
    * somewhere, went wrong and that's either a bug, an unaccounted-for
    * synchronisation error, or a intentional remote subversion.
    */
-  verify: function(data) {
+  verify(data) {
     this.log("verify called");
     var passed = true;
     if (this.id !== data.playerid) {
@@ -92,6 +92,13 @@ Player.prototype = {
   },
 
   /**
+   * game dealt X tiles to the indicated player.
+   */
+  dealtTiles(playerposition, tileCount) {
+    this.send("dealt", { playerposition, tileCount });
+  },
+
+  /**
    * the current hand was drawn.
    */
   drawOccured() {
@@ -115,12 +122,12 @@ Player.prototype = {
   /**
    * Game notification that another player drew a tile.
    */
-  drew(cpos) {
+  drew(playerposition) {
     this.send("drew", {
       playerid: this.id,
       gameid: this.game.id,
       handid: this.id,
-      player: cpos
+      playerposition: playerposition
     });
   },
 
@@ -136,10 +143,20 @@ Player.prototype = {
    */
   discarded(pos, tile) {
     this.send("discard", {
-      playerpos: pos,
+      playerposition: pos,
       playerid: this.id,
       gameid: this.game.id,
       handid: this.hand.id,
+      tile: tile
+    });
+  },
+
+  /**
+   * Game notification that a discarded tile was unclaimed and
+   * has been moved to the (inaccessible) discard pile
+   */
+  unclaimed(tile) {
+    this.send("unclaimed", {
       tile: tile
     });
   },
@@ -164,16 +181,16 @@ Player.prototype = {
   /**
    * Game notification that another player received a compensation tile for a bonus tiles.
    */
-  gotCompensation(pos, tiles) {
+  gotCompensation(playerposition, tiles) {
     tiles = tiles.filter(t => t>=Constants.BONUS);
-    this.send("compensated", { pos, tiles });
+    this.send("compensated", { playerposition, tiles });
   },
 
   /**
    * A declined claim is mostly a matter of notification, no action is requied.
    */
   declineClaim(tile, claimType) {
-    this.socket.emit("declined", {
+    this.send("declined", {
       playerid: this.id,
       tile: tile,
       claimType: claimType
@@ -186,7 +203,7 @@ Player.prototype = {
    */
   acceptClaim(ruleset, tile, claimType, winType) {
     ruleset.processClaim(this, tile, claimType, winType);
-    this.socket.emit("accepted", {
+    this.send("accepted", {
       playerid: this.id,
       tile: tile,
       claimType: claimType,
@@ -198,10 +215,21 @@ Player.prototype = {
    * Another player claimed the discard.
    */
   claimOccurred(pos, tile, claimType) {
-    this.socket.emit("claimed", {
+    this.send("claimed", {
       player: pos,
       tile: tile,
       claimType: claimType
+    });
+  },
+
+
+  /**
+   * Another player revealed a set of tiles after claiming
+   */
+  revealedSet(pos, set) {
+    this.send("revealed", {
+      playerposition: pos,
+      set: set
     });
   },
 
@@ -209,7 +237,7 @@ Player.prototype = {
    * Someone won this round.
    */
   winOccurred(pos, tile, winType) {
-    this.socket.emit("finish:win", {
+    this.send("finish:win", {
       player: pos,
       tile: tile,
       winType: winType

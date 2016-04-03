@@ -22,14 +22,19 @@ Hand.prototype = {
     this.log("starting wall:", this.wall.tiles.slice(0).join(','));
     this.log("dealing initial tiles");
 
-    this.players.forEach(player => {
+    this.players.forEach((player,pos) => {
       // set up protocol handlers for actions taken by players
       player.socket.on("discard", this.handleDiscard.bind(this));
       player.socket.on("claim", this.handleClaim.bind(this));
       player.socket.on("compensate", this.compensateTiles.bind(this));
+      player.socket.on("reveal", this.handleReveal.bind(this));
       // deal tiles
       var tiles = this.wall.deal(Constants.HANDSIZE - 1);
       player.setHand(tiles.sort((a,b) => a-b));
+      this.players.forEach(p => {
+        if (p===player) return;
+        p.dealtTiles(pos, tiles.length);
+      });
     });
 
     // give east their 14th tile, and take the game from there:
@@ -44,7 +49,8 @@ Hand.prototype = {
     this.log("wall after deal:", this.wall.tiles.slice(0).join(','));
   },
 
-  next: function() {
+  next: function(discardTile) {
+    this.players.forEach(player => player.unclaimed(discardTile));
     var oldplayer = this.currentPlayer;
     this.currentPlayer = (this.currentPlayer + 1) % this.players.length;
     this.log("active player:",oldplayer,"=>",this.currentPlayer);
@@ -89,7 +95,7 @@ Hand.prototype = {
 
     // We will wait 3 seconds for all claims to come in.
     // If none do, we continue the round.
-    this.roundTimeout = setTimeout(this.next.bind(this), this.hand_timeout || Constants.HAND_TIMEOUT);
+    this.roundTimeout = setTimeout(this.next.bind(this, tile), this.hand_timeout || Constants.HAND_TIMEOUT);
   },
 
   handleClaim: function(data) {
@@ -178,6 +184,15 @@ Hand.prototype = {
     });
 
     // FIXME: TODO: notify other players of bonus tiles being revealed
+  },
+
+  handleReveal(data) {
+    var set = data.set;
+    var playerposition = data.playerposition;
+    this.players.forEach((p, pos) => {
+      if (pos === playerposition) return;
+      p.revealedSet(playerposition, set);
+    });
   }
 };
 

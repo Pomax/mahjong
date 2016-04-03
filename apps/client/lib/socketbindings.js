@@ -72,9 +72,9 @@ module.exports = {
      * a compensation tile due to bonus tiles.
      */
     socket.on('compensated', data => {
-      var playerpos = data.pos;
+      var playerposition = data.playerposition;
       var tiles = data.tiles;
-      player.log("player",playerpos,"received compensation for",tiles);
+      player.log("player",playerposition,"received compensation for",tiles);
     });
 
     /**
@@ -98,11 +98,11 @@ module.exports = {
     });
 
     /**
-     * Received from the server when ever another player discards a tile.
+     * Received from the server whenever another player discards a tile.
      */
     socket.on('discard', data => {
       var tile = data.tile;
-      var pos = data.playerpos;
+      var pos = data.playerposition;
       player.log("saw discard of tile", tile,"by player",pos);
       player.setState({ discard: tile, discardPlayer: pos });
     });
@@ -131,6 +131,15 @@ module.exports = {
       player.setState({
         discard: false
       });
+    });
+
+    /**
+     * Received from the server when another player reveals a claimed set.
+     */
+    socket.on('revealed', data => {
+      var playerpos = data.playerposition;
+      var set = data.set;
+      player.log("player",playerpos,"played",set);
     });
 
     /**
