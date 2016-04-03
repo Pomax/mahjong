@@ -122,7 +122,7 @@ module.exports = {
      */
     socket.on('accepted', data => {
       var tile = data.tile;
-      player.processClaim(data.tile, data.claimType);
+      player.processClaim(data.tile, data.claimType, data.winType);
     });
 
     /**

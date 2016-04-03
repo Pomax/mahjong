@@ -175,10 +175,9 @@ Player.prototype = {
   /**
    * An accepted win may require we reveal the claimed pair/set
    */
-  awardWinningClaim(ruleset, tile, claimType) {
-    ruleset.awardWinningClaim(this, tile, claimType);
-    var winType = claimType;
-    claimType = Constants.WIN;
+  awardWinningClaim(ruleset, tile, claimType, winType) {
+    ruleset.awardWinningClaim(this, tile, claimType, winType);
+    claimType = winType;
     this.send("accepted", { tile, claimType, winType });
   },
 

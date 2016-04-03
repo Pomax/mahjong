@@ -13,7 +13,7 @@ Ruleset.prototype = {
    * Can this player claim the tile they want to claim for the purpose they indicated?
    */
   canClaim: function(player, tile, claimType, winType) {
-    this.log("can",player.id,"claim tile",tile,"given tiles",player.tiles,"?");
+    this.log("can",player.id,"claim tile",tile,"given tiles",player.tiles,"("+claimType+"/"+winType+")","?");
 
     if (claimType === Constants.PAIR && winType === Constants.PAIR) { return this.canClaimSet(player, tile, 1); }
     if (claimType <= Constants.CHOW3) { return this.canClaimChow(player, tile, claimType); }
@@ -62,11 +62,13 @@ Ruleset.prototype = {
   },
 
   /**
-   * This is a complicated function, and is highly ruleset dependent.
+   * Verifying a win is a complicated process, and is highly ruleset dependent.
+   * This ruleset implements the simplest verification possible: does the player
+   * have a way to form four sets and a pair? If so, their claim is deemed valid.
    */
   canClaimWin: function(player, tile, claimType, winType) {
     // 1. can we claim this thing, outside of winning?
-    var claim = (claimType === Constants.WIN && winType === Constants.PAIR) ? winType : claimType;
+    var claim = (claimType === Constants.WIN) ? winType : claimType;
     if (!this.canClaim(player, tile, claim, winType)) return false;
 
     this.log(player.id,"can claim",tile,", but can they win?");
@@ -90,14 +92,16 @@ Ruleset.prototype = {
    * Determine which tiles to form a set with.
    */
   processClaim: function(player, tile, claimType, winType) {
-    this.log("processing claim of tile",tile,"by player",player.id);
+    this.log("processing claim of tile",tile,"by player",player.id,"("+claimType+"/"+winType+")");
     var tiles = player.tiles, set;
     if (claimType === Constants.WIN   && winType === Constants.PAIR)  { set = this.formSet(tile, 2); }
-    if (claimType === Constants.CHOW1 || winType === Constants.CHOW1) { set = this.formChow(tile, claimType); }
-    if (claimType === Constants.CHOW2 || winType === Constants.CHOW2) { set = this.formChow(tile, claimType); }
-    if (claimType === Constants.CHOW3 || winType === Constants.CHOW3) { set = this.formChow(tile, claimType); }
+    if (claimType === Constants.CHOW1 || winType === Constants.CHOW1) { set = this.formChow(tile, Constants.CHOW1); }
+    if (claimType === Constants.CHOW2 || winType === Constants.CHOW2) { set = this.formChow(tile, Constants.CHOW2); }
+    if (claimType === Constants.CHOW3 || winType === Constants.CHOW3) { set = this.formChow(tile, Constants.CHOW3); }
     if (claimType === Constants.PUNG  || winType === Constants.PUNG)  { set = this.formSet(tile, 3); }
     if (claimType === Constants.KONG) { set = this.formSet(tile, 4); }
+
+    console.log(claimType, winType, set);
 
     tiles.push(tile);
     set.forEach(tile => {
@@ -108,12 +112,14 @@ Ruleset.prototype = {
     player.revealed.push(set);
   },
 
-  awardWinningClaim: function(player, tile, claimType) {
-    this.log("processing winning claim of tile",tile,"by player",player.id);
+  awardWinningClaim: function(player, tile, claimType, winType) {
+    this.log("processing winning claim of tile",tile,"by player",player.id,"("+claimType+"/"+winType+")");
     var tiles = player.tiles, set;
-    if (claimType === Constants.PAIR)  { set = this.formSet(tile, 2); }
-    if (claimType  <= Constants.CHOW)  { set = this.formChow(tile, claimType); }
-    if (claimType === Constants.PUNG)  { set = this.formSet(tile, 3); }
+    if (winType === Constants.PAIR)  { set = this.formSet(tile, 2); }
+    if (winType  <= Constants.CHOW3) { set = this.formChow(tile, winType); }
+    if (winType === Constants.PUNG)  { set = this.formSet(tile, 3); }
+
+    console.log(claimType, winType, set);
 
     tiles.push(tile);
     set.forEach(tile => {

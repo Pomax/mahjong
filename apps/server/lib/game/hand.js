@@ -11,6 +11,7 @@ var Hand = function(game, ruleset, handid, players, east) {
   this.ruleset = ruleset;
   this.players = players;
   this.wall = new Wall();
+  // this.wall = new Wall(Constants.RIGGED);
   this.currentPlayer = east;
   this.log = logger('game', game.id, 'hand', handid);
 };
@@ -143,8 +144,18 @@ Hand.prototype = {
       // if this was a winning claim, the hand is over.
       if (claimType === Constants.WIN) {
         this.log("player",playerposition,"("+player.id+")","has won.");
-        player.awardWinningClaim(this.ruleset, tile, winType);
+        player.awardWinningClaim(this.ruleset, tile, claimType, winType);
+
+        this.log("notifying players of win");
         this.players.forEach((player, idx) => {
+          if (idx!==playerposition) {
+            player.claimOccurred(playerposition, tile, winType);
+          }
+        });
+
+        this.log("end of hand.");
+        this.players.forEach((player, idx) => {
+          // FIXME: TODO: will this run into async issues?
           player.winOccurred(playerposition, tile, winType);
         });
       }
@@ -172,7 +183,7 @@ Hand.prototype = {
     } else {
       // decline the claim and advance the game.
       player.declineClaim(tile, claimType);
-      this.next();
+      this.next(tile);
     }
   },
 

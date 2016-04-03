@@ -25,12 +25,15 @@
       var img = new Image();
       var setup = function() {
         console.log("adding iframes");
-        for(var i=0; i<4; i++) {
+        (function next(cnt) {
+          if (cnt===4) return;
+
           var frame = document.createElement("iframe");
           frame.src = "http://localhost:8080/index.html?gameid={{gameid}}";
-          console.log(frame.src);
+          frame.onload = function() { next(cnt+1); };
           document.body.appendChild(frame);
-        }
+
+        }(0));
         document.body.removeChild(img);
       };
       img.onload = setup;

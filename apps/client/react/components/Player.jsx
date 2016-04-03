@@ -254,12 +254,13 @@ var Player = React.createClass({
   /**
    * Determine which tiles to form a set with.
    */
-  processClaim(tile, claimType) {
+  processClaim(tile, claimType, winType) {
     this.log("claim for", tile, "("+claimType+")", "was accepted");
 
     // remove tile from hand twice and form set.
     // FIXME: TODO: synchronize this with server/lib/game/player.js
     var set = [];
+    if (claimType === Constants.WIN && winType === Constants.PAIR) { set = this.formSet(tile,2); }
     if (claimType <= Constants.CHOW3) { set = this.formChow(tile, claimType); }
     if (claimType === Constants.PUNG) { set = this.formSet(tile, 3); }
     if (claimType === Constants.KONG) { set = this.formSet(tile, 4); }

@@ -7,6 +7,7 @@ var Constants = {
   NOTILE: -1,
   HANDSIZE: 14,
   HAND_TIMEOUT: 5000,
+  RIGGED: true,
 
   // game turn types
   CONTINUE:        0,
