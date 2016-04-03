@@ -44,7 +44,7 @@ module.exports = {
     });
 
     /**
-     * Received from the server upon joining a game.
+     * Received from the server upon starting a hand.
      */
     socket.on('sethand', data => {
       var tiles = data.tiles;
