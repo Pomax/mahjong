@@ -17,7 +17,7 @@ For testing, make one player start a new game, then join the other three players
 
 ## Socket.io timing
 
-I've seen socket.io completely ignore, or not ever get, socket data if too much code runs synchronously. As such, most socket.emit calls are wrapped in a process.nextTick() in `lib/game/player.js`'s `send(msg,payload)` function. I'm pretty sure this can't scale, but for now it'll do.
+I've seen socket.io completely ignore, or not ever get, socket data if too much code runs synchronously. As such, most socket.emit calls are wrapped in a process.nextTick() in `lib/game/player.js`'s `send(msg,payload)` function. I'm pretty sure this can't scale, but for now it'll do. There is [an issue](https://github.com/Pomax/mahjong/issues/10) for investigating this, if you want to help do that, you are my hero.
 
 ## Release status
 
