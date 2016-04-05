@@ -29,7 +29,8 @@ Player.prototype = {
       payload.playerposition = this.playerposition;
     }
     // Force break in execution before sending; if we don't, socket.io
-    // starts to loose all kinds of data. For... reasons? idk...
+    // starts to lose data and/or connectivity. It's also unclear _why_
+    // this break fixes the issues, and thus, whether it fixes it at all...
     process.nextTick(()=>{ this.socket.emit(str, payload); });
   },
 
