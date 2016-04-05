@@ -28,7 +28,9 @@ Player.prototype = {
     if (typeof payload.playerposition === 'undefined') {
       payload.playerposition = this.playerposition;
     }
-    this.socket.emit(str, payload);
+    // Force break in execution before sending; if we don't, socket.io
+    // starts to loose all kinds of data. For... reasons? idk...
+    process.nextTick(()=>{ this.socket.emit(str, payload); });
   },
 
   /**
@@ -56,17 +58,17 @@ Player.prototype = {
   verify(digest) {
     var localDigest = this.getDigest();
     var passed = (digest === localDigest);
+    console.log("verifying",this.playerposition,":",this.tiles,this.bonus,this.revealed);
     this.send("verification", { result: passed });
   },
 
   /**
    * When a hand starts, everything resets.
    */
-  startHand(hand, playerposition) {
+  bindHand(hand, state) {
     this.hand = hand;
-    this.playerposition = playerposition;
-    // notify the client that server-bootstrapping is complete.
-    this.send("ready", {});
+    this.playerposition = state.playerposition;
+    this.send("confirm", state);
   },
 
   /**

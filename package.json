@@ -7,9 +7,8 @@
   "scripts": {
     "client:build": "webpack --prod --progress --colors --watch",
     "client:dev": "webpack-dev-server --progress --colors --hot --inline --content-base public/",
-    "client": "http-server -s -c-1 apps/client/web",
     "server": "node apps/server/server.js",
-    "start": "npm-run-all --parallel client:build client server"
+    "start": "npm-run-all --parallel client:build server"
   },
   "author": "Pomax",
   "devDependencies": {

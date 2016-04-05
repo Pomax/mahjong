@@ -1,9 +1,11 @@
 var React = require('react');
 
-var Wall = require('../Components/Wall.jsx');
-var Discards = require('../Components/Discards.jsx');
-var Player = require('../Components/Player.jsx');
-var OtherPlayer = require('../Components/OtherPlayer.jsx');
+var Lobby = require('../components/Lobby.jsx');
+var Wall = require('../components/Wall.jsx');
+var Discards = require('../components/Discards.jsx');
+var Player = require('../components/Player.jsx');
+var OtherPlayer = require('../components/OtherPlayer.jsx');
+
 
 // externally loaded:
 var io = require('io');
@@ -11,25 +13,36 @@ var io = require('io');
 var Client = React.createClass({
 
   getInitialState() {
+    /**
+     * Initial socket connection
+     */
+    var socket = io.connect('http://localhost:' + window.location.port);
+    //socket.on('connected', data => {});
+
     return {
-      socket: io.connect('http://localhost:8081'),
+      socket: socket,
+      viewLobby: true,
       gameid: -1,
+      playerid: -1,
       handid: -1,
       playerposition: -1
     };
   },
 
   componentWillMount: function() {
-    this.state.socket.on('ready', data => {
+    this.state.socket.on('confirm', data => {
       var gameid = data.gameid;
       var handid = data.handid;
+      var playerid = data.playerposition;
       var playerposition = data.playerposition;
-      this.setState({ gameid, handid, playerposition });
+      this.setState({ gameid, handid, playerid, playerposition });
     });
   },
 
   render() {
     var socket = this.state.socket;
+    if (this.state.viewLobby) { return this.renderLobby(socket); }
+
     var others = null;
     if (this.state.playerposition>-1) {
       others = [0,1,2,3].map(pos => {
@@ -37,9 +50,10 @@ var Client = React.createClass({
         return <OtherPlayer socket={socket} key={pos} playerposition={pos} />;
       });
     }
+
     return (
       <div>
-        <Player socket={socket} />
+        <Player socket={socket} playerid={this.state.playerid} gameid={this.state.gameid}/>
         <div className="others">
         { others }
         </div>
@@ -47,6 +61,14 @@ var Client = React.createClass({
         <Wall socket={socket} />
       </div>
     );
+  },
+
+  renderLobby(socket) {
+    return <Lobby socket={socket} joinGame={this.joinGame} onFinish={this.leaveLobby}/>;
+  },
+
+  joinGame(gameid, playerid) {
+    this.setState({ gameid, playerid, viewLobby: false });
   }
 
 });

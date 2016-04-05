@@ -9,6 +9,7 @@ var Ruleset = require('./rulesets/minimal');
 
 var GameManager = function() {
   this.games = {};
+  this.gamesListeners = [];
   this.log = logger('manager');
 };
 
@@ -18,6 +19,7 @@ GameManager.prototype = {
     this.log("resetting game manager");
     Object.keys(this.games).forEach(k => this.games[k].reset());
     this.games = {};
+    this.gamesListeners = [];
   },
 
   nextPlayerId: uid(),
@@ -34,23 +36,71 @@ GameManager.prototype = {
   },
 
   manageConnection: function(socket) {
-    var playerid = this.nextPlayerId();
-    this.log("creating connection for client.","playerid:" + playerid);
+    /*
+      var playerid = this.nextPlayerId();
+      this.log("creating connection for client.","playerid:" + playerid);
 
-    var securities = {playerid};
-    this.mustMatch = Object.keys(securities);
-    this.listenFor = new Listener(socket, securities);
-    this.notify = new Emitter(socket, securities);
+      var securities = { playerid };
+      this.mustMatch = Object.keys(securities);
+      this.listenFor = new Listener(socket, securities);
+      this.notify = new Emitter(socket, securities);
 
-    // set up listening for this client's request to join a game
-    this.listenFor.join(this);
+      // set up listening for this client's request to join a game
+      this.listenFor.join(this);
 
-    // and then notify the client that they are connected
-    this.notify.connected(playerid);
+      // notify the client that they are connected
+      this.notify.connected(playerid);
+    */
+    console.log("making connection with client");
+
+    socket.on('listen:games', data => this.addGamesListener(socket, data));
+    socket.on('listen:stop', data => this.removeGamesListener(socket, data));
+    socket.on('newgame:request', data => this.makeNewGame(socket, data));
+    socket.on('player:register', data => this.registerPlayer(socket, data));
+
+    console.log("emitting 'connected'");
+    socket.emit('connected');
+    this.notifyGameUpdate();
   },
 
-  handleJoin: function(gameid, playerid, socket) {
+  registerPlayer(socket, data) {
+    // FIXME: TODO: add in playerid security, obviously
+    var playerid = data.playerid || this.nextPlayerId();
+    var gameid = data.gameid;
     this.getGame(gameid).addPlayer(playerid, socket);
+    socket.emit("player:registered", { gameid, playerid });
+    this.notifyGameUpdate();
+  },
+
+  notifyGameUpdate(specific) {
+    var games = {};
+    Object.keys(this.games).forEach(gameid => {
+      games[gameid] = this.games[gameid].getPlayerCount();
+    });
+    var list = specific ? [specific] : this.gamesListeners;
+    list.forEach(socket => {
+      console.log("sending gameslist to socket", games);
+      socket.emit("gameslist", { games });
+    });
+  },
+
+  addGamesListener(socket, data) {
+    console.log("added socket to gameslist listeners");
+    this.gamesListeners.push(socket);
+    this.notifyGameUpdate(socket);
+  },
+
+  removeGamesListener(socket, data) {
+    var pos = this.gamesListeners.indexOf(socket);
+    console.log("removing socket "+pos+" from gameslist listeners");
+    this.gamesListeners.splice(pos, 1);
+  },
+
+  makeNewGame(socket, data) {
+    console.log("making new game for a client");
+    gameid = this.nextGameId();
+    this.getGame(gameid);
+    socket.emit("newgame:made", { gameid });
   }
 };
 

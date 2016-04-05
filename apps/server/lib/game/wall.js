@@ -2,15 +2,15 @@ var logger = require('../logger');
 var Constants = require('../constants');
 var Tiles = require('./tiles');
 
-var Wall = function (rigged) {
+var Wall = function () {
   this.log = logger("wall");
-  this.formTiles(rigged);
+  this.formTiles();
 };
 
 Wall.prototype = {
   deadCount: Constants.DEADWALL,
 
-  formTiles: function(rigged) {
+  formTiles: function() {
     this.tiles = [];
 
     // create sorted array of tile numbers
@@ -24,18 +24,12 @@ Wall.prototype = {
       tile = tiles.splice((Math.random()*tiles.length), 1)[0];
       this.tiles.push(tile);
     }
-
-    // if (rigged) {
-    //   this.log("rigging a wall");
-    //   var tiles = this.tiles.slice();
-    //   this.__rigTiles(tiles);
-    // }
-
   },
 
+  /*
   // __rigTiles: function(tiles) {
   //   this.tiles = [];
-
+  //
   //   var patterns = {
   //     needsPair:  [0,0,0, 1,1,1, 2,2,2, 3,3,3, 4], // needs 4
   //     needsPung:  [0,0,0, 1,1,1, 2,2,2, 3,3, 4,4], // needs 3 or 4
@@ -43,17 +37,18 @@ Wall.prototype = {
   //     needsChow2: [7,7, 0,1,2, 0,1,2, 0,1,2, 3,5], // needs 4, as chow2
   //     needsChow3: [7,7, 0,1,2, 0,1,2, 0,1,2, 2,3]  // needs 4, as chow3
   //   };
-
+  //
   //   var needed = 4;
   //   var pattern = patterns.needsChow3;
-
+  //
   //   pattern.concat([needed]).forEach(tile => {
   //     var pos = tiles.indexOf(tile);
   //     tiles.splice(pos,1);
   //   });
-
+  //
   //   this.tiles = pattern.concat([needed]).concat(tiles);
   // },
+  */
 
   length: function() {
     return this.tiles.length;

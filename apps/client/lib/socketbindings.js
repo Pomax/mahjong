@@ -10,19 +10,6 @@ module.exports = {
   bind: function(socket, player) {
 
     /**
-     * Received from the server upon socket connection.
-     */
-    socket.on('connected', data => {
-      var playerid = data.playerid;
-      var gameid = window.location.search.match(/gameid=(\d+)/)[1];
-      player.log("joining game", gameid);
-      player.setState({ playerid }, () => {
-        // respond with request to join a specific game.
-        socket.emit("join", { playerid, gameid });
-      });
-    });
-
-    /**
      * Received from the server upon joining a game.
      */
     socket.on('joined', data => {
@@ -35,13 +22,12 @@ module.exports = {
     /**
      * Received from the server when a game is ready to start.
      */
-    socket.on('ready', data => {
+    socket.on('confirm', data => {
       var gameid = data.gameid;
       var handid = data.handid;
       var playerid = data.playerid;
       var playerposition = data.playerposition;
-      player.log("starting game", gameid);
-      player.setState({ handid, playerposition });
+      player.makeReady(gameid, handid, playerid, playerposition);
     });
 
     /**
@@ -51,10 +37,14 @@ module.exports = {
       var tiles = data.tiles;
       tiles.sort((a,b) => a - b);
       player.log("received", tiles.join(','));
-      player.setInitialTiles(tiles, () => {
-        // respond with a request to verify this player's tiles
-        socket.emit("synchronize", { hash: player.getHash() });
-      });
+      // respond with a request to verify this player's tiles
+      player.setInitialTiles(tiles, () => { player.verify(); });
+    });
+
+    socket.on('dealt', data => {
+      var playerposition = data.playerposition;
+      var tileCount = data.tileCount;
+      //...
     });
 
     /**
@@ -148,21 +138,27 @@ module.exports = {
      */
     socket.on('finish:draw', data => {
       player.log("hand was a draw...");
-      player.setState({ mode: Player.HAND_OVER, discard: false });
+      player.finishDraw();
     });
 
     /**
      * End of a round, round ended in a win by a player.
      */
     socket.on('finish:win', data => {
-      player.log("hand was a won by", data.player);
-      player.setState({ mode: Player.HAND_OVER, discard: false });
+      var playerposition = parseInt(data.playerposition);
+      var tile = parseInt(data.tile);
+      var winType = parseInt(data.winType);
+      player.log("hand was a won by", playerposition);
+      player.finishWin(playerposition, tile, winType);
     });
 
     /**
      * Verification results
      */
-    socket.on('verification', data => { player.log("verification:",data.result); });
+    socket.on('verification', data => {
+      var result = data.result;
+      player.verification(result);
+    });
 
   }
 };

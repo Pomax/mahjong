@@ -54,6 +54,8 @@ p + p {
 }
 
 .player.active { background: #449944; }
+.player.winner { background: #ffe691; }
+.player.loser, .player.draw  { background: #ffe9e9; }
 
 .discard {
   display: block;

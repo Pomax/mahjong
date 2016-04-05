@@ -49,9 +49,11 @@ Game.prototype = {
     this.notify.joined(gameid, playerid, playerposition);
 
     // when four players have joined a game, start that game.
-    if (this.players.length === 4) {
-      this.startGame();
-    }
+    if (this.players.length === 4) { this.startGame(); }
+  },
+
+  getPlayerCount: function() {
+    return this.players.length;
   },
 
   startGame: function() {

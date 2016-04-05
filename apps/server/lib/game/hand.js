@@ -11,7 +11,6 @@ var Hand = function(game, ruleset, handid, players, east) {
   this.ruleset = ruleset;
   this.players = players;
   this.wall = new Wall();
-  // this.wall = new Wall(Constants.RIGGED);
   this.currentPlayer = east;
   this.log = logger('game', game.id, 'hand', handid);
 };
@@ -22,17 +21,10 @@ Hand.prototype = {
    * ...
    */
   start: function() {
-    this.log("starting hand");
-    this.players.forEach((player, playerposition) => {
-      player.startHand(this, playerposition);
-    });
-    this.log("starting wall:", this.wall.tiles.slice(0).join(','));
-    // perform initial setup:
+    this.ready = 0;
     this.players.forEach((player, playerposition) => {
       this.initialSetup(player, playerposition);
     });
-    // Start the game loop for this hand.
-    this.deal();
   },
 
   /**
@@ -55,18 +47,46 @@ Hand.prototype = {
     this.listenFor.compensate(this);
     this.listenFor.reveal(this);
     this.listenFor.verify(this);
+    this.listenFor.confirm(this);
 
-    // deal a player their initial tiles
-    var tiles = this.wall.deal(Constants.HANDSIZE - 1);
-    player.setHand(tiles.sort((a,b) => a-b));
-    this.log("dealing",tiles.length,"initial tiles to",playerposition);
-
-    // notify the other players that someone was dealt their initial tiles
-    this.players.forEach(p => {
-      if (p===player) return;
-      p.dealtTiles(playerposition, tiles.length);
-    });
+    var state = {gameid, handid, playerid, playerposition};
+    player.bindHand(this, state);
   },
+
+  handleConfirmed: function(playerposition) {
+    this.ready++;
+    this.log(playerposition,"confirmed, ",this.ready,"players ready");
+    if (this.ready<this.players.length) return;
+    this.startPlay();
+  },
+
+  /**
+   * ...
+   */
+  startPlay: function() {
+    this.ready++;
+    if (this.ready<this.players.length) return;
+
+    this.log("starting wall:", this.wall.tiles.slice(0).join(','));
+    this.players.forEach((player, playerposition) => {
+
+      setTimeout(()=>{
+        // deal a player their initial tiles
+        var tiles = this.wall.deal(Constants.HANDSIZE - 1);
+        this.log("dealing",tiles.length,"initial tiles to",playerposition);
+        player.setHand(tiles.sort((a,b) => a-b));
+
+        // notify the other players that someone was dealt their initial tiles
+        this.players.forEach(p => {
+          if (p===player) return;
+          p.dealtTiles(playerposition, tiles.length);
+        });
+      },0);
+    });
+    // Start the game loop for this hand.
+    this.deal();
+  },
+
 
   /**
    * ...
@@ -204,8 +224,11 @@ Hand.prototype = {
       return this.log("ERROR", "player requested unfair compensation for", tiles);
     }
 
+    this.log("sending player",playerposition,"bonus compensation tile(s)");
+
     var player = this.players[playerposition];
     var compensationTiles = this.wall.deal(tiles.length);
+    this.log("tile(s):",compensationTiles);
     player.getCompensation(tiles, compensationTiles);
 
     this.players.forEach(p => {

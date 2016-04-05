@@ -1,6 +1,7 @@
 var React = require('react');
 var Tile = require('../components/Tile.jsx');
 var ClaimMenu = require('../components/ClaimMenu.jsx');
+var Overlay = require('../components/Overlay.jsx');
 var Constants = require('../../../server/lib/constants');
 var classnames = require('classnames');
 var socketbindings = require('../../lib/socketbindings');
@@ -42,6 +43,10 @@ var Player = React.createClass({
       // discard information
       discard: false,
       discardPlayer: -1,
+      // hand-end information
+      winner: false,
+      winTile: false,
+      winType: false,
       // play log for this player
       log: []
     };
@@ -52,31 +57,59 @@ var Player = React.createClass({
     socketbindings.bind(socket, this);
   },
 
+  makeReady(gameid, handid, playerid, playerposition) {
+    var state = { gameid, handid, playerid, playerposition };
+    this.setState(state, () => {
+      this.send("confirmed", state);
+    });
+  },
+
   /**
    * Render the player UI
    */
   render() {
+    var winner = (this.state.mode === Player.HAND_OVER) && (this.state.winner === this.state.playerposition);
+    var loser = (this.state.mode === Player.HAND_OVER) && (this.state.winner !== this.state.playerposition);
+    var draw = (this.state.mode === Player.HAND_OVER) && (this.state.winner === -1);
+
     var classes = classnames("player", {
-      active: this.state.mode === Player.OWN_TURN
+      active: this.state.mode === Player.OWN_TURN,
+      winner: winner,
+      loser: loser,
+      draw: draw
     });
 
     var dclasses = classnames("discard", {
       menu: this.state.claimMenu
     });
 
+    var overlay = null;
+    if (this.state.mode === Player.HAND_OVER) {
+      var content = '';
+      if (draw) { content = "The hand was a draw..."; }
+      else if (winner) { content = "You won the hand!"; }
+      else if (loser) { content = "Player "+this.state.winner+" won the hand."; }
+      overlay = <Overlay>{content}</Overlay>;
+    }
+
     return (
-      <div className={classes}>
-        <div className={dclasses}>{ this.showDiscard() }</div>
-        <div className="tiles">{ this.renderTiles(this.state.tiles, this.state.mode === Player.HAND_OVER) }</div>
-        <div className="open">
-          <span className="bonus">{ this.renderTiles(this.state.bonus, true) }</span>
-          <span className="revealed">{ this.renderRevealed() }</span>
+      <div>
+        {overlay}
+
+        <div className={classes}>
+
+          <div className={dclasses}>{ this.showDiscard() }</div>
+          <div className="tiles">{ this.renderTiles(this.state.tiles, this.state.mode === Player.HAND_OVER) }</div>
+          <div className="open">
+            <span className="bonus">{ this.renderTiles(this.state.bonus, true) }</span>
+            <span className="revealed">{ this.renderRevealed() }</span>
+          </div>
+          {
+            /*
+              <div className="log">{ this.state.log.map((msg,pos) => <p key={pos}>{msg}</p>).reverse() }</div>
+            */
+          }
         </div>
-        {
-          /*
-            <div className="log">{ this.state.log.map((msg,pos) => <p key={pos}>{msg}</p>).reverse() }</div>
-          */
-        }
       </div>
     );
   },
@@ -181,10 +214,8 @@ var Player = React.createClass({
         bonus: this.state.bonus.concat(bonus)
       }, () => {
         // request compensation tiles for any bonus tile found.
-        this.log("requesting compensation for", bonus.join(','));
-        this.send("compensate", {
-          tiles: bonus
-        });
+        console.log("requesting compensation for", bonus.join(','));
+        this.send("compensate", { tiles: bonus });
       });
     }
   },
@@ -319,9 +350,47 @@ var Player = React.createClass({
    * Ask the server to verify our tile state.
    */
   verify() {
-    this.send("verify", {
-      digest: this.getDigest()
-    });
+    console.log("verifying",this.state.playerposition,":",this.state.tiles,this.state.bonus,this.state.revealed);
+    this.send("verify", { digest: this.getDigest() });
+  },
+
+  /**
+   * If we did not pass verification, we need to inspect the game logs immediately.
+   */
+  verification(result) {
+    if (result === false) {
+      alert("player "+this.state.playerposition+" failed hand verification!");
+    }
+    this.log("verification:",result);
+  },
+
+  /**
+   * Hand ended, ending in a draw.
+   */
+  finishDraw() {
+    this.finish(-1, Constants.NOTILE, Constants.NOTHING);
+  },
+
+  /**
+   * Hand ended, ending in a win by one of the players.
+   */
+  finishWin(playerposition, tile, winType) {
+    this.finish(playerposition, tile, winType);
+  },
+
+  /**
+   * Hand ended.
+   * pid = -1 => draw
+   * pid > -1 => winning player
+   */
+  finish(playerposition, tile, winType) {
+    this.setState({
+      mode: Player.HAND_OVER,
+      discard: false,
+      winner: playerposition,
+      winTile: tile,
+      winType: winType
+    }, () => { console.log(this.state); });
   }
 });
 

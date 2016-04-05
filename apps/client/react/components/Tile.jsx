@@ -9,7 +9,7 @@ var Tile = React.createClass({
   },
 
   getInitialState: function() {
-    var base = ['', (this.props.base || 'images/tiles'), this.props.tileset,''].join('/');
+    var base = [(this.props.base || 'images/tiles'), this.props.tileset,''].join('/');
     var face = base + this.props.value + ".jpg";
     var back = base + "concealed.jpg";
     return { base, face, back, src: face };

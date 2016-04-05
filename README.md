@@ -16,3 +16,7 @@ Connecting to [http://localhost:8081](http://localhost:8081) will load a page th
 To join a game manually, with four separate tabs/windows, point each tab/window at [http://localhost:8080/game/:gameid](http://localhost:8080/game/0) where `:gameid` is a number 0 or up.
 
 This is a work in progress, so there's plenty that doesn't work right now, hopefully I can take this line out of the README.md in the near future.
+
+## Socket.io timing
+
+I've seen socket.io completely ignore, or not ever get, socket data if too much code runs synchronously. As such, most socket.emit calls are wrapped in a process.nextTick() in `lib/game/player.js`'s `send(msg,payload)` function. I'm pretty sure this can't scale, but for now it'll do.

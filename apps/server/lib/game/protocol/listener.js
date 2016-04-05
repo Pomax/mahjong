@@ -112,6 +112,18 @@ Listener.prototype = {
         data.digest
       );
     });
+  },
+
+  /**
+   * A client is confirming that they are ready to start play on a hand.
+   *
+   * for integrity, payload must contain [gameid,handid,playerid,playerposition]
+   */
+  confirm(handler) {
+    this.socket.on("confirmed", (data) => {
+      if (this.fails(data, handler.mustMatch)) return;
+      handler.handleConfirmed.bind(handler)(data.playerposition);
+    });
   }
 
 };
