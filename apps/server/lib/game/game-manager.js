@@ -17,8 +17,12 @@ GameManager.prototype = {
   reset: function() {
     this.log('\033[2J'); // clear the terminal
     this.log("resetting game manager");
+    // notify in-game clients
     Object.keys(this.games).forEach(k => this.games[k].reset());
     this.games = {};
+    // notify in-lobby clients
+    var list = specific ? [specific] : this.gamesListeners;
+    list.forEach(socket => { socket.emit("server:reset", { games }); });
     this.gamesListeners = [];
   },
 

@@ -44,9 +44,11 @@ var Lobby = React.createClass({
 
   render() {
     return (
-      <div>
+      <div className="lobby">
         <GameList games={this.state.games} joinGame={this.joinGame} />
-        <button onClick={this.newGame}>start a new game</button>
+        <div className="new">
+          <button onClick={this.newGame}>start a new game</button>
+        </div>
       </div>
     );
   }

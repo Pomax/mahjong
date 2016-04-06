@@ -8,38 +8,34 @@
         padding: 0;
         height: 100%;
         overflow: hidden;
+        background: black;
       }
       iframe {
-        display: inline-block;
-        border: 1px solid grey;
-        width: 50vw;
-        height: 50vh;
-        margin: 0;
+        float: left;
+        border: none;
+        width: calc(50vw - 2px);
+        height: calc(50vh - 2px);
+        margin: 1px;
         padding: 0;
         box-sizing: border-box;
+        background: white;
       }
     </style>
   </head>
   <body>
     <script>
-      var img = new Image();
-      var setup = function() {
-        console.log("adding iframes");
-        (function next(cnt) {
-          if (cnt===4) return;
+      console.log("adding iframes");
+      (function next(cnt) {
+        if (cnt===4) return;
 
-          var frame = document.createElement("iframe");
-          frame.src = "{{host}}/client/index.html";
-          frame.onload = function() { next(cnt+1); };
-          document.body.appendChild(frame);
+        var frame = document.createElement("iframe");
+        frame.src = "{{host}}/client/index.html";
+        frame.onload = function() {
+          next(cnt+1);
+        };
+        document.body.appendChild(frame);
 
-        }(0));
-        document.body.removeChild(img);
-      };
-      img.onload = setup;
-      img.onerror = setup;
-      img.src = "/reset";
-      document.body.appendChild(img);
+      }(0));
     </script>
   </body>
 </html>

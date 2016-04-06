@@ -104,3 +104,42 @@ p + p {
 .others img { width: 4%; }
 .others span + span { margin-left: 1em; }
 .others .name { vertical-align: 14px; }
+
+
+.lobby .games {
+  border: 1px solid black;
+  display: inline-block;
+  margin: 1em;
+}
+
+.lobby .games .game {
+  background: white;
+}
+
+.lobby .games .game:nth-child(2n) {
+  background: lightsteelblue;
+}
+
+.lobby .games .game + .game {
+  margin-top: 0.25em;
+}
+
+.lobby .games .game button {
+  border: none;
+  background: darkolivegreen;
+  color: white;
+  font-family: verdana;
+}
+
+.lobby .new button {
+  border: none;
+  background: #269279;
+  color: white;
+  font-family: verdana;
+  font-weight: bold;
+  padding: 1em;
+  display: block;
+  border-radius: 5px;
+  margin: auto;
+  width: 12em;
+}
