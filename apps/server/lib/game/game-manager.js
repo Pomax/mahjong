@@ -21,8 +21,11 @@ GameManager.prototype = {
     Object.keys(this.games).forEach(k => this.games[k].reset());
     this.games = {};
     // notify in-lobby clients
-    var list = specific ? [specific] : this.gamesListeners;
-    list.forEach(socket => { socket.emit("server:reset", { games }); });
+    this.gamesListeners.forEach(socket => {
+      if (socket.connected) {
+        socket.emit("server:reset", { games });
+      }
+    });
     this.gamesListeners = [];
   },
 
@@ -84,7 +87,9 @@ GameManager.prototype = {
     var list = specific ? [specific] : this.gamesListeners;
     list.forEach(socket => {
       console.log("sending gameslist to socket", games);
-      socket.emit("gameslist", { games });
+      if (socket.connected) {
+        socket.emit("gameslist", { games });
+      }
     });
   },
 
