@@ -4,7 +4,11 @@ var path = require('path');
 var express = require('express');
 var app = express();
 var gameManager = require('./lib/game/game-manager');
-var PORT = 8081;
+var habitat = require('habitat');
+habitat.load(path.join(__dirname, "..", "..", ".env"));
+
+var PORT = process.env.PORT || 8081;
+var HOST = process.env.HOST || "http://localhost:" + PORT;
 
 // immediate route redirect
 app.get('/', function(req, res) {
@@ -15,7 +19,7 @@ app.get('/', function(req, res) {
 // game interface
 app.get('/test', function(req, res) {
   fs.readFile(path.join(__dirname, 'index.html'), function(err, data) {
-    var html = data.toString().replace(/\{\{host\}\}/g, process.env.HOSTNAME || "http://localhost:"+PORT);
+    var html = data.toString().replace(/\{\{host\}\}/g, HOST);
     res.status(200).type('text/html').send(html);
   });
 })

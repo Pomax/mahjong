@@ -16,8 +16,9 @@ var Client = React.createClass({
     /**
      * Initial socket connection
      */
-    var socket = io.connect('http://localhost:' + window.location.port);
-    //socket.on('connected', data => {});
+    var loc = window.location;
+    var url = loc.protocol + "//" + loc.hostname + (loc.port? ':'+loc.port : '');
+    var socket = io.connect(url);
 
     return {
       socket: socket,
