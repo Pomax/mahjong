@@ -53,10 +53,6 @@ p + p {
   border-width: 1px 0;
 }
 
-.player.active { background: #449944; }
-.player.winner { background: #ffe691; }
-.player.loser, .player.draw  { background: #ffe9e9; }
-
 .discard {
   display: block;
   position: absolute;
@@ -143,3 +139,10 @@ p + p {
   margin: auto;
   width: 12em;
 }
+
+.player.active { background: #449944; color: white; }
+.player.winner { background: #ffe691; }
+.player.loser, .player.draw  { background: #ffe9e9; }
+
+.otherplayer { margin: 1px; border: 1px solid transparent; padding: 5px; }
+.otherplayer.ourturn { margin: 1px; border: 1px solid darkolivegreen; }

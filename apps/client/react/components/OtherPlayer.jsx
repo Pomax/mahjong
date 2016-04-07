@@ -1,6 +1,7 @@
 var React = require('react');
 var Tile = require('../components/Tile.jsx');
 var Constants = require('../../../server/lib/constants');
+var classnames = require('classnames');
 
 var OtherPlayer = React.createClass({
 
@@ -15,6 +16,7 @@ var OtherPlayer = React.createClass({
   componentDidMount() {
     var socket = this.props.socket;
     socket.on("dealt", this.addTiles);
+    socket.on("tile", this.otherPlayerTile);
     socket.on("drew", this.addTile);
     socket.on("compensated", this.addBonus);
     socket.on("discarded", this.removeTile);
@@ -29,8 +31,12 @@ var OtherPlayer = React.createClass({
   },
 
   render() {
+    var className = classnames("otherplayer", {
+      ourturn: this.state.ourTurn
+    });
+
     return (
-      <div className="otherplayer">
+      <div className={className}>
       <span className="name">{this.props.playerposition + ':'}</span>
       <span className="tiles">{this.formTiles(this.state.tiles)}</span>
       <span className="revealed">{this.formTiles(this.state.revealed,true)}</span>
@@ -51,11 +57,18 @@ var OtherPlayer = React.createClass({
     this.setState({ tiles });
   },
 
+  otherPlayerTile(data) {
+    this.setState({ ourTurn: false });
+  },
+
   addTile(data) {
-    if(!this.ours(data)) return;
+    if(!this.ours(data)) {
+      this.setState({ ourTurn: false });
+      return;
+    }
     var tiles = this.state.tiles;
     tiles.push('concealed');
-    this.setState({ tiles });
+    this.setState({ tiles, ourTurn: true });
   },
 
   addBonus(data) {
