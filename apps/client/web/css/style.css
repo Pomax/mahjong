@@ -20,10 +20,28 @@ p + p {
   border-radius: 2px;
   margin: 1px;
   background: white;
+  width: 5%;
+}
+
+.tile.highlight {
+  border-bottom: 5px solid black;
 }
 
 .tile.owndiscard {
   opacity: 0.5;
+}
+
+.player {
+  position: relative;
+  background: inherit;
+  border: 1px solid black;
+  border-width: 1px 0;
+}
+
+.player .score {
+  position: absolute;
+  right: calc(100px + 0.5em);
+  bottom: 0.2em;
 }
 
 .player .tiles { display: block; min-height: 54px; }
@@ -46,13 +64,6 @@ p + p {
   margin-top: 0.1em;
 }
 
-.player {
-  position: relative;
-  background: inherit;
-  border: 1px solid black;
-  border-width: 1px 0;
-}
-
 .discard {
   display: block;
   position: absolute;
@@ -63,6 +74,17 @@ p + p {
   background: #449944;
   padding: calc(54px / 2);
   box-sizing: border-box;
+  background-size: 100% 100%;
+  border-left: 1px solid black;
+}
+
+.discard.east { background-image: url(../images/winds/east.png); }
+.discard.south { background-image: url(../images/winds/south.png); }
+.discard.west { background-image: url(../images/winds/west.png); }
+.discard.north { background-image: url(../images/winds/north.png); }
+
+.discard .tile {
+  width: 82%;
 }
 
 .discard.menu {
@@ -146,3 +168,10 @@ p + p {
 
 .otherplayer { margin: 1px; border: 1px solid transparent; padding: 5px; }
 .otherplayer.ourturn { margin: 1px; border: 1px solid darkolivegreen; }
+
+.handinfo {
+  position: absolute;
+  bottom: 0px;
+  background: rgb(217, 233, 222);
+  border-top: 1px solid black;
+}

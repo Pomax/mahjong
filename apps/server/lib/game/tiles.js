@@ -7,7 +7,7 @@ module.exports = {
     return Constants.NUMERALS <= tn && tn < Constants.HONOURS;
   },
   isTerminal: function(tn) {
-    if (!this.isNumeral(tile)) return false;
+    if (!this.isNumeral(tn)) return false;
     return (tn % Constants.NUMMOD === 0 || tn % Constants.NUMMOD === 8);
   },
   isHonour: function(tn) {

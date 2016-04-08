@@ -64,10 +64,23 @@ GameManager.prototype = {
     socket.on('listen:stop', data => this.removeGamesListener(socket, data));
     socket.on('newgame:request', data => this.makeNewGame(socket, data));
     socket.on('player:register', data => this.registerPlayer(socket, data));
+    socket.on('disconnect', data => this.disconnectPlayer(socket, data));
 
     console.log("emitting 'connected'");
     socket.emit('connected');
-    this.notifyGameUpdate();
+    this.notifyGameListUpdate();
+  },
+
+  disconnectPlayer(socket, data) {
+    // for now, treat the player as "gone".
+    this.log("socket disconencted...");
+    var keys = Object.keys(this.games);
+    keys.forEach(g => {
+      var game = this.games[g];
+      if (!game) return;
+      game.handleDisconnect(socket)
+    });
+    this.notifyGameListUpdate();
   },
 
   registerPlayer(socket, data) {
@@ -76,13 +89,21 @@ GameManager.prototype = {
     var gameid = data.gameid;
     this.getGame(gameid).addPlayer(playerid, socket);
     socket.emit("player:registered", { gameid, playerid });
-    this.notifyGameUpdate();
+    this.notifyGameListUpdate();
   },
 
-  notifyGameUpdate(specific) {
+  notifyGameListUpdate(specific) {
     var games = {};
     Object.keys(this.games).forEach(gameid => {
-      games[gameid] = this.games[gameid].getPlayerCount();
+      var g = this.games[gameid];
+      if (!g) return
+      var cnt = g.getPlayerCount();
+      if(cnt>0) {
+        games[gameid] = cnt;
+      } else {
+        g.remove();
+        this.games[gameid] = false;
+      }
     });
     var list = specific ? [specific] : this.gamesListeners;
     list.forEach(socket => {
@@ -96,7 +117,7 @@ GameManager.prototype = {
   addGamesListener(socket, data) {
     console.log("added socket to gameslist listeners");
     this.gamesListeners.push(socket);
-    this.notifyGameUpdate(socket);
+    this.notifyGameListUpdate(socket);
   },
 
   removeGamesListener(socket, data) {

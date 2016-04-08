@@ -52,6 +52,19 @@ Game.prototype = {
     if (this.players.length === 4) { this.startGame(); }
   },
 
+  handleDisconnect: function(socket) {
+    var pid = -1;
+    for(var i=0, p; i<this.players.length; i++) {
+      p = this.players[i];
+      if (p.socket === socket) {
+        p.setDisconnected();
+        this.players.splice(i,1);
+        return true;
+      }
+    }
+    return false;
+  },
+
   getPlayerCount: function() {
     return this.players.length;
   },
@@ -61,6 +74,11 @@ Game.prototype = {
     var hand = new Hand(this, this.ruleset, this.hands.length, this.players);
     this.hands.push(hand);
     hand.start();
+  },
+
+  remove: function() {
+    // killing off this game
+    this.log("removing game "+this.id);
   }
 };
 

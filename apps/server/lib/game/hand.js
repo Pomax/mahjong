@@ -12,6 +12,7 @@ var Hand = function(game, ruleset, handid, players, east) {
   this.players = players;
   this.wall = new Wall();
   this.currentPlayer = east;
+  this.windoftheround = 0; // FIXME: TODO: add in wind rotations
   this.log = logger('game', game.id, 'hand', handid);
 };
 
@@ -69,24 +70,21 @@ Hand.prototype = {
 
     this.log("starting wall:", this.wall.tiles.slice(0).join(','));
     this.players.forEach((player, playerposition) => {
+      // deal a player their initial tiles
+      var tiles = this.wall.deal(Constants.HANDSIZE - 1);
+      this.log("dealing",tiles.length,"initial tiles to",playerposition);
+      player.setHand(tiles.sort((a,b) => a-b));
 
-      setTimeout(()=>{
-        // deal a player their initial tiles
-        var tiles = this.wall.deal(Constants.HANDSIZE - 1);
-        this.log("dealing",tiles.length,"initial tiles to",playerposition);
-        player.setHand(tiles.sort((a,b) => a-b));
-
-        // notify the other players that someone was dealt their initial tiles
-        this.players.forEach(p => {
-          if (p===player) return;
-          p.dealtTiles(playerposition, tiles.length);
-        });
-      },0);
+      // notify the other players that someone was dealt their initial tiles
+      this.players.forEach(p => {
+        if (p===player) return;
+        p.dealtTiles(playerposition, tiles.length);
+      });
     });
-    // Start the game loop for this hand.
-    this.deal();
-  },
 
+    this.log("starting game loop");
+    process.nextTick(() => this.deal());
+  },
 
   /**
    * ...
@@ -152,7 +150,8 @@ Hand.prototype = {
     this.roundTimeout = false;
 
     // who's claiming this discard, and for what?
-    var player = this.players[playerposition];
+    var players = this.players;
+    var player = players[playerposition];
 
     // is this a legal claim?
     this.log(playerposition,"("+playerid+"/"+player.id+")","claims discard as", claimType);
@@ -167,16 +166,21 @@ Hand.prototype = {
         player.awardWinningClaim(this.ruleset, tile, claimType, winType);
 
         this.log("notifying players of win");
-        this.players.forEach((player, idx) => {
+        players.forEach((player, idx) => {
           if (idx!==playerposition) {
             player.claimOccurred(playerposition, tile, winType);
           }
         });
 
         this.log("end of hand.");
-        this.players.forEach((player, idx) => {
+        players.forEach((player, idx) => {
           // FIXME: TODO: will this run into async issues?
           player.winOccurred(playerposition, tile, winType);
+        });
+
+        // compute scores
+        this.ruleset.score(players, this.windoftheround).forEach((balance, pid) => {
+          this.players[pid].adjustBalance(balance);
         });
       }
 
@@ -250,8 +254,8 @@ Hand.prototype = {
   /**
    * ...
    */
-  handleVerify: function(playerposition, digest) {
-    this.players[playerposition].verify(digest);
+  handleVerify: function(playerposition, digest, tiles, bonus, revealed) {
+    this.players[playerposition].verify(digest, tiles, bonus, revealed);
   }
 
 };

@@ -23,11 +23,12 @@ module.exports = {
      * Received from the server when a game is ready to start.
      */
     socket.on('confirm', data => {
-      var gameid = data.gameid;
-      var handid = data.handid;
-      var playerid = data.playerid;
-      var playerposition = data.playerposition;
-      player.makeReady(gameid, handid, playerid, playerposition);
+      var gameid = parseInt(data.gameid);
+      var handid = parseInt(data.handid);
+      var playerid = parseInt(data.playerid);
+      var playerposition = parseInt(data.playerposition);
+      var score = parseInt(data.score);
+      player.makeReady(gameid, handid, playerid, playerposition, score);
     });
 
     /**
@@ -85,7 +86,7 @@ module.exports = {
      */
     socket.on('drew', data => {
       player.log("player", data.player, "received tile");
-      player.setState({ discard: false });
+      player.setState({ discard: false, mode: Player.OUT_OF_TURN});
     });
 
     /**
@@ -150,6 +151,15 @@ module.exports = {
       var winType = parseInt(data.winType);
       player.log("hand was a won by", playerposition);
       player.finishWin(playerposition, tile, winType);
+    });
+
+    /**
+     * Update this player's score.
+     */
+    socket.on('update:score', data => {
+      var score = parseInt(data.score);
+      var balance = data.balance;
+      player.updateScore(score, balance);
     });
 
     /**

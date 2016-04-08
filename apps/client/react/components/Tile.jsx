@@ -1,9 +1,10 @@
 var React = require('react');
+var classnames = require('classnames');
 
 var Tile = React.createClass({
   getDefaultProps: function() {
     return {
-      tileset: 'basic',
+      tileset: 'classic',
       value: 'concealed'
     };
   },
@@ -16,12 +17,12 @@ var Tile = React.createClass({
   },
 
   render: function() {
-    var className = "tile";
-    if (this.props.ownDiscard) {
-      className += " owndiscard";
-    }
+    var className = classnames("tile", {
+      owndiscard: this.props.ownDiscard,
+      highlight: this.props.highlight
+    });
     return (
-      <img className={className} title={this.state.src} src={this.state.src} onClick={this.props.onClick}/>
+      <img className={className} src={this.state.src} onClick={this.props.onClick} title={this.props.title}/>
     );
   }
 });

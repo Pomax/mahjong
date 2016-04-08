@@ -1,5 +1,6 @@
 var React = require('react');
 var Tile = require('../components/Tile.jsx');
+var Tiles = require('../../../server/lib/game/tiles');
 var Constants = require('../../../server/lib/constants');
 
 var Discards = React.createClass({
@@ -22,7 +23,7 @@ var Discards = React.createClass({
   },
 
   formTiles() {
-    return this.state.tiles.map((t,p) => <Tile key={t+'-'+p} value={t}/>);
+    return this.state.tiles.map((t,p) => <Tile key={t+'-'+p} value={t} title={"discarded "+Tiles.getTileName(t)}/>);
   },
 
   render() {

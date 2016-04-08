@@ -7,8 +7,10 @@ var Emitter = require('./protocol/emitter');
 
 var Player = function(game, id, socket) {
   this.game = game;
+  this.score = 0;
   this.id = id;
   this.socket = socket;
+  this.connected = true;
   this.tiles = [];
   this.bonus = [];
   this.revealed = [];
@@ -42,6 +44,22 @@ Player.prototype = {
   },
 
   /**
+   * Player disconnected (either by choice or through circumstances).
+   * We keep the player object around because they might reconnect...
+   */
+  setDisconnected() {
+    this.connected = false;
+  },
+
+  /**
+   * Reconnect player object with a socket.
+   */
+  reconnect(socket) {
+    this.socket = socket;
+    this.connected = true;
+  },
+
+  /**
    * Generate a hash based on this player's tiles, bonus tiles, and revealed tiles.
    */
   getDigest() {
@@ -56,19 +74,23 @@ Player.prototype = {
    * somewhere, went wrong and that's either a bug, an unaccounted-for
    * synchronisation error, or a intentional remote subversion.
    */
-  verify(digest) {
+  verify(digest, tiles, bonus, revealed) {
     var localDigest = this.getDigest();
     var passed = (digest === localDigest);
-    console.log("verifying",this.playerposition,":",this.tiles,this.bonus,this.revealed);
+    console.log("verifying",this.playerposition);
+    console.log("local tiles:", this.tiles.sort(), this.bonus.sort(), this.revealed.sort());
+    console.log("remote tiles:", tiles.sort(), bonus.sort(), revealed.sort());
     this.send("verification", { result: passed });
   },
 
   /**
-   * When a hand starts, everything resets.
+   * When a hand starts, everything resets, except the player's score.
    */
   bindHand(hand, state) {
     this.hand = hand;
     this.playerposition = state.playerposition;
+    this.winner = false;
+    state.score = this.score;
     this.send("confirm", state);
   },
 
@@ -179,7 +201,9 @@ Player.prototype = {
    * An accepted win may require we reveal the claimed pair/set
    */
   awardWinningClaim(ruleset, tile, claimType, winType) {
+    this.log("pre win:", this.tiles.slice().sort(), this.bonus, this.revealed.slice().sort());
     ruleset.awardWinningClaim(this, tile, claimType, winType);
+    this.log("post win:", this.tiles.slice().sort(), this.bonus, this.revealed.slice().sort());
     claimType = winType;
     this.send("accepted", { tile, claimType, winType });
   },
@@ -204,6 +228,20 @@ Player.prototype = {
    */
   winOccurred(playerposition, tile, winType) {
     this.send("finish:win", { playerposition, tile, winType });
+    if (playerposition === this.playerposition) {
+      this.winner = true;
+    }
+  },
+
+  /**
+   * Adjust this player's score balance
+   */
+  adjustBalance(balance) {
+   this.score += balance.score;
+   this.send("update:score", {
+     score: this.score,
+     balance: balance
+   });
   }
 };
 

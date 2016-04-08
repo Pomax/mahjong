@@ -109,7 +109,10 @@ Listener.prototype = {
       if (this.fails(data, handler.mustMatch)) return;
       handler.handleVerify.bind(handler)(
         data.playerposition,
-        data.digest
+        data.digest,
+        data.tiles,
+        data.bonus,
+        data.revealed
       );
     });
   },

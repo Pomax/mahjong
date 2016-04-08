@@ -1,5 +1,6 @@
 var React = require('react');
 var Tile = require('../components/Tile.jsx');
+var Tiles = require('../../../server/lib/game/tiles');
 var ClaimMenu = require('../components/ClaimMenu.jsx');
 var Overlay = require('../components/Overlay.jsx');
 var Constants = require('../../../server/lib/constants');
@@ -11,7 +12,9 @@ var Player = React.createClass({
   statics: {
     OWN_TURN: "in own turn",
     OUT_OF_TURN: "out of turn",
-    HAND_OVER: "hand is over"
+    HAND_OVER: "hand is over",
+    winds: ['east', 'south', 'west', 'north'],
+    windKanji: ['東', '南', '西', '北']
   },
 
   log() {
@@ -36,7 +39,10 @@ var Player = React.createClass({
       playerposition: -1,
       handid: -1,
       mode: Player.OUT_OF_TURN,
+      score: 0,
+      balance: '',
       // hand information
+      dealtTile: -1,
       tiles: [],
       bonus: [],
       revealed: [],
@@ -57,8 +63,8 @@ var Player = React.createClass({
     socketbindings.bind(socket, this);
   },
 
-  makeReady(gameid, handid, playerid, playerposition) {
-    var state = { gameid, handid, playerid, playerposition };
+  makeReady(gameid, handid, playerid, playerposition, score) {
+    var state = { gameid, handid, playerid, playerposition, score, balance:'' };
     this.setState(state, () => {
       this.send("confirmed", state);
     });
@@ -79,7 +85,7 @@ var Player = React.createClass({
       draw: draw
     });
 
-    var dclasses = classnames("discard", {
+    var dclasses = classnames("discard", Player.winds[this.state.playerposition], {
       menu: this.state.claimMenu
     });
 
@@ -89,7 +95,14 @@ var Player = React.createClass({
       if (draw) { content = "The hand was a draw..."; }
       else if (winner) { content = "You won the hand!"; }
       else if (loser) { content = "Player "+this.state.winner+" won the hand."; }
-      overlay = <Overlay>{content}</Overlay>;
+      overlay = (
+        <Overlay>
+          {content}
+          <pre>
+            {JSON.stringify(this.state.balance,false,2)}
+          </pre>
+        </Overlay>
+      );
     }
 
     return (
@@ -97,9 +110,13 @@ var Player = React.createClass({
         {overlay}
 
         <div className={classes}>
-
-          <div className={dclasses}>{ this.showDiscard() }</div>
-          <div className="tiles">{ this.renderTiles(this.state.tiles, this.state.mode === Player.HAND_OVER) }</div>
+          <div className="score">
+            score: { this.state.score }
+          </div>
+          <div className={dclasses}>
+          { this.showDiscard() }
+          </div>
+          <div className="tiles">{ this.renderTiles(this.state.tiles, this.state.mode === Player.HAND_OVER, this.state.dealtTile) }</div>
           <div className="open">
             <span className="bonus">{ this.renderTiles(this.state.bonus, true) }</span>
             <span className="revealed">{ this.renderRevealed() }</span>
@@ -128,7 +145,8 @@ var Player = React.createClass({
     }
     var ownDiscard = this.state.discardPlayer === this.state.playerposition;
     var onClick = ownDiscard ? null : this.claimMenu;
-    return <Tile value={this.state.discard} ownDiscard={ownDiscard} onClick={onClick}/>;
+    var title = ownDiscard ? "your discard" : "discard tile "+Tiles.getTileName(this.state.discard)+", click to claim it!";
+    return <Tile value={this.state.discard} ownDiscard={ownDiscard} onClick={onClick} title={title} />;
   },
 
   /**
@@ -138,7 +156,7 @@ var Player = React.createClass({
     var tiles = [];
     this.state.revealed.forEach((set,p1) => {
       set.forEach((tile,p2) => {
-        tiles.push(<Tile key={`${tile}-${p1}-${p2}`} value={tile}/>);
+        tiles.push(<Tile key={`${tile}-${p1}-${p2}`} value={tile} title={"revealed tile "+Tiles.getTileName(tile)}/>);
       });
     });
     return tiles;
@@ -147,7 +165,7 @@ var Player = React.createClass({
   /**
    * Render the in-hand tiles for this player
    */
-  renderTiles(tiles, inactive) {
+  renderTiles(tiles, inactive, tileHighlight) {
     if (tiles.length === 0) {
       return null;
     }
@@ -155,7 +173,15 @@ var Player = React.createClass({
     return tiles.map((tile,pos) => {
       var key = tile + '-' + pos;
       var onclick = inactive ? null : this.handleTileSelect(tile);
-      return <Tile key={key} value={tile} onClick={onclick}/>;
+
+      var highlight = false;
+      if (tile === tileHighlight && this.state.mode === Player.OWN_TURN) {
+        highlight = true;
+        tileHighlight = -1;
+      }
+      var ourTurn = (this.state.mode === Player.OWN_TURN);
+      var title = Tiles.getTileName(tile) + (ourTurn && !inactive ? ", click to discard" : '');
+      return <Tile highlight={highlight} key={key} value={tile} onClick={onclick} title={title}/>;
     });
   },
 
@@ -175,7 +201,10 @@ var Player = React.createClass({
     var tiles = this.state.tiles;
     tiles = tiles.concat(compensation);
     tiles.sort((a,b) => a - b);
-    this.setState({ tiles: tiles }, this.filterForBonus);
+    this.setState({
+      dealtTile: compensation[0],
+      tiles: tiles
+    }, this.filterForBonus);
   },
 
   /**
@@ -187,6 +216,7 @@ var Player = React.createClass({
     tiles.push(tile);
     tiles.sort((a,b) => a - b);
     this.setState({
+      dealtTile: tile,
       tiles: tiles,
       mode: Player.OWN_TURN,
       discard: false
@@ -247,6 +277,7 @@ var Player = React.createClass({
     }
     tiles.splice(pos,1);
     this.setState({
+      dealtTile: -1,
       tiles,
       mode: Player.OUT_OF_TURN
     }, () => {
@@ -351,7 +382,12 @@ var Player = React.createClass({
    */
   verify() {
     console.log("verifying",this.state.playerposition,":",this.state.tiles,this.state.bonus,this.state.revealed);
-    this.send("verify", { digest: this.getDigest() });
+    this.send("verify", {
+      tiles: this.state.tiles,
+      bonus: this.state.bonus,
+      revealed: this.state.revealed,
+      digest: this.getDigest()
+    });
   },
 
   /**
@@ -391,6 +427,13 @@ var Player = React.createClass({
       winTile: tile,
       winType: winType
     }, () => { console.log(this.state); });
+  },
+
+  /**
+   * Score was updated based on a hand being won by someone.
+   */
+  updateScore(score, balance) {
+    this.setState({ score, balance });
   }
 });
 

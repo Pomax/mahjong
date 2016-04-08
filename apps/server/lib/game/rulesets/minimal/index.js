@@ -1,7 +1,8 @@
-var logger = require('../../logger');
-var Constants = require('../../constants');
-var Tiles = require('../tiles');
-var FSA = require('./minimal-fsa');
+var logger = require('../../../logger');
+var Constants = require('../../../constants');
+var Tiles = require('../../tiles');
+var FSA = require('./fsa');
+var scoreplayers = require('./scoring');
 
 var Ruleset = function() {
   this.log = logger("rules");
@@ -162,7 +163,15 @@ Ruleset.prototype = {
 
     this.log("starting FSA check for this win");
     return FSA.check(tiles, pair, sets);
+  },
+
+  /**
+   * Score a hand, if it ended in a win.
+   */
+  score: function(players, windoftheround) {
+    return scoreplayers(players, windoftheround);
   }
+
 };
 
 module.exports = Ruleset;

@@ -44,22 +44,27 @@ var Client = React.createClass({
     var socket = this.state.socket;
     if (this.state.viewLobby) { return this.renderLobby(socket); }
 
-    var others = null;
+    var others = <div>Waiting for other players to join the game...</div>;
+    var handinfo = null;
+
     if (this.state.playerposition>-1) {
       others = [0,1,2,3].map(pos => {
         if (pos === this.state.playerposition) return null;
-        return <OtherPlayer socket={socket} key={pos} playerposition={pos} />;
+        return <OtherPlayer label={Player.windKanji[pos]} socket={socket} key={pos} playerposition={pos} />;
       });
+      handinfo = (
+        <div className="handinfo">
+          <Discards socket={socket} />
+          <Wall socket={socket} />
+        </div>
+      );
     }
 
     return (
       <div>
         <Player socket={socket} playerid={this.state.playerid} gameid={this.state.gameid}/>
-        <div className="others">
-        { others }
-        </div>
-        <Discards socket={socket} />
-        <Wall socket={socket} />
+        <div className="others">{ others }</div>
+        { handinfo }
       </div>
     );
   },

@@ -1,5 +1,6 @@
 var React = require('react');
 var Tile = require('../components/Tile.jsx');
+var Tiles = require('../../../server/lib/game/tiles');
 var Constants = require('../../../server/lib/constants');
 var classnames = require('classnames');
 
@@ -25,8 +26,13 @@ var OtherPlayer = React.createClass({
 
   formTiles(tiles, sets) {
     return tiles.map((t,p) => {
-      if (!sets) return <Tile key={t+'-'+p} value={t}/>;
-      return t.map((t,p) => <Tile key={t+'-'+p} value={t}/>);
+      if (!sets) {
+        var title = t!=="concealed" ? Tiles.getTileName(t) : "another player's tile";
+        return <Tile key={t+'-'+p} value={t} title={title} />;
+      }
+      return t.map((t,p) => {
+        return <Tile key={t+'-'+p} value={t} title={Tiles.getTileName(t)} />;
+      });
     });
   },
 
@@ -37,7 +43,7 @@ var OtherPlayer = React.createClass({
 
     return (
       <div className={className}>
-      <span className="name">{this.props.playerposition + ':'}</span>
+      <span className="name">{this.props.label}</span>
       <span className="tiles">{this.formTiles(this.state.tiles)}</span>
       <span className="revealed">{this.formTiles(this.state.revealed,true)}</span>
       <span className="bonus">{this.formTiles(this.state.bonus)}</span>
