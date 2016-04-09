@@ -62,6 +62,12 @@ Hand.prototype = {
       this.log("rotating wind of the round");
       this.windoftheround++;
     }
+
+    // Play stops once the wind of the round comes back to East
+    if (this.windoftheround===4) {
+      return this.log("GAME ENDED");
+    }
+
     this.turn++;
     this.wall.reset();
     this.currentPlayer = 0;
