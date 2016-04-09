@@ -7,8 +7,13 @@ var Discards = React.createClass({
 
   getInitialState() {
     return {
-      tiles: []
+      tiles: [],
+      turn: this.props.turn
     };
+  },
+
+  reset: function(prevProps, prevState) {
+    this.setState(this.getInitialState());
   },
 
   componentDidMount: function() {

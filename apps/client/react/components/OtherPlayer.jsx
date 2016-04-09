@@ -10,8 +10,13 @@ var OtherPlayer = React.createClass({
     return {
       tiles: [],
       bonus: [],
-      revealed: []
+      revealed: [],
+      turn: this.props.turn
     };
+  },
+
+  reset: function(prevProps, prevState) {
+    this.setState(this.getInitialState());
   },
 
   componentDidMount() {

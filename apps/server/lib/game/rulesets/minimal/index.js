@@ -170,6 +170,15 @@ Ruleset.prototype = {
    */
   score: function(players, windoftheround) {
     return scoreplayers(players, windoftheround);
+  },
+
+  /**
+   * determine player rotation when a hand is over.
+   */
+  rotate: function(won) {
+    // we rotate [0,1,2,3] -> [1,2,3,0] if the hand was won.
+    return won? 1 : 1;
+    // we also rotate on a draw =)
   }
 
 };

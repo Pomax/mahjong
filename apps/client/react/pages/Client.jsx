@@ -50,23 +50,34 @@ var Client = React.createClass({
     if (this.state.playerposition>-1) {
       others = [0,1,2,3].map(pos => {
         if (pos === this.state.playerposition) return null;
-        return <OtherPlayer label={Player.windKanji[pos]} socket={socket} key={pos} playerposition={pos} />;
+        return <OtherPlayer ref={"player"+pos} label={Player.windKanji[pos]} socket={socket} key={pos} playerposition={pos} />;
       });
       handinfo = (
         <div className="handinfo">
-          <Discards socket={socket} />
-          <Wall socket={socket} />
+          <Discards ref="discards" socket={socket}/>
+          <Wall ref="wall" socket={socket} />
         </div>
       );
     }
 
     return (
       <div>
-        <Player socket={socket} playerid={this.state.playerid} gameid={this.state.gameid}/>
+        <Player socket={socket} playerid={this.state.playerid} gameid={this.state.gameid} onNextHand={this.nextHand}/>
         <div className="others">{ others }</div>
         { handinfo }
       </div>
     );
+  },
+
+  nextHand() {
+    this.refs.discards.reset();
+    this.refs.wall.reset();
+    for(var i=0; i<4; i++) {
+      var player = this.refs['player'+i];
+      if (player) {
+        player.reset();
+      }
+    }
   },
 
   renderLobby(socket) {

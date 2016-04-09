@@ -28,6 +28,9 @@ Wall.prototype = {
     this.__rigTiles(this.tiles);
   },
 
+  reset: function() {
+    this.formTiles();
+  },
 
   __rigTiles: function(tiles) {
     this.tiles = [];

@@ -12,8 +12,13 @@ var Wall = React.createClass({
 
   getInitialState() {
     return {
-      tiles: this.generateBlanks(144)
+      tiles: this.generateBlanks(144),
+      turn: this.props.turn
     };
+  },
+
+  reset: function(prevProps, prevState) {
+    this.setState(this.getInitialState());
   },
 
   componentDidMount() {

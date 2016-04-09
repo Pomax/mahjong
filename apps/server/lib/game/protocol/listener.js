@@ -10,13 +10,19 @@ Listener = function(socket, securities) {
 
 Listener.prototype = {
   // test function
-  fails(data, keys) {
-    var failed = keys.some(key => this.securities[key]!==data[key]);
+  fails(data, keys, ignore) {
+    ignore = ignore || [];
+    var failed = keys.some(key => ignore.indexOf(key)>-1 ? false : this.securities[key]!==data[key]);
     if (failed) {
       console.error("mismatch between",this.securities,"and",data);
       console.trace();
     }
     return failed;
+  },
+
+  // when players rotate we need to update the securities.
+  updateSecurities(securities) {
+    this.securities = securities;
   },
 
   /**
@@ -126,6 +132,16 @@ Listener.prototype = {
     this.socket.on("confirmed", (data) => {
       if (this.fails(data, handler.mustMatch)) return;
       handler.handleConfirmed.bind(handler)(data.playerposition);
+    });
+  },
+
+  /**
+   * ...
+   */
+  restartready(handler) {
+    this.socket.on("restartready", (data) => {
+      if (this.fails(data, handler.mustMatch, ['playerposition'])) return;
+      handler.handleRestartReady.bind(handler)();
     });
   }
 

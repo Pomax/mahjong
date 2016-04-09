@@ -58,6 +58,27 @@ var Player = React.createClass({
     };
   },
 
+  resetState(done) {
+    this.setState({
+      // game data
+      playerposition: -1,
+      mode: Player.OUT_OF_TURN,
+      balance: '',
+      // hand information
+      dealtTile: -1,
+      tiles: [],
+      bonus: [],
+      revealed: [],
+      // discard information
+      discard: false,
+      discardPlayer: -1,
+      // hand-end information
+      winner: false,
+      winTile: false,
+      winType: false
+    }, done);
+  },
+
   componentDidMount() {
     var socket = this.props.socket;
     socketbindings.bind(socket, this);
@@ -65,6 +86,7 @@ var Player = React.createClass({
 
   makeReady(gameid, handid, playerid, playerposition, score) {
     var state = { gameid, handid, playerid, playerposition, score, balance:'' };
+    console.log(state);
     this.setState(state, () => {
       this.send("confirmed", state);
     });
@@ -131,11 +153,21 @@ var Player = React.createClass({
     );
   },
 
+  restartReady() {
+    this.resetState(() => {
+      this.send("restartready", {ready: true});
+      this.props.onNextHand();
+    });
+  },
+
   /**
    * Show the currently available discard
    */
   showDiscard() {
     if (this.state.discard === false) {
+      if (this.state.winner !== false) {
+        return <button onClick={this.restartReady}>Ready</button>;
+      }
       return null;
     }
     if (this.state.claimMenu) {

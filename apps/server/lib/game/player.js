@@ -89,6 +89,9 @@ Player.prototype = {
   bindHand(hand, state) {
     this.hand = hand;
     this.playerposition = state.playerposition;
+    this.tiles = [];
+    this.bonus = [];
+    this.revealed = [];
     this.winner = false;
     state.score = this.score;
     this.send("confirm", state);
