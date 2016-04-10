@@ -170,5 +170,14 @@ module.exports = {
       player.verification(result);
     });
 
+    /**
+     * Handle a kong declaration response.
+     */
+    socket.on('claim:concealedkong', data => {
+      var tile = parseInt(data.tile);
+      var compensation = data.compensation ? parseInt(data.compensation) : false;
+      player.allowKongDeclaration(tile, compensation);
+    });
+
   }
 };

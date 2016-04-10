@@ -65,9 +65,17 @@ function scoreConcealed(tiles, haspillow, playerwind, windoftheround, log) {
   // these tiles can form, and then score all of them, picking
   // the highest value as the "scored" value.
   var tree = FSA.generate(tiles.slice(), haspillow ? 0 : 1);
-  var collections = tree.getDistinctPaths();
-  var possibleScores = collections.map(sets => scoreSets(sets, playerwind, windoftheround, false, log));
-  return possibleScores.sort().reverse()[0];
+  var collections = tree.getAllValuePaths();
+  var possibleScores = collections.map(sets => {
+    var templog = [];
+    return {
+      score: scoreSets(sets, playerwind, windoftheround, false, templog),
+      log: templog
+    };
+  });
+  var best = possibleScores.sort((a,b) => b.score - a.score)[0];
+  best.log.forEach(entry => log.push(entry));
+  return best.score;
 }
 
 function getTileScores(player, windoftheround) {

@@ -101,10 +101,17 @@ Ruleset.prototype = {
     if (claimType === Constants.CHOW3 || winType === Constants.CHOW3) { set = this.formChow(tile, Constants.CHOW3); }
     if (claimType === Constants.PUNG  || winType === Constants.PUNG)  { set = this.formSet(tile, 3); }
     if (claimType === Constants.KONG) { set = this.formSet(tile, 4); }
+    if (claimType === Constants.CONCEALED_KONG) {
+      set = this.formSet(tile, 4);
+      set.concealed = true;
+    }
 
     console.log(claimType, winType, set);
 
-    tiles.push(tile);
+    if (claimType !== Constants.CONCEALED_KONG) {
+      tiles.push(tile);
+    }
+
     set.forEach(tile => {
       var pos = tiles.indexOf(tile);
       tiles.splice(pos,1);

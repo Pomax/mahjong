@@ -1,3 +1,11 @@
+/**
+ * TODO:
+ *
+ * - allow the user to claim that they have won
+ * - allow a user to declare a self-drawn kong
+ *
+ */
+
 var React = require('react');
 var Tile = require('../components/Tile.jsx');
 var Tiles = require('../../../server/lib/game/tiles');
@@ -8,18 +16,42 @@ var classnames = require('classnames');
 var socketbindings = require('../../lib/socketbindings');
 var md5 = require('md5');
 
+// the static properties we want the Player class to have.
+var statics = {
+  OWN_TURN: "in own turn",
+  OUT_OF_TURN: "out of turn",
+  HAND_OVER: "hand is over",
+  winds: ['east', 'south', 'west', 'north'],
+  windKanji: ['東', '南', '西', '北']
+};
+
+// The base state of a player when a hand is played.
+var baseState = {
+  // game data
+  playerposition: -1,
+  mode: statics.OUT_OF_TURN,
+  balance: '',
+  // hand information
+  dealtTile: -1,
+  tiles: [],
+  kongs: [],
+  bonus: [],
+  revealed: [],
+  // discard information
+  discard: false,
+  discardPlayer: -1,
+  // hand-end information
+  winner: false,
+  winTile: false,
+  winType: false
+};
+
 var Player = React.createClass({
-  statics: {
-    OWN_TURN: "in own turn",
-    OUT_OF_TURN: "out of turn",
-    HAND_OVER: "hand is over",
-    winds: ['east', 'south', 'west', 'north'],
-    windKanji: ['東', '南', '西', '北']
-  },
+  statics: statics,
 
   log() {
     var msg = Array.from(arguments).join(' ');
-    this.setState({ log: this.state.log.concat([msg]) });
+    console.log(msg);
   },
 
   send(evt, payload) {
@@ -31,52 +63,18 @@ var Player = React.createClass({
   },
 
   getInitialState() {
-    return {
+    return Object.assign({
       socket: this.props.socket,
       // game data
-      playerid: -1,
       gameid: -1,
-      playerposition: -1,
       handid: -1,
-      mode: Player.OUT_OF_TURN,
-      score: 0,
-      balance: '',
-      // hand information
-      dealtTile: -1,
-      tiles: [],
-      bonus: [],
-      revealed: [],
-      // discard information
-      discard: false,
-      discardPlayer: -1,
-      // hand-end information
-      winner: false,
-      winTile: false,
-      winType: false,
-      // play log for this player
-      log: []
-    };
+      playerid: -1,
+      score: 0
+    }, baseState);
   },
 
   resetState(done) {
-    this.setState({
-      // game data
-      playerposition: -1,
-      mode: Player.OUT_OF_TURN,
-      balance: '',
-      // hand information
-      dealtTile: -1,
-      tiles: [],
-      bonus: [],
-      revealed: [],
-      // discard information
-      discard: false,
-      discardPlayer: -1,
-      // hand-end information
-      winner: false,
-      winTile: false,
-      winType: false
-    }, done);
+    this.setState(baseState, done);
   },
 
   componentDidMount() {
@@ -86,84 +84,94 @@ var Player = React.createClass({
 
   makeReady(gameid, handid, playerid, playerposition, score) {
     var state = { gameid, handid, playerid, playerposition, score, balance:'' };
-    console.log(state);
     this.setState(state, () => {
       this.send("confirmed", state);
     });
+  },
+
+  isWinner() {
+    return (this.state.mode === Player.HAND_OVER) && (this.state.winner === this.state.playerposition);
+  },
+
+  isLoser() {
+    return (this.state.mode === Player.HAND_OVER) && (this.state.winner !== this.state.playerposition);
+  },
+
+  isDraw() {
+    return (this.state.mode === Player.HAND_OVER) && (this.state.winner === -1);
   },
 
   /**
    * Render the player UI
    */
   render() {
-    var winner = (this.state.mode === Player.HAND_OVER) && (this.state.winner === this.state.playerposition);
-    var loser = (this.state.mode === Player.HAND_OVER) && (this.state.winner !== this.state.playerposition);
-    var draw = (this.state.mode === Player.HAND_OVER) && (this.state.winner === -1);
+    var winner = this.isWinner(),
+        loser = this.isLoser(),
+        draw = this.isDraw();
 
-    var classes = classnames("player", {
-      active: this.state.mode === Player.OWN_TURN,
-      winner: winner,
-      loser: loser,
-      draw: draw
-    });
+    var classes = classnames(
+      "player",
+      {
+        active: this.state.mode === Player.OWN_TURN,
+        winner: winner,
+        loser: loser,
+        draw: draw
+      }
+    );
 
-    var dclasses = classnames("discard", Player.winds[this.state.playerposition], {
-      menu: this.state.claimMenu
-    });
-
-    var overlay = null;
-    if (this.state.mode === Player.HAND_OVER) {
-      var content = '';
-      if (draw) { content = "The hand was a draw..."; }
-      else if (winner) { content = "You won the hand!"; }
-      else if (loser) { content = "Player "+this.state.winner+" won the hand."; }
-      overlay = (
-        <Overlay>
-          {content}
-          <pre>
-            {JSON.stringify(this.state.balance,false,2)}
-          </pre>
-        </Overlay>
-      );
-    }
+    var dclasses = classnames(
+      "discard",
+      Player.winds[this.state.playerposition],
+      {
+        menu: this.state.claimMenu
+      }
+    );
 
     return (
       <div>
-        {overlay}
-
+        { this.formOverlay(winner, loser, draw) }
         <div className={classes}>
+          <div className="kongs">
+          { this.state.kongs.map(k => <button key={k} onClick={this.claimConcealedKong(k)}>{Tiles.getTileName(k)}</button>) }
+          </div>
           <div className="score">
             score: { this.state.score }
           </div>
           <div className={dclasses}>
-          { this.showDiscard() }
+          { this.renderDiscard() }
           </div>
           <div className="tiles">{ this.renderTiles(this.state.tiles, this.state.mode === Player.HAND_OVER, this.state.dealtTile) }</div>
           <div className="open">
             <span className="bonus">{ this.renderTiles(this.state.bonus, true) }</span>
             <span className="revealed">{ this.renderRevealed() }</span>
           </div>
-          {
-            /*
-              <div className="log">{ this.state.log.map((msg,pos) => <p key={pos}>{msg}</p>).reverse() }</div>
-            */
-          }
         </div>
       </div>
     );
   },
 
-  restartReady() {
-    this.resetState(() => {
-      this.send("restartready", {ready: true});
-      this.props.onNextHand();
-    });
+  formOverlay(winner, loser, draw) {
+    if (this.state.mode !== Player.HAND_OVER) {
+      return null;
+    }
+    var content = '';
+    if (draw) { content = "The hand was a draw..."; }
+    else if (winner) { content = "You won the hand!"; }
+    else if (loser) { content = "Player "+this.state.winner+" won the hand."; }
+    return (
+      <Overlay>
+        {content}
+        <pre>
+          {JSON.stringify(this.state.balance,false,2)}
+        </pre>
+      </Overlay>
+    );
   },
 
   /**
    * Show the currently available discard
    */
-  showDiscard() {
+  renderDiscard() {
     if (this.state.discard === false) {
       if (this.state.winner !== false) {
         return <button onClick={this.restartReady}>Ready</button>;
@@ -218,6 +226,17 @@ var Player = React.createClass({
   },
 
 
+  // ==========================================================================================
+
+
+  // make the playe reset in preparation for the next hand.
+  restartReady() {
+    this.resetState(() => {
+      this.send("restartready", {ready: true});
+      this.props.onNextHand();
+    });
+  },
+
   /**
    * Add a tile to this player's bank of tiles
    */
@@ -253,6 +272,56 @@ var Player = React.createClass({
       mode: Player.OWN_TURN,
       discard: false
     }, this.filterForBonus);
+
+    // check if player has any kongs-in-hand, because they might
+    // want to declare those to get a bonus tile.
+    this.checkKong(tiles);
+  },
+
+  // check if this player has any concealed kongs in their hand
+  checkKong(tiles) {
+    var counter = {};
+    tiles.forEach(t => counter[t] = (counter[t]||0) + 1);
+    var kongs = Object.keys(counter).filter(c => counter[c]===4);
+    this.setState({ kongs });
+  },
+
+  // Called by the button to claim a concealed kong. Sends a
+  // request to the server to see if they can perform this
+  // claim. If they can, the response is an acceptance plus
+  // bonus tile that the player needs.
+  claimConcealedKong(tile) {
+    return (evt) => {
+      this.log("requesting concealed kong for "+tile);
+      this.send("claim:concealedkong", { tile });
+    };
+  },
+
+  allowKongDeclaration(tile, compensation) {
+    if (compensation) {
+
+      // FIXME: TODO: overlap with processClaim, refactor to single function.
+      var tiles = this.state.tiles;
+
+      var set = [tile, tile, tile, tile];
+      set.forEach(tile => {
+        var pos = tiles.indexOf(tile);
+        tiles.splice(pos,1);
+      });
+
+      var revealed = this.state.revealed;
+      revealed.push(set);
+
+      this.setState({ tiles, revealed }, () => {
+        this.addTile(compensation);
+      });
+
+      // notify server of our reveal
+      this.send("reveal", { set, concealed: true });
+
+    } else {
+      this.log("not allowed to claim concealed kong for " + tile);
+    }
   },
 
   /**
@@ -276,7 +345,7 @@ var Player = React.createClass({
         bonus: this.state.bonus.concat(bonus)
       }, () => {
         // request compensation tiles for any bonus tile found.
-        console.log("requesting compensation for", bonus.join(','));
+        this.log("requesting compensation for", bonus.join(','));
         this.send("compensate", { tiles: bonus });
       });
     }
@@ -413,7 +482,7 @@ var Player = React.createClass({
    * Ask the server to verify our tile state.
    */
   verify() {
-    console.log("verifying",this.state.playerposition,":",this.state.tiles,this.state.bonus,this.state.revealed);
+    this.log("verifying",this.state.playerposition,":",this.state.tiles,this.state.bonus,this.state.revealed);
     this.send("verify", {
       tiles: this.state.tiles,
       bonus: this.state.bonus,
@@ -458,7 +527,7 @@ var Player = React.createClass({
       winner: playerposition,
       winTile: tile,
       winType: winType
-    }, () => { console.log(this.state); });
+    }, () => { this.log(this.state); });
   },
 
   /**

@@ -35,8 +35,9 @@ var OtherPlayer = React.createClass({
         var title = t!=="concealed" ? Tiles.getTileName(t) : "another player's tile";
         return <Tile key={t+'-'+p} value={t} title={title} />;
       }
-      return t.map((t,p) => {
-        return <Tile key={t+'-'+p} value={t} title={Tiles.getTileName(t)} />;
+      return t.map((v,p) => {
+        v = t.concealed && p>0? 'concealed' : v;
+        return <Tile key={v+'-'+p} value={v} title={Tiles.getTileName(v)} />;
       });
     });
   },
@@ -99,6 +100,8 @@ var OtherPlayer = React.createClass({
     if(!this.ours(data)) return;
     var playerpos = data.playerposition;
     var revealedSet = data.revealed;
+    revealedSet.concealed = data.concealed;
+
     var revealed = this.state.revealed;
     revealed.push(revealedSet);
     var tiles = this.state.tiles;

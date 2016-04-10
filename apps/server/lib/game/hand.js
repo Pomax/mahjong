@@ -114,6 +114,8 @@ Hand.prototype = {
       listener.verify(this);
       listener.confirm(this);
       listener.restartready(this);
+      listener.kongDeclaration(this);
+
     } else {
       this.listeners[playerid].updateSecurities(securities);
     }
@@ -314,10 +316,10 @@ Hand.prototype = {
   /**
    * ...
    */
-  handleReveal: function(playerposition, set) {
+  handleReveal: function(playerposition, set, concealed) {
     this.players.forEach((p, pos) => {
       if (pos === playerposition) return;
-      p.revealedSet(playerposition, set);
+      p.revealedSet(playerposition, set, concealed);
     });
   },
 
@@ -326,6 +328,19 @@ Hand.prototype = {
    */
   handleVerify: function(playerposition, digest, tiles, bonus, revealed) {
     this.players[playerposition].verify(digest, tiles, bonus, revealed);
+  },
+
+  /**
+   * A player wants to declare a kong in hand.
+   */
+  handleKongDeclaration: function(playerposition, tile) {
+    var player = this.players[playerposition];
+    if (player.hasKong(tile)) {
+      var compensation = this.wall.drawSupplement();
+      player.allowKongDeclaration(this.ruleset, tile, compensation);
+    } else {
+      player.disallowKongDeclaration(tile);
+    }
   }
 
 };

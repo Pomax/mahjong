@@ -222,8 +222,8 @@ Player.prototype = {
   /**
    * Another player revealed a set of tiles after claiming
    */
-  revealedSet(playerposition, revealed) {
-    this.send("revealed", { playerposition, revealed });
+  revealedSet(playerposition, revealed, concealed) {
+    this.send("revealed", { playerposition, revealed, concealed });
   },
 
   /**
@@ -245,7 +245,26 @@ Player.prototype = {
      score: this.score,
      balance: balance
    });
-  }
+  },
+
+  /**
+   * does this player have a kong of [tile] in their hand?
+   */
+  hasKong(tile) {
+    var counter = {};
+    this.tiles.forEach(t => counter[t] = (counter[t]||0) + 1);
+    var kongs = Object.keys(counter).filter(c => counter[c]===4);
+    return !!counter[tile];
+  },
+
+  allowKongDeclaration(ruleset, tile, compensation) {
+    ruleset.processClaim(this, tile, Constants.CONCEALED_KONG, Constants.NOTILE);
+    this.send("claim:concealedkong", { tile, compensation });
+  },
+
+  disallowKongDeclaration(tile) {
+    this.send("claim:concealedkong", { tile });
+  },
 };
 
 module.exports = Player;

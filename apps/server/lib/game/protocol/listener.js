@@ -34,8 +34,8 @@ Listener.prototype = {
     this.socket.on('join', (data) => {
       if (this.fails(data, handler.mustMatch)) return;
       handler.handleJoin.bind(handler)(
-        data.gameid,
-        data.playerid,
+        parseInt(data.gameid),
+        parseInt(data.playerid),
         this.socket
       );
     });
@@ -50,8 +50,8 @@ Listener.prototype = {
     this.socket.on("discard", (data) => {
       if (this.fails(data, handler.mustMatch)) return;
       handler.handleDiscard.bind(handler)(
-        data.playerposition,
-        data.tile
+        parseInt(data.playerposition),
+        parseInt(data.tile)
       );
     });
   },
@@ -65,11 +65,11 @@ Listener.prototype = {
     this.socket.on("claim", (data) => {
       if (this.fails(data, handler.mustMatch)) return;
       handler.handleClaim.bind(handler)(
-        data.playerid,
-        data.playerposition,
-        data.tile,
-        data.claimType,
-        data.winType
+        parseInt(data.playerid),
+        parseInt(data.playerposition),
+        parseInt(data.tile),
+        parseInt(data.claimType),
+        parseInt(data.winType)
       );
     });
   },
@@ -83,8 +83,8 @@ Listener.prototype = {
     this.socket.on("compensate", (data) => {
       if (this.fails(data, handler.mustMatch)) return;
       handler.handleCompensate.bind(handler)(
-        data.playerid,
-        data.playerposition,
+        parseInt(data.playerid),
+        parseInt(data.playerposition),
         data.tiles
       );
     });
@@ -99,8 +99,9 @@ Listener.prototype = {
     this.socket.on("reveal", (data) => {
       if (this.fails(data, handler.mustMatch)) return;
       handler.handleReveal.bind(handler)(
-        data.playerposition,
-        data.set
+        parseInt(data.playerposition),
+        data.set,
+        data.concealed
       );
     });
   },
@@ -114,7 +115,7 @@ Listener.prototype = {
     this.socket.on("verify", (data) => {
       if (this.fails(data, handler.mustMatch)) return;
       handler.handleVerify.bind(handler)(
-        data.playerposition,
+        parseInt(data.playerposition),
         data.digest,
         data.tiles,
         data.bonus,
@@ -131,7 +132,9 @@ Listener.prototype = {
   confirm(handler) {
     this.socket.on("confirmed", (data) => {
       if (this.fails(data, handler.mustMatch)) return;
-      handler.handleConfirmed.bind(handler)(data.playerposition);
+      handler.handleConfirmed.bind(handler)(
+        parseInt(data.playerposition)
+      );
     });
   },
 
@@ -143,7 +146,20 @@ Listener.prototype = {
       if (this.fails(data, handler.mustMatch, ['playerposition'])) return;
       handler.handleRestartReady.bind(handler)();
     });
-  }
+  },
+
+  /**
+   * Called by a player when they want to declare a concealed kong.
+   */
+  kongDeclaration(handler) {
+    this.socket.on("claim:concealedkong", (data) => {
+      if (this.fails(data, handler.mustMatch)) return;
+      handler.handleKongDeclaration.bind(handler)(
+        parseInt(data.playerposition),
+        parseInt(data.tile)
+      );
+    });
+  },
 
 };
 
