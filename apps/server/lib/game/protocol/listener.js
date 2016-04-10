@@ -161,6 +161,18 @@ Listener.prototype = {
     });
   },
 
+  /**
+   * A player thinks they can win. Process that claim.
+   */
+  winDeclaration(handler) {
+    this.socket.on("declare:win", (data) => {
+      if (this.fails(data, handler.mustMatch)) return;
+      handler.handleWinDeclaration.bind(handler)(
+        parseInt(data.playerposition)
+      );
+    });
+  }
+
 };
 
 module.exports = Listener;

@@ -4,54 +4,68 @@ var FSA = require('./fsa');
 
 // simple scoring:
 //
-// 1) the winner receives their tilescore from each other player
-// 2) other players do not settle scores amongst themselves.
-// 3) east does not win/lose double
+//   1) the winner receives their tilescore from each other player
+//   2) other players do not settle scores amongst themselves.
+//   3) east does not win/lose double
 //
 // points awarded:
 //
-//  winning: 0
-//  chow: 0
-//  pung:
-//    simple: 1
-//    honour: 2
-//  kong:
-//    simple: 2
-//    honour: 4
-//  bonus tiles: 1 each
+//   winning: 0
+//   chow: 0
+//   pung:
+//     simple: 1
+//     honour: 2
+//   kong:
+//     simple: 2
+//     honour: 4
+//   bonus tiles: 1 each
 //
-//  tiles-in-hand score double the points
+//   (tiles-in-hand score double the points)
 //
+// Illegal win:
+//
+//   player pays all other players 3 points.
+//
+var Scores = {
+  WIN:  0,
+  PAIR: 0,
+  CHOW: 0,
+  PUNG: 1,
+  KONG: 2,
+  HONOUR_MULTIPLIER: 2,
+  CONCEALED_MULTIPLIER: 2,
+  ILLEGAL_WIN: -5,
+}
 
 function scoreSet(set, open, log) {
   var logEntry = log.length;
   var score = 0;
   if (set.length < 3) {
     log.push("pair");
-    score = 0;
+    score = Scores.PAIR;
   }
   else if (set[0] !== set[1]) {
     log.push("chow");
-    score = 0;
+    score = Scores.CHOW;
   }
   else {
     if (set[0] < Constants.HONOURS) {
       log.push("pung");
-      score = 1;
+      score = Scores.PUNG;
     } else {
       log.push("pung of honours");
-      score = 2;
+      score = Scores.HONOUR_MULTIPLIER * Scores.PUNG;
     }
     if (set.length === 4) {
       log[logEntry] = log[logEntry].replace('pung', 'kong');
-      score *= 2;
+      score *= Scores.KONG/Scores.PUNG;
     }
   }
   log[logEntry] = log[logEntry] + ": " + score;
 
   if (!open) {
-    log[logEntry] = log[logEntry] + " (x2 for concealed)";
-    score *= 2;
+    log[logEntry] = log[logEntry] + " (x"+Scores.CONCEALED_MULTIPLIER+" for concealed)";
+    score *= Scores.CONCEALED_MULTIPLIER;
   }
   return score;
 }
@@ -107,6 +121,23 @@ function scorePlayers(players, windoftheround) {
       _.score = -winningScore;
     }
     return _;
+  });
+};
+
+scorePlayers.processIllegalWin = function(players, player) {
+  return players.map((p,pid) => {
+    if (p===player) {
+      return {
+        score: 3 * Scores.ILLEGAL_WIN,
+        pid,
+        log: ['declared illegal win: ' + Scores.ILLEGAL_WIN + " (x3)"]
+      };
+    }
+    return {
+      score: -Scores.ILLEGAL_WIN,
+      pid,
+      log: ['player '+pid+' declared illegal win: ' + (-Scores.ILLEGAL_WIN)]
+    };
   });
 };
 

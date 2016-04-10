@@ -20081,6 +20081,7 @@
 	  SET: 128,
 	  REQUIRED: 256,
 	  WIN: 512,
+	  SELF_DRAWN_WIN: 1024,
 
 	  // numerals: 0-26 (simples: 1..7 % 9, terminals: 0 % 9 and 8 % 9)
 	  NUMERALS: 0,
@@ -20442,6 +20443,7 @@
 	    console.log(msg);
 	  },
 	  send: function send(evt, payload) {
+	    payload = payload || {};
 	    payload.gameid = this.state.gameid;
 	    payload.handid = this.state.handid;
 	    payload.playerid = this.state.playerid;
@@ -20514,24 +20516,28 @@
 	        { className: classes },
 	        React.createElement(
 	          'div',
-	          { className: 'kongs' },
-	          this.state.kongs.map(function (k) {
-	            return React.createElement(
-	              'button',
-	              { key: k, onClick: _this2.claimConcealedKong(k) },
-	              Tiles.getTileName(k)
-	            );
-	          })
+	          { className: 'kongs-and-scores' },
+	          React.createElement(
+	            'span',
+	            { className: 'kongs' },
+	            this.state.kongs.map(function (k) {
+	              return React.createElement(
+	                'button',
+	                { key: k, onClick: _this2.claimConcealedKong(k) },
+	                Tiles.getTileName(k)
+	              );
+	            })
+	          ),
+	          React.createElement(
+	            'span',
+	            { className: 'score' },
+	            'score: ',
+	            this.state.score
+	          )
 	        ),
 	        React.createElement(
 	          'div',
-	          { className: 'score' },
-	          'score: ',
-	          this.state.score
-	        ),
-	        React.createElement(
-	          'div',
-	          { className: dclasses },
+	          { className: dclasses, onClick: this.discardClicked },
 	          this.renderDiscard()
 	        ),
 	        React.createElement(
@@ -20994,16 +21000,12 @@
 	   * pid > -1 => winning player
 	   */
 	  finish: function finish(playerposition, tile, winType) {
-	    var _this11 = this;
-
 	    this.setState({
 	      mode: Player.HAND_OVER,
 	      discard: false,
 	      winner: playerposition,
 	      winTile: tile,
 	      winType: winType
-	    }, function () {
-	      _this11.log(_this11.state);
 	    });
 	  },
 
@@ -21013,6 +21015,23 @@
 	   */
 	  updateScore: function updateScore(score, balance) {
 	    this.setState({ score: score, balance: balance });
+	  },
+
+
+	  /**
+	   * Clicking the discard instead of discard, on your own turn,
+	   * will ask you whether you want to claim that you have just won.
+	   */
+	  discardClicked: function discardClicked(evt) {
+	    if (this.state.mode === Player.OWN_TURN) {
+	      var win = confirm("Would you like to declare a win?");
+	      if (win) {
+	        win = confirm("Are you sure? You may be penalized for a bad declaration");
+	        if (win) {
+	          this.send("declare:win");
+	        }
+	      }
+	    }
 	  }
 	});
 
@@ -21381,6 +21400,12 @@
 	      player.finishWin(playerposition, tile, winType);
 	    });
 
+	    socket.on('finish:win:illegal', function (data) {
+	      var playerposition = parseInt(data.playerposition);
+	      player.log("player", playerposition, "declared an illegal win.");
+	      player.finishDraw(playerposition);
+	    });
+
 	    /**
 	     * Update this player's score.
 	     */
@@ -21405,6 +21430,14 @@
 	      var tile = parseInt(data.tile);
 	      var compensation = data.compensation ? parseInt(data.compensation) : false;
 	      player.allowKongDeclaration(tile, compensation);
+	    });
+
+	    socket.on('declare:win:accepted', function (data) {
+	      console.log("player has self-drawn win.");
+	    });
+
+	    socket.on('declare:win:declined', function (data) {
+	      console.log("player claimed win, but could not win.");
 	    });
 	  }
 	};

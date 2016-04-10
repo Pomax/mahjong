@@ -115,6 +115,7 @@ Hand.prototype = {
       listener.confirm(this);
       listener.restartready(this);
       listener.kongDeclaration(this);
+      listener.winDeclaration(this);
 
     } else {
       this.listeners[playerid].updateSecurities(securities);
@@ -341,8 +342,64 @@ Hand.prototype = {
     } else {
       player.disallowKongDeclaration(tile);
     }
-  }
+  },
 
+  /**
+   * A player wants to verify that they can win with their current hand.
+   */
+  handleWinDeclaration: function(playerposition) {
+    var players = this.players,
+        player = players[playerposition];
+
+    if (this.ruleset.canClaimSelfDrawnWin(player)) {
+
+      // DRY this out, it's very similar to the code in handleClaim()
+
+      this.log("player",playerposition,"("+player.id+")","has won.");
+      player.allowWin(this.ruleset);
+
+      this.log("notifying players of win");
+      players.forEach((player, idx) => {
+        player.winOccurred(playerposition, Constants.SELF_DRAWN_WIN);
+      });
+      this.log("end of hand.");
+
+      // compute scores
+      this.ruleset.score(players, this.windoftheround).forEach((balance, pid) => {
+        this.players[pid].adjustBalance(balance);
+      });
+
+      // and now we wait (well, not really) for "restartready" events from players
+      this.restartready = 0;
+    }
+
+    else {
+      player.disallowWin();
+      // Depending on the rules, the hand is now over, and the player calling
+      // a win despite not winning may be penalized.
+      if (this.ruleset.END_HAND_ON_ILLEGAL_WIN) {
+
+        // DRY this out, it's very similar to the above and handleClaim() code.
+
+        this.log("notifying players of illegal win declaration");
+        players.forEach((player, idx) => {
+          player.illegalWinOccurred(playerposition);
+        });
+        this.log("end of hand.");
+
+        // compute scores
+        this.ruleset.resolveIllegalWin(this.players, player).forEach((balance, pid) => {
+          this.players[pid].adjustBalance(balance);
+        });
+
+        // and now we wait (well, not really) for "restartready" events from players
+        this.restartready = 0;
+      } else {
+        // no repercussions, just "not allowed to win"
+      }
+    }
+
+  }
 };
 
 module.exports = Hand;

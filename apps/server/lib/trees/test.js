@@ -1,6 +1,7 @@
 Tree = require('./');
 
-var n = new Tree({a:1,b:2}),
+var root = new Tree(),
+    n = root.add({a:1,b:2}),
     n2 = n.add({a:2,b:2}),
     n3 = n2.add({a:3,b:2})
     n4 = n.add({a:9,b:9}),

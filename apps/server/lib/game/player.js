@@ -24,6 +24,7 @@ Player.prototype = {
    * socket.io interfacing
    */
   send(str, payload) {
+    payload = payload || {};
     payload.gameid = this.game.id;
     payload.handid = this.hand.id;
     payload.playerid = this.id;
@@ -237,6 +238,13 @@ Player.prototype = {
   },
 
   /**
+   * Someone tried to win this round but was rather mistaken in that thought.
+   */
+  illegalWinOccurred(playerposition) {
+    this.send("finish:win:illegal", { playerposition });
+  },
+
+  /**
    * Adjust this player's score balance
    */
   adjustBalance(balance) {
@@ -265,6 +273,16 @@ Player.prototype = {
   disallowKongDeclaration(tile) {
     this.send("claim:concealedkong", { tile });
   },
+
+  allowWin() {
+    this.log("player has a self-drawn win.");
+    this.send("declare:win:accepted");
+  },
+
+  disallowWin() {
+    this.log("player does not have a self-drawn win.");
+    this.send("declare:win:declined");
+  }
 };
 
 module.exports = Player;

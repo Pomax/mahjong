@@ -153,6 +153,12 @@ module.exports = {
       player.finishWin(playerposition, tile, winType);
     });
 
+    socket.on('finish:win:illegal', data => {
+      var playerposition = parseInt(data.playerposition);
+      player.log("player", playerposition,"declared an illegal win.");
+      player.finishDraw(playerposition);
+    });
+
     /**
      * Update this player's score.
      */
@@ -177,6 +183,14 @@ module.exports = {
       var tile = parseInt(data.tile);
       var compensation = data.compensation ? parseInt(data.compensation) : false;
       player.allowKongDeclaration(tile, compensation);
+    });
+
+    socket.on('declare:win:accepted', data => {
+      console.log("player has self-drawn win.");
+    });
+
+    socket.on('declare:win:declined', data => {
+      console.log("player claimed win, but could not win.");
     });
 
   }

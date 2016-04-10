@@ -4,15 +4,19 @@
  * depth-first
  */
 function Tree(value, allowIndirectManipulation) {
-  // we allow for indirect data manipulation.
-  this.value = allowIndirectManipulation ? value : JSON.parse(JSON.stringify(value));
-  this.parent = false;
+  this.value = undefined;
+  this.parent = undefined;
   this.children = [];
-  if (this.value.__children) {
+
+  if (value) {
+    // do we allow for indirect data manipulation?
+    this.value = allowIndirectManipulation ? value : JSON.parse(JSON.stringify(value));
     // Also note that the ".__children" value gets removed,
     // as it is only usable for bootstrapping a full tree.
-    this.value.__children.forEach(c => this.add(c));
-    delete this.value.__children;
+    if (this.value.__children) {
+      this.value.__children.forEach(c => this.add(c));
+      delete this.value.__children;
+    }
   }
 };
 
@@ -134,7 +138,7 @@ Tree.prototype = {
     var base = sofar? sofar.slice() : [];
     if(this.value) { base.push(this.value); }
     if (this.children.length===0) { seen.push(base); }
-    this.children.map(c => { c.getDistinctPaths(base, seen); });
+    this.children.map(c => { c.getAllValuePaths(base, seen); });
     return seen;
   },
 

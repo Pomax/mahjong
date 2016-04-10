@@ -10,6 +10,12 @@ var Ruleset = function() {
 
 Ruleset.prototype = {
 
+  END_HAND_ON_ILLEGAL_WIN: true,
+
+  resolveIllegalWin: function(players, player) {
+    return scoreplayers.processIllegalWin(players, player);
+  },
+
   /**
    * Can this player claim the tile they want to claim for the purpose they indicated?
    */
@@ -71,7 +77,6 @@ Ruleset.prototype = {
     // 1. can we claim this thing, outside of winning?
     var claim = (claimType === Constants.WIN) ? winType : claimType;
     if (!this.canClaim(player, tile, claim, winType)) return false;
-
     this.log(player.id,"can claim",tile,", but can they win?");
 
     // 2. if so, what's left after we resolve that claim?
@@ -86,6 +91,13 @@ Ruleset.prototype = {
     this.log("checking coverage wrt winnning");
     var covered = this.checkCoverage(player.tiles, player.bonus, player.revealed);
     this.log("winner?",covered);
+    return covered;
+  },
+
+  canClaimSelfDrawnWin: function(player) {
+    this.log("checking coverage wrt winning");
+    var covered = this.checkCoverage(player.tiles, player.bonus, player.revealed);
+    this.log("self-drawn winner?",covered);
     return covered;
   },
 

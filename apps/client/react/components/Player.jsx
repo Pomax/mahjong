@@ -55,6 +55,7 @@ var Player = React.createClass({
   },
 
   send(evt, payload) {
+    payload = payload || {};
     payload.gameid = this.state.gameid;
     payload.handid = this.state.handid;
     payload.playerid = this.state.playerid;
@@ -131,13 +132,15 @@ var Player = React.createClass({
       <div>
         { this.formOverlay(winner, loser, draw) }
         <div className={classes}>
-          <div className="kongs">
-          { this.state.kongs.map(k => <button key={k} onClick={this.claimConcealedKong(k)}>{Tiles.getTileName(k)}</button>) }
+          <div className="kongs-and-scores">
+            <span className="kongs">
+            { this.state.kongs.map(k => <button key={k} onClick={this.claimConcealedKong(k)}>{Tiles.getTileName(k)}</button>) }
+            </span>
+            <span className="score">
+              score: { this.state.score }
+            </span>
           </div>
-          <div className="score">
-            score: { this.state.score }
-          </div>
-          <div className={dclasses}>
+          <div className={dclasses} onClick={this.discardClicked}>
           { this.renderDiscard() }
           </div>
           <div className="tiles">{ this.renderTiles(this.state.tiles, this.state.mode === Player.HAND_OVER, this.state.dealtTile) }</div>
@@ -527,7 +530,7 @@ var Player = React.createClass({
       winner: playerposition,
       winTile: tile,
       winType: winType
-    }, () => { this.log(this.state); });
+    });
   },
 
   /**
@@ -535,6 +538,22 @@ var Player = React.createClass({
    */
   updateScore(score, balance) {
     this.setState({ score, balance });
+  },
+
+  /**
+   * Clicking the discard instead of discard, on your own turn,
+   * will ask you whether you want to claim that you have just won.
+   */
+  discardClicked(evt) {
+    if (this.state.mode === Player.OWN_TURN) {
+      var win = confirm("Would you like to declare a win?");
+      if (win) {
+        win = confirm("Are you sure? You may be penalized for a bad declaration");
+        if (win) {
+          this.send("declare:win");
+        }
+      }
+    }
   }
 });
 

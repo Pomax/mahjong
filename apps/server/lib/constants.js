@@ -15,18 +15,19 @@ var Constants = {
   WON:             2,
 
   // set types
-  NOTHING:        -1,
-  CHOW:            0,
-  CHOW1:           1, // chow, tile is first
-  CHOW2:           2, // chow, tile is second
-  CHOW3:           4, // chow, tile is third
-  PAIR:            8,
-  PUNG:           16,
-  KONG:           32,
-  CONCEALED_KONG: 64,
-  SET:           128,
-  REQUIRED:      256,
-  WIN:           512,
+  NOTHING:          -1,
+  CHOW:              0,
+  CHOW1:             1, // chow, tile is first
+  CHOW2:             2, // chow, tile is second
+  CHOW3:             4, // chow, tile is third
+  PAIR:              8,
+  PUNG:             16,
+  KONG:             32,
+  CONCEALED_KONG:   64,
+  SET:             128,
+  REQUIRED:        256,
+  WIN:             512,
+  SELF_DRAWN_WIN: 1024,
 
   // numerals: 0-26 (simples: 1..7 % 9, terminals: 0 % 9 and 8 % 9)
   NUMERALS:     0,
