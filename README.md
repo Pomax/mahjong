@@ -62,7 +62,7 @@ Do you want to help build out the documentation around both playing mahjong usin
 
 ## Where to contribute
 
-We're doing all the work right here, on github. Hit up the [./issues](issue tracker), which is emphatically **not** a "bug tracker", but a tracker of whatever issues are relevant to a project, covering all the above-mentioned points, and just start a new issue if you want to jump into this project.
+We're doing all the work right here, on github. Hit up the [issue tracker](./issues), which is emphatically **not** a "bug tracker", but a tracker of whatever issues are relevant to a project, covering all the above-mentioned points, and just start a new issue if you want to jump into this project.
 
 ### Is there a CLA?
 
