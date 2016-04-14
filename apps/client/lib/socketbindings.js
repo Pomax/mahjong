@@ -14,7 +14,7 @@ module.exports = {
      */
     socket.on('joined', data => {
       var gameid = data.gameid;
-      var playerposition = data.pos;
+      var playerposition = data.playerposition;
       player.log("joined game", gameid,"with position",playerposition);
       player.setState({ gameid });
     });

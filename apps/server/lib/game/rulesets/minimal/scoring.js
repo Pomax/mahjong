@@ -34,8 +34,8 @@ var Scores = {
   KONG: 2,
   HONOUR_MULTIPLIER: 2,
   CONCEALED_MULTIPLIER: 2,
-  ILLEGAL_WIN: -5,
-}
+  ILLEGAL_WIN: -5
+};
 
 function scoreSet(set, open, log) {
   var logEntry = log.length;
@@ -114,15 +114,15 @@ function scorePlayers(players, windoftheround) {
 
   var winningScore = tilescores[winner].score;
   // winner gets 3x what they won with, losers get nothing =(
-  return tilescores.map((_,pid) => {
-    if(pid===winner) { _.score = winningScore * 3; }
+  return tilescores.map((scoreObj,pid) => {
+    if(pid===winner) { scoreObj.score = winningScore * 3; }
     else {
-      _.from.push("pay winner: " + (-winningScore))
-      _.score = -winningScore;
+      scoreObj.from.push("pay winner: " + (-winningScore));
+      scoreObj.score = -winningScore;
     }
-    return _;
+    return scoreObj;
   });
-};
+}
 
 scorePlayers.processIllegalWin = function(players, player) {
   return players.map((p,pid) => {

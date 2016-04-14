@@ -25,6 +25,7 @@ p + p {
 
 .tile.highlight {
   border-bottom: 5px solid black;
+  margin-bottom: -3px;
 }
 
 .tile.owndiscard {
@@ -60,9 +61,8 @@ p + p {
 
 }
 
-
-.player .tiles { display: block; min-height: 54px; }
-.player .open { display: block; min-height: 54px; }
+.player .tiles { display: block; min-height: 58px; }
+.player .open { display: block; min-height: 58px; }
 
 .player .log {
   display: block;
@@ -87,9 +87,9 @@ p + p {
   top: 0;
   right: 0;
   width: 100px;
-  height: 108px;
+  height: 116px;
   background: #449944;
-  padding: calc(54px / 2);
+  padding: calc(58px / 2);
   box-sizing: border-box;
   background-size: 100% 100%;
   border-left: 1px solid black;
@@ -140,11 +140,23 @@ p + p {
 .others span + span { margin-left: 1em; }
 .others .name { vertical-align: 14px; }
 
+.lobby .games:before {
+  color: black;
+  content: "Current games list";
+  background: white;
+  padding: 0.5em;
+  position: absolute;
+  top: -1.25em;
+  left: 0.25em;
+}
 
 .lobby .games {
-  border: 1px solid black;
-  display: inline-block;
+  position: relative;
+  border: 1px solid lightgrey;
   margin: 1em;
+  padding: 1em;
+  min-width: 40em;
+  display: inline-block;
 }
 
 .lobby .games .game {
@@ -161,30 +173,65 @@ p + p {
 
 .lobby .games .game button {
   border: none;
-  background: darkolivegreen;
+  background: #269279;
   color: white;
   font-family: verdana;
 }
 
+.lobby .new:before {
+  color: black;
+  content: "Start a new game";
+  background: white;
+  padding: 0.5em;
+  position: absolute;
+  top: -1.25em;
+  left: 0.25em;
+}
+.lobby .new {
+  position: relative;
+  border: 1px solid lightgrey;
+  margin: 1em;
+  padding: 1em;
+  display: inline-block;
+  min-width: 40em;
+}
+
+.lobby .new * + * {
+  margin-left: 1em;
+}
+
 .lobby .new button {
-  border: none;
+  border: 1px solid black;
   background: #269279;
   color: white;
-  font-family: verdana;
-  font-weight: bold;
+}
+
+.lobby .player-information:before {
+  color: black;
+  content: "Information about you!";
+  background: white;
+  padding: 0.5em;
+  position: absolute;
+  top: -1.25em;
+  left: 0.25em;
+}
+
+.lobby .player-information {
+  position: relative;
+  border: 1px solid lightgrey;
+  margin: 1em;
   padding: 1em;
-  display: block;
-  border-radius: 5px;
-  margin: auto;
-  width: 12em;
+  display: inline-block;
+  min-width: 40em;
 }
 
 .player.active { background: #449944; color: white; }
 .player.winner { background: #ffe691; }
-.player.loser, .player.draw  { background: #ffe9e9; }
+.player.draw   { background: #ffe9e9; }
 
 .otherplayer { margin: 1px; border: 1px solid transparent; padding: 5px; }
 .otherplayer.ourturn { margin: 1px; border: 1px solid darkolivegreen; }
+.otherplayer.winner { background: #ffe691; }
 
 .handinfo {
   position: absolute;

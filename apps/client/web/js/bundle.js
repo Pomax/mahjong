@@ -7957,6 +7957,10 @@
 	  }
 	};
 
+	function registerNullComponentID() {
+	  ReactEmptyComponentRegistry.registerNullComponentID(this._rootNodeID);
+	}
+
 	var ReactEmptyComponent = function (instantiate) {
 	  this._currentElement = null;
 	  this._rootNodeID = null;
@@ -7965,7 +7969,7 @@
 	assign(ReactEmptyComponent.prototype, {
 	  construct: function (element) {},
 	  mountComponent: function (rootID, transaction, context) {
-	    ReactEmptyComponentRegistry.registerNullComponentID(rootID);
+	    transaction.getReactMountReady().enqueue(registerNullComponentID, this);
 	    this._rootNodeID = rootID;
 	    return ReactReconciler.mountComponent(this._renderedComponent, rootID, transaction, context);
 	  },
@@ -18688,7 +18692,7 @@
 
 	'use strict';
 
-	module.exports = '0.14.7';
+	module.exports = '0.14.8';
 
 /***/ },
 /* 148 */
@@ -19668,13 +19672,15 @@
 	var React = __webpack_require__(2);
 
 	var Lobby = __webpack_require__(161);
-	var Wall = __webpack_require__(163);
-	var Discards = __webpack_require__(167);
-	var Player = __webpack_require__(170);
-	var OtherPlayer = __webpack_require__(178);
+	var Wall = __webpack_require__(170);
+	var Discards = __webpack_require__(173);
+	var Player = __webpack_require__(174);
+	var OtherPlayer = __webpack_require__(182);
+
+	var Settings = __webpack_require__(183);
 
 	// externally loaded:
-	var io = __webpack_require__(179);
+	var io = __webpack_require__(184);
 
 	var Client = React.createClass({
 	  displayName: 'Client',
@@ -19686,9 +19692,18 @@
 	    var url = loc.protocol + "//" + loc.hostname + (loc.port ? ':' + loc.port : '');
 	    var socket = io.connect(url);
 
+	    var search = window.location.search;
+	    var params = {};
+	    search.replace('?', '').split('&').forEach(function (t) {
+	      var v = t.split('=');
+	      params[v[0]] = v[1];
+	    });
+
 	    return {
 	      socket: socket,
+	      settings: new Settings(params.localStorageId),
 	      viewLobby: true,
+	      playerNames: [],
 	      gameid: -1,
 	      playerid: -1,
 	      handid: -1,
@@ -19720,14 +19735,18 @@
 	    var others = React.createElement(
 	      'div',
 	      null,
-	      'Waiting for other players to join the game...'
+	      React.createElement(
+	        'div',
+	        null,
+	        'Waiting for other players to join the game...'
+	      )
 	    );
 	    var handinfo = null;
 
 	    if (this.state.playerposition > -1) {
 	      others = [0, 1, 2, 3].map(function (pos) {
 	        if (pos === _this2.state.playerposition) return null;
-	        return React.createElement(OtherPlayer, { ref: "player" + pos, label: Player.windKanji[pos], socket: socket, key: pos, playerposition: pos });
+	        return React.createElement(OtherPlayer, { ref: "player" + pos, name: _this2.state.playerNames[pos], label: Player.windKanji[pos], socket: socket, key: pos, playerposition: pos });
 	      });
 	      handinfo = React.createElement(
 	        'div',
@@ -19740,7 +19759,7 @@
 	    return React.createElement(
 	      'div',
 	      null,
-	      React.createElement(Player, { socket: socket, playerid: this.state.playerid, gameid: this.state.gameid, onNextHand: this.nextHand }),
+	      React.createElement(Player, { settings: this.state.settings, socket: socket, playerid: this.state.playerid, gameid: this.state.gameid, onNextHand: this.nextHand }),
 	      React.createElement(
 	        'div',
 	        { className: 'others' },
@@ -19748,6 +19767,9 @@
 	      ),
 	      handinfo
 	    );
+	  },
+	  renderLobby: function renderLobby(socket) {
+	    return React.createElement(Lobby, { settings: this.state.settings, socket: socket, readyGame: this.readyGame });
 	  },
 	  nextHand: function nextHand() {
 	    this.refs.discards.reset();
@@ -19759,11 +19781,14 @@
 	      }
 	    }
 	  },
-	  renderLobby: function renderLobby(socket) {
-	    return React.createElement(Lobby, { socket: socket, joinGame: this.joinGame, onFinish: this.leaveLobby });
-	  },
-	  joinGame: function joinGame(gameid, playerid) {
-	    this.setState({ gameid: gameid, playerid: playerid, viewLobby: false });
+	  readyGame: function readyGame(data) {
+	    var _this3 = this;
+
+	    console.log(data);
+	    console.log("switching UI from lobby to game mode");
+	    this.setState({ viewLobby: false, playerNames: data.players }, function () {
+	      _this3.state.socket.emit("readygame", data);
+	    });
 	  }
 	});
 
@@ -19782,49 +19807,135 @@
 	 * reconnecting if the socket breaks at any point in time).
 	 */
 	var React = __webpack_require__(2);
-	var GameList = __webpack_require__(162);
+	var rulesets = __webpack_require__(162);
 
 	var Lobby = React.createClass({
 	  displayName: 'Lobby',
 	  getInitialState: function getInitialState() {
 	    return {
-	      games: {}
+	      games: {},
+	      gamename: "",
+	      playername: this.props.settings.name,
+	      ruleset: Object.keys(rulesets)[0],
+	      gameid: -1,
+	      playerid: -1
 	    };
 	  },
 	  componentDidMount: function componentDidMount() {
 	    var _this = this;
 
-	    this.props.socket.emit("listen:games");
-
-	    this.props.socket.on("gameslist", function (data) {
+	    // start sending us updates about available games
+	    this.props.socket.emit("sendgames");
+	    this.props.socket.on("gamelist", function (data) {
 	      _this.setState({ games: data.games });
 	    });
 
-	    this.props.socket.on("newgame:made", function (data) {
+	    // sent in response to a newgame request by the player
+	    this.props.socket.on("madegame", function (data) {
 	      _this.joinGame(data.gameid);
+	      console.log("server made game", data.gameid);
 	    });
 
-	    this.props.socket.on("player:registered", function (data) {
-	      var gameid = parseInt(data.gameid);
-	      var playerid = parseInt(data.playerid);
-	      _this.props.joinGame(gameid, playerid);
+	    // sent in response to a joingame request by the player
+	    this.props.socket.on("joinedgame", function (data) {
+	      // show user as joined for this game
+	      _this.setState({
+	        gameid: parseInt(data.gameid),
+	        playerid: parseInt(data.playerid)
+	      });
+	      console.log(data.playerid, "joined game", data.gameid);
+	    });
+
+	    // sent in response to a leavegame request by the player
+	    this.props.socket.on("leftgame", function (data) {
+	      // no longer show user as joined for this game
+	      _this.setState({
+	        gameid: -1,
+	        playerid: -1
+	      });
+	      console.log("left game", data.gameid);
+	    });
+
+	    // A game this player is joined to is ready to begin,
+	    // which means the lobby needs to inform the client
+	    // to switch over the UI to game play mode.
+	    this.props.socket.on("readygame", function (data) {
+	      console.log("readygame received");
+	      _this.props.readyGame(data);
 	    });
 	  },
-	  joinGame: function joinGame(gameid) {
-	    this.props.socket.emit("listen:stop", {});
-	    this.props.socket.emit("player:register", { gameid: gameid });
-	  },
-	  newGame: function newGame() {
-	    this.props.socket.emit("newgame:request");
-	  },
 	  render: function render() {
+	    var _this2 = this;
+
+	    var keys = Object.keys(this.state.games);
+
 	    return React.createElement(
 	      'div',
 	      { className: 'lobby' },
-	      React.createElement(GameList, { games: this.state.games, joinGame: this.joinGame }),
+	      React.createElement(
+	        'div',
+	        { className: 'player-information' },
+	        React.createElement(
+	          'label',
+	          null,
+	          'Your name: '
+	        ),
+	        React.createElement('input', { type: 'text', value: this.state.playername, onChange: this.updatePlayerName })
+	      ),
+	      React.createElement(
+	        'div',
+	        { className: 'games' },
+	        keys.length === 0 ? React.createElement(
+	          'div',
+	          null,
+	          'No games found'
+	        ) : keys.map(function (gameid) {
+	          var joined = _this2.state.gameid == gameid; // coerced comparison
+	          var game = _this2.state.games[gameid];
+	          return React.createElement(
+	            'div',
+	            { className: 'game', key: "game" + gameid },
+	            React.createElement(
+	              'div',
+	              { className: 'name' },
+	              game.name
+	            ),
+	            React.createElement(
+	              'div',
+	              { className: 'rules' },
+	              'rules: ',
+	              game.ruleset
+	            ),
+	            React.createElement(
+	              'div',
+	              { className: 'count' },
+	              'players: ',
+	              game.players.length,
+	              ' (',
+	              game.players.join(', '),
+	              ')'
+	            ),
+	            joined ? React.createElement(
+	              'button',
+	              { onClick: _this2.leaveGame },
+	              'LEAVE'
+	            ) : React.createElement(
+	              'button',
+	              { onClick: function onClick(evt) {
+	                  return _this2.joinGame(gameid);
+	                } },
+	              'JOIN'
+	            )
+	          );
+	        })
+	      ),
 	      React.createElement(
 	        'div',
 	        { className: 'new' },
+	        'Game name: ',
+	        React.createElement('input', { type: 'text', ref: 'gamename', value: this.state.gamename, onChange: this.updateGameName }),
+	        'Ruleset: ',
+	        this.getRulesets(),
 	        React.createElement(
 	          'button',
 	          { onClick: this.newGame },
@@ -19832,6 +19943,71 @@
 	        )
 	      )
 	    );
+	  },
+	  getRulesets: function getRulesets() {
+	    var options = Object.keys(rulesets).map(function (name) {
+	      return React.createElement(
+	        'option',
+	        { key: name, value: name },
+	        name
+	      );
+	    });
+	    return React.createElement(
+	      'select',
+	      { value: this.state.ruleset, onChange: this.setNewRuleset },
+	      options
+	    );
+	  },
+	  updatePlayerName: function updatePlayerName(evt) {
+	    var _this3 = this;
+
+	    var playername = evt.target.value;
+	    this.setState({ playername: playername }, function () {
+	      return _this3.props.settings.setName(playername);
+	    });
+	  },
+	  updateGameName: function updateGameName(evt) {
+	    this.setState({
+	      gamename: evt.target.value
+	    });
+	  },
+	  setNewRuleset: function setNewRuleset(evt) {
+	    this.setState({ ruleset: evt.target.value });
+	  },
+
+
+	  // player wants to make a new game
+	  newGame: function newGame() {
+	    var playername = this.props.settings.name || false;
+	    var name = this.state.gamename;
+	    var ruleset = this.state.ruleset;
+	    this.props.socket.emit("newgame", {
+	      name: name,
+	      ruleset: ruleset,
+	      playername: playername
+	    });
+	    // leads to the server sending "madegame"
+	  },
+
+
+	  // player wants to join an existing game
+	  joinGame: function joinGame(gameid) {
+	    this.props.socket.emit("joingame", {
+	      gameid: gameid,
+	      playername: this.props.settings.name
+	    });
+	    // leads to the server sending "joinedgame"
+	  },
+
+
+	  // player wants to leave a game that they joined,
+	  // but which hasn't started yet.
+	  leaveGame: function leaveGame() {
+	    this.props.socket.emit("leavegame", {
+	      gameid: this.state.gameid,
+	      playerid: this.state.playerid,
+	      playername: this.props.settings.name
+	    });
 	  }
 	});
 
@@ -19841,52 +20017,11 @@
 /* 162 */
 /***/ function(module, exports, __webpack_require__) {
 
-	"use strict";
+	'use strict';
 
-	var React = __webpack_require__(2);
-
-	var GameList = React.createClass({
-	  displayName: "GameList",
-
-
-	  render: function render() {
-	    var _this = this;
-
-	    var keys = Object.keys(this.props.games);
-	    if (keys.length === 0) return null;
-
-	    return React.createElement(
-	      "ul",
-	      { className: "games" },
-	      keys.map(function (gameid) {
-	        return React.createElement(
-	          "li",
-	          { className: "game", key: gameid },
-	          "game ",
-	          gameid,
-	          ": ",
-	          _this.props.games[gameid],
-	          " players ",
-	          React.createElement(
-	            "button",
-	            { onClick: _this.join(gameid) },
-	            "JOIN"
-	          )
-	        );
-	      })
-	    );
-	  },
-
-	  join: function join(gameid) {
-	    var _this2 = this;
-
-	    return function (evt) {
-	      _this2.props.joinGame(gameid);
-	    };
-	  }
-	});
-
-	module.exports = GameList;
+	module.exports = {
+	  minimal: __webpack_require__(163)
+	};
 
 /***/ },
 /* 163 */
@@ -19894,160 +20029,266 @@
 
 	'use strict';
 
-	var React = __webpack_require__(2);
-	var Tile = __webpack_require__(164);
-	var Constants = __webpack_require__(166);
+	var logger = __webpack_require__(164);
+	var Constants = __webpack_require__(165);
+	var Tiles = __webpack_require__(166);
+	var FSA = __webpack_require__(167);
+	var scoreplayers = __webpack_require__(169);
 
-	var Wall = React.createClass({
-	  displayName: 'Wall',
-	  generateBlanks: function generateBlanks(num) {
-	    var tiles = [];
-	    while (num--) {
-	      tiles.push('concealed');
+	var Ruleset = function Ruleset() {
+	  this.log = logger("rules");
+	};
+
+	Ruleset.prototype = {
+
+	  END_HAND_ON_ILLEGAL_WIN: true,
+
+	  resolveIllegalWin: function resolveIllegalWin(players, player) {
+	    return scoreplayers.processIllegalWin(players, player);
+	  },
+
+	  /**
+	   * Can this player claim the tile they want to claim for the purpose they indicated?
+	   */
+	  canClaim: function canClaim(player, tile, claimType, winType) {
+	    this.log("can", player.id, "claim tile", tile, "given tiles", player.tiles, "(" + claimType + "/" + winType + ")", "?");
+
+	    if (claimType === Constants.PAIR && winType === Constants.PAIR) {
+	      return this.canClaimSet(player, tile, 1);
 	    }
-	    return tiles;
+	    if (claimType <= Constants.CHOW3) {
+	      return this.canClaimChow(player, tile, claimType);
+	    }
+	    if (claimType === Constants.PUNG) {
+	      return this.canClaimSet(player, tile, 2);
+	    }
+	    if (claimType === Constants.KONG) {
+	      return this.canClaimSet(player, tile, 3);
+	    }
+	    if (claimType === Constants.WIN) {
+	      return this.canClaimWin(player, tile, claimType, winType);
+	    }
+
+	    return false;
 	  },
-	  getInitialState: function getInitialState() {
-	    return {
-	      tiles: this.generateBlanks(144),
-	      turn: this.props.turn
+
+	  /**
+	   * check if this player can form a chow with the indicted tile
+	   * given the tiles that they currently hold.
+	   */
+	  canClaimChow: function canClaimChow(player, tile, claimType) {
+	    var suit = Tiles.getTileSuit(tile);
+	    if (suit >= Constants.HONOURS) return false;
+	    // check for connecting tiles in the same suit
+	    var fullsuit = Tiles.getSuitTiles(suit);
+	    var tpos = fullsuit.indexOf(tile);
+	    var tiles = player.tiles;
+	    if (claimType === Constants.CHOW1) {
+	      //this.log("chow1 with tpos",tpos,"in suit",suit,"tiles",tiles);
+	      return tpos + 2 < Constants.NUMMOD && tiles.indexOf(tile + 1) > -1 && tiles.indexOf(tile + 2) > -1;
+	    }
+	    if (claimType === Constants.CHOW2) {
+	      //this.log("chow2 with tpos",tpos,"in suit",suit,"tiles",tiles);
+	      return tpos > 0 && tpos + 1 < Constants.NUMMOD && tiles.indexOf(tile - 1) > -1 && tiles.indexOf(tile + 1) > -1;
+	    }
+	    if (claimType === Constants.CHOW3) {
+	      //this.log("chow3 with tpos",tpos,"in suit",suit,"tiles",tiles);
+	      return tpos > 1 && tiles.indexOf(tile - 1) > -1 && tiles.indexOf(tile - 2) > -1;
+	    }
+	    // we can't reasonably get here.
+	    return false;
+	  },
+
+	  /**
+	   * check if this player can form a set of size inhandcount+1 given
+	   * the tiles that they currently hold.
+	   */
+	  canClaimSet: function canClaimSet(player, tile, inhandcount) {
+	    var instances = 0;
+	    player.tiles.forEach(function (t, idx) {
+	      if (t === tile) instances++;
+	    });
+	    return instances >= inhandcount;
+	  },
+
+	  /**
+	   * Verifying a win is a complicated process, and is highly ruleset dependent.
+	   * This ruleset implements the simplest verification possible: does the player
+	   * have a way to form four sets and a pair? If so, their claim is deemed valid.
+	   */
+	  canClaimWin: function canClaimWin(player, tile, claimType, winType) {
+	    // 1. can we claim this thing, outside of winning?
+	    var claim = claimType === Constants.WIN ? winType : claimType;
+	    if (!this.canClaim(player, tile, claim, winType)) return false;
+	    this.log(player.id, "can claim", tile, ", but can they win?");
+
+	    // 2. if so, what's left after we resolve that claim?
+	    player = {
+	      tiles: player.tiles.slice(),
+	      bonus: player.bonus.slice(),
+	      revealed: player.revealed.slice()
 	    };
+	    this.processClaim(player, tile, claimType, winType);
+
+	    // 3. Can we form any sort of winning pattern with those tiles?
+	    this.log("checking coverage wrt winnning");
+	    var covered = this.checkCoverage(player.tiles, player.bonus, player.revealed);
+	    this.log("winner?", covered);
+	    return covered;
 	  },
 
-
-	  reset: function reset(prevProps, prevState) {
-	    this.setState(this.getInitialState());
+	  canClaimSelfDrawnWin: function canClaimSelfDrawnWin(player) {
+	    this.log("checking coverage wrt winning");
+	    var covered = this.checkCoverage(player.tiles, player.bonus, player.revealed);
+	    this.log("self-drawn winner?", covered);
+	    return covered;
 	  },
 
-	  componentDidMount: function componentDidMount() {
-	    var socket = this.props.socket;
-	    socket.on("tile", this.removeTile);
-	    socket.on("drew", this.removeTile);
-	    socket.on('compensation', this.removeCompensation);
-	    socket.on('compensated', this.removeCompensation);
-	  },
-	  removeTile: function removeTile() {
-	    var tiles = this.state.tiles;
-	    tiles.pop();
-	    this.setState({ tiles: tiles });
-	  },
-	  removeCompensation: function removeCompensation(data) {
-	    var _this = this;
+	  /**
+	   * Determine which tiles to form a set with.
+	   */
+	  processClaim: function processClaim(player, tile, claimType, winType) {
+	    this.log("processing claim of tile", tile, "by player", player.id, "(" + claimType + "/" + winType + ")");
+	    var tiles = player.tiles,
+	        set;
+	    if (claimType === Constants.WIN && winType === Constants.PAIR) {
+	      set = this.formSet(tile, 2);
+	    }
+	    if (claimType === Constants.CHOW1 || winType === Constants.CHOW1) {
+	      set = this.formChow(tile, Constants.CHOW1);
+	    }
+	    if (claimType === Constants.CHOW2 || winType === Constants.CHOW2) {
+	      set = this.formChow(tile, Constants.CHOW2);
+	    }
+	    if (claimType === Constants.CHOW3 || winType === Constants.CHOW3) {
+	      set = this.formChow(tile, Constants.CHOW3);
+	    }
+	    if (claimType === Constants.PUNG || winType === Constants.PUNG) {
+	      set = this.formSet(tile, 3);
+	    }
+	    if (claimType === Constants.KONG) {
+	      set = this.formSet(tile, 4);
+	    }
+	    if (claimType === Constants.CONCEALED_KONG) {
+	      set = this.formSet(tile, 4);
+	      set.concealed = true;
+	    }
 
-	    var tiles = data.tiles;
-	    tiles.forEach(function (tile) {
-	      return _this.removeTile();
+	    console.log(claimType, winType, set);
+
+	    if (claimType !== Constants.CONCEALED_KONG) {
+	      tiles.push(tile);
+	    }
+
+	    set.forEach(function (tile) {
+	      var pos = tiles.indexOf(tile);
+	      tiles.splice(pos, 1);
 	    });
+
+	    player.revealed.push(set);
 	  },
-	  formTiles: function formTiles() {
-	    return this.state.tiles.map(function (t, p) {
-	      return React.createElement(Tile, { key: t + '-' + p, value: t });
+
+	  awardWinningClaim: function awardWinningClaim(player, tile, claimType, winType) {
+	    this.log("processing winning claim of tile", tile, "by player", player.id, "(" + claimType + "/" + winType + ")");
+	    var tiles = player.tiles,
+	        set;
+	    if (winType === Constants.PAIR) {
+	      set = this.formSet(tile, 2);
+	    }
+	    if (winType <= Constants.CHOW3) {
+	      set = this.formChow(tile, winType);
+	    }
+	    if (winType === Constants.PUNG) {
+	      set = this.formSet(tile, 3);
+	    }
+
+	    console.log(claimType, winType, set);
+
+	    tiles.push(tile);
+	    set.forEach(function (tile) {
+	      var pos = tiles.indexOf(tile);
+	      tiles.splice(pos, 1);
 	    });
+
+	    player.revealed.push(set);
 	  },
-	  render: function render() {
-	    return React.createElement(
-	      'div',
-	      { className: 'wall' },
-	      this.formTiles()
-	    );
+
+	  // utility function
+	  formChow: function formChow(tile, chowtype) {
+	    if (chowtype === Constants.CHOW1) return [tile, tile + 1, tile + 2];
+	    if (chowtype === Constants.CHOW2) return [tile - 1, tile, tile + 1];
+	    if (chowtype === Constants.CHOW3) return [tile - 2, tile - 1, tile];
+	  },
+
+	  // utility function
+	  formSet: function formSet(tile, howmany) {
+	    var set = [];
+	    while (howmany--) {
+	      set.push(tile);
+	    }
+	    return set;
+	  },
+
+	  /**
+	   * Check whether a given tiles + bonus + revealed situation grants a win
+	   */
+	  checkCoverage: function checkCoverage(tiles, bonus, revealed) {
+	    var sets = 4;
+	    var pair = 1;
+	    revealed.forEach(function (set) {
+	      if (set.length >= 3) sets--;
+	      if (set.length === 2) pair--;
+	    });
+
+	    this.log("sets:", sets, "pairs:", pair);
+
+	    if (sets < 0) {
+	      this.log("more than four sets found in", revealed);return false;
+	    }
+	    if (pair < 0) {
+	      this.log("multiple pairs found in", revealed);return false;
+	    }
+
+	    this.log("starting FSA check for this win");
+	    return FSA.check(tiles, pair, sets);
+	  },
+
+	  /**
+	   * Score a hand, if it ended in a win.
+	   */
+	  score: function score(players, windoftheround) {
+	    return scoreplayers(players, windoftheround);
+	  },
+
+	  /**
+	   * determine player rotation when a hand is over.
+	   */
+	  rotate: function rotate(won) {
+	    // we rotate [0,1,2,3] -> [1,2,3,0] if the hand was won.
+	    return won ? 1 : 1;
+	    // we also rotate on a draw =)
 	  }
-	});
 
-	module.exports = Wall;
+	};
+
+	module.exports = Ruleset;
 
 /***/ },
 /* 164 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ function(module, exports) {
 
 	'use strict';
 
-	var React = __webpack_require__(2);
-	var classnames = __webpack_require__(165);
-
-	var Tile = React.createClass({
-	  displayName: 'Tile',
-
-	  getDefaultProps: function getDefaultProps() {
-	    return {
-	      tileset: 'classic',
-	      value: 'concealed'
-	    };
-	  },
-
-	  getInitialState: function getInitialState() {
-	    var base = [this.props.base || 'images/tiles', this.props.tileset, ''].join('/');
-	    var face = base + this.props.value + ".jpg";
-	    var back = base + "concealed.jpg";
-	    return { base: base, face: face, back: back, src: face };
-	  },
-
-	  render: function render() {
-	    var className = classnames("tile", {
-	      owndiscard: this.props.ownDiscard,
-	      highlight: this.props.highlight
-	    });
-	    return React.createElement('img', { className: className, src: this.state.src, onClick: this.props.onClick, title: this.props.title });
-	  }
-	});
-
-	module.exports = Tile;
+	module.exports = function () {
+	  var id = Array.from(arguments).join(' ');
+	  return function () {
+	    var msg = Array.from(arguments).join(' ');
+	    console.log('[' + id + '] ' + msg);
+	  };
+	};
 
 /***/ },
 /* 165 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;/*!
-	  Copyright (c) 2016 Jed Watson.
-	  Licensed under the MIT License (MIT), see
-	  http://jedwatson.github.io/classnames
-	*/
-	/* global define */
-
-	(function () {
-		'use strict';
-
-		var hasOwn = {}.hasOwnProperty;
-
-		function classNames () {
-			var classes = [];
-
-			for (var i = 0; i < arguments.length; i++) {
-				var arg = arguments[i];
-				if (!arg) continue;
-
-				var argType = typeof arg;
-
-				if (argType === 'string' || argType === 'number') {
-					classes.push(arg);
-				} else if (Array.isArray(arg)) {
-					classes.push(classNames.apply(null, arg));
-				} else if (argType === 'object') {
-					for (var key in arg) {
-						if (hasOwn.call(arg, key) && arg[key]) {
-							classes.push(key);
-						}
-					}
-				}
-			}
-
-			return classes.join(' ');
-		}
-
-		if (typeof module !== 'undefined' && module.exports) {
-			module.exports = classNames;
-		} else if (true) {
-			// register as 'classnames', consistent with npm package name
-			!(__WEBPACK_AMD_DEFINE_ARRAY__ = [], __WEBPACK_AMD_DEFINE_RESULT__ = function () {
-				return classNames;
-			}.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
-		} else {
-			window.classNames = classNames;
-		}
-	}());
-
-
-/***/ },
-/* 166 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -20264,64 +20505,13 @@
 	module.exports = Constants;
 
 /***/ },
-/* 167 */
+/* 166 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var React = __webpack_require__(2);
-	var Tile = __webpack_require__(164);
-	var Tiles = __webpack_require__(168);
-	var Constants = __webpack_require__(166);
-
-	var Discards = React.createClass({
-	  displayName: 'Discards',
-	  getInitialState: function getInitialState() {
-	    return {
-	      tiles: [],
-	      turn: this.props.turn
-	    };
-	  },
-
-
-	  reset: function reset(prevProps, prevState) {
-	    this.setState(this.getInitialState());
-	  },
-
-	  componentDidMount: function componentDidMount() {
-	    var socket = this.props.socket;
-	    socket.on("unclaimed", this.addDiscard);
-	  },
-
-	  addDiscard: function addDiscard(data) {
-	    var tiles = this.state.tiles;
-	    tiles.push(data.tile);
-	    this.setState({ tiles: tiles });
-	  },
-	  formTiles: function formTiles() {
-	    return this.state.tiles.map(function (t, p) {
-	      return React.createElement(Tile, { key: t + '-' + p, value: t, title: "discarded " + Tiles.getTileName(t) });
-	    });
-	  },
-	  render: function render() {
-	    return React.createElement(
-	      'div',
-	      { className: 'discards' },
-	      this.formTiles()
-	    );
-	  }
-	});
-
-	module.exports = Discards;
-
-/***/ },
-/* 168 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	var logger = __webpack_require__(169);
-	var Constants = __webpack_require__(166);
+	var logger = __webpack_require__(164);
+	var Constants = __webpack_require__(165);
 
 	module.exports = {
 	  // is... functions
@@ -20366,21 +20556,800 @@
 	};
 
 /***/ },
-/* 169 */
+/* 167 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	var logger = __webpack_require__(164);
+	var Constants = __webpack_require__(165);
+	var Tiles = __webpack_require__(166);
+	var Tree = __webpack_require__(168);
+
+	var debug = false;
+
+	var FSA = function FSA() {
+	  this.log = debug ? logger("fsa") : function () {};
+	};
+
+	FSA.prototype = {
+	  /**
+	   * Check to see if there is *any* winning pattern possible.
+	   */
+
+	  check: function check(tiles, pair, sets) {
+	    this.log("checking", tiles, pair, sets);
+	    if (!pair && !sets) {
+	      if (tiles.length) {
+	        this.log("this was not a winning pattern.");
+	        return false;
+	      }
+	      this.log("this is a winning pattern.");
+	      return true;
+	    }
+
+	    var success;
+	    var tile = tiles.splice(0, 1)[0];
+
+	    // try this tile as a pair
+	    if (pair === 1) {
+	      success = this.tryPair(tile, tiles.slice(), pair, sets);
+	      if (success) return true;
+	    }
+
+	    // try this tile as 1/2/3 chows
+	    if (Tiles.isNumeral(tile)) {
+	      success = this.tryChow(tile, tiles.slice(), pair, sets);
+	      if (success) return true;
+	    }
+
+	    // try this tile as a pung
+	    success = this.tryPung(tile, tiles.slice(), pair, sets);
+	    if (success) return true;
+
+	    return false;
+	  },
+
+
+	  /**
+	   * Generate *all* sets/pairs that can be formed.
+	   */
+	  generate: function generate(tiles, pair, patterns) {
+	    patterns = patterns || new Tree();
+	    var sets = 0;
+	    var tile = tiles.splice(0, 1)[0];
+	    if (pair === 1) {
+	      this.tryPair(tile, tiles.slice(), pair, sets, patterns);
+	    }
+	    if (Tiles.isNumeral(tile)) {
+	      this.tryChow(tile, tiles.slice(), pair, sets, patterns);
+	    }
+	    this.tryPung(tile, tiles.slice(), pair, sets, patterns);
+	    this.tryKong(tile, tiles.slice(), pair, sets, patterns);
+	    return patterns;
+	  },
+	  tryPair: function tryPair(tile, tiles, pair, sets, patterns) {
+	    // remove duplicate
+	    var pos = tiles.indexOf(tile);
+	    if (pos === -1) return false;
+	    tiles.splice(pos, 1);
+
+	    // recurse
+	    this.log("pair", tile, "worked");
+	    if (patterns) {
+	      return this.generate(tiles, pair - 1, patterns.add([tile, tile]));
+	    }
+	    return this.check(tiles, pair - 1, sets);
+	  },
+	  tryChow: function tryChow(tile, tiles, pair, sets, patterns) {
+	    var success;
+	    var position = tile % Constants.NUMMOD;
+	    // end positions
+	    if (position === 0) {
+	      success = this.tryChow1(tile, tiles.slice(), pair, sets, patterns);
+	      if (success) return true;
+	    } else if (position === Constants.NUMMOD) {
+	      success = this.tryChow3(tile, tiles.slice(), pair, sets, patterns);
+	      if (success) return true;
+	    }
+	    // single-to-end positions
+	    else if (position === 1) {
+	        success = this.tryChow1(tile, tiles.slice(), pair, sets, patterns);
+	        if (success) return true;
+	        success = this.tryChow2(tile, tiles.slice(), pair, sets, patterns);
+	        if (success) return true;
+	      } else if (position === Constants.NUMMOD - 1) {
+	        success = this.tryChow2(tile, tiles.slice(), pair, sets, patterns);
+	        if (success) return true;
+	        success = this.tryChow3(tile, tiles.slice(), pair, sets, patterns);
+	        if (success) return true;
+	      }
+	      // the rest
+	      else {
+	          success = this.tryChow1(tile, tiles.slice(), pair, sets, patterns);
+	          if (success) return true;
+	          success = this.tryChow2(tile, tiles.slice(), pair, sets, patterns);
+	          if (success) return true;
+	          success = this.tryChow3(tile, tiles.slice(), pair, sets, patterns);
+	          if (success) return true;
+	        }
+
+	    // FIXME: TODO: This can be cleaned up, but the current code follows
+	    //              the "make it work, then clean it up" methodology.
+	    return false;
+	  },
+	  tryChow1: function tryChow1(tile, tiles, pair, sets, patterns) {
+	    var t1 = tile + 1,
+	        t2 = tile + 2;
+	    return this.tryChowX(tile, t1, t2, tiles, pair, sets, patterns);
+	  },
+	  tryChow2: function tryChow2(tile, tiles, pair, sets, patterns) {
+	    var t1 = tile - 1,
+	        t2 = tile + 1;
+	    return this.tryChowX(tile, t1, t2, tiles, pair, sets, patterns);
+	  },
+	  tryChow3: function tryChow3(tile, tiles, pair, sets, patterns) {
+	    var t1 = tile - 2,
+	        t2 = tile - 1;
+	    return this.tryChowX(tile, t1, t2, tiles, pair, sets, patterns);
+	  },
+	  tryChowX: function tryChowX(tile, t1, t2, tiles, pair, sets, patterns) {
+	    // remove first tile
+	    var pos = tiles.indexOf(t1);
+	    if (pos === -1) return false;
+	    tiles.splice(pos, 1);
+
+	    // remove second tile
+	    pos = tiles.indexOf(t2);
+	    if (pos === -1) return false;
+	    tiles.splice(pos, 1);
+
+	    // recurse
+	    this.log("chow", tile, t1, t2, "worked");
+	    if (patterns) {
+	      return this.generate(tiles, pair, patterns.add([tile, t1, t2].sort()));
+	    }
+	    return this.check(tiles, pair, sets - 1);
+	  },
+	  tryPung: function tryPung(tile, tiles, pair, sets, patterns) {
+	    // remove first duplicate
+	    var pos = tiles.indexOf(tile);
+	    if (pos === -1) return false;
+	    tiles.splice(pos, 1);
+
+	    // remove second duplicate
+	    pos = tiles.indexOf(tile);
+	    if (pos === -1) return false;
+	    tiles.splice(pos, 1);
+
+	    // recurse
+	    this.log("pung", tile, "worked");
+	    if (patterns) {
+	      return this.generate(tiles, pair, patterns.add([tile, tile, tile]));
+	    }
+	    return this.check(tiles, pair, sets - 1);
+	  },
+	  tryKong: function tryKong(tile, tiles, pair, sets, patterns) {
+	    // remove first duplicate
+	    var pos = tiles.indexOf(tile);
+	    if (pos === -1) return false;
+	    tiles.splice(pos, 1);
+
+	    // remove second duplicate
+	    pos = tiles.indexOf(tile);
+	    if (pos === -1) return false;
+	    tiles.splice(pos, 1);
+
+	    // remove third duplicate
+	    pos = tiles.indexOf(tile);
+	    if (pos === -1) return false;
+	    tiles.splice(pos, 1);
+
+	    // recurse
+	    this.log("kong", tile, "worked");
+	    if (patterns) {
+	      return this.generate(tiles, pair, patterns.add([tile, tile, tile, tile]));
+	    }
+	    return this.check(tiles, pair, sets - 1);
+	  }
+	};
+
+	module.exports = new FSA();
+
+/***/ },
+/* 168 */
 /***/ function(module, exports) {
 
 	'use strict';
 
-	module.exports = function () {
-	  var id = Array.from(arguments).join(' ');
-	  return function () {
-	    var msg = Array.from(arguments).join(' ');
-	    console.log('[' + id + '] ' + msg);
-	  };
+	/**
+	 * A basic tree implementation. Without any specific insertion
+	 * algorithm specified, this Tree is a simple local insert,
+	 * depth-first
+	 */
+	function Tree(value, allowIndirectManipulation) {
+	  var _this = this;
+
+	  this.value = undefined;
+	  this.parent = undefined;
+	  this.children = [];
+
+	  if (value) {
+	    // do we allow for indirect data manipulation?
+	    this.value = allowIndirectManipulation ? value : JSON.parse(JSON.stringify(value));
+	    // Also note that the ".__children" value gets removed,
+	    // as it is only usable for bootstrapping a full tree.
+	    if (this.value.__children) {
+	      this.value.__children.forEach(function (c) {
+	        return _this.add(c);
+	      });
+	      delete this.value.__children;
+	    }
+	  }
+	}
+
+	Tree.prototype = {
+	  /**
+	   * Add a child tree to this tree at this node.
+	   *
+	   * If a different insertion rule is needed, pass in your
+	   * own insertion algorithm to effect a different kind of
+	   * tree.
+	   */
+	  add: function add(value, insert) {
+	    var n = new Tree(value);
+	    if (insert) {
+	      // insertion format: function(Tree, Node) -> Node
+	      return insert(this, n);
+	    }
+	    this.children.push(n);
+	    n.parent = this;
+	    return n;
+	  },
+
+	  /**
+	   * Remove a child node from the tree (examined depth-first).
+	   *
+	   * If someone wants to implement a "bf" flag that switches
+	   * this to breadth-first, I will be happy to merge that in.
+	   */
+	  remove: function remove(n, bf) {
+	    var c = this.children;
+	    if (c.length === 0) return false;
+	    var pos = c.indexOf(n);
+	    if (pos > -1) {
+	      this.children.splice(pos, 1);
+	      return true;
+	    }
+	    // early return
+	    return c.some(function (ch) {
+	      return ch.remove(n);
+	    });
+	  },
+
+	  /**
+	   * Find a node based on one (or more) key/value pairs, depth-first.
+	   *
+	   * If someone wants to implement a "bf" flag that switches
+	   * this to breadth-first, I will be happy to merge that in.
+	   */
+	  find: function find(keyValueObj) {
+	    if (this.matches(keyValueObj)) return this;
+	    var c = this.children;
+	    // ensure early return
+	    for (var i = 0, r; i < c.length; i++) {
+	      r = c[i].find(keyValueObj);
+	      if (r) return r;
+	    }
+	    return false;
+	  },
+
+	  /**
+	   * See if this node matches the target set of key/value pairs.
+	   */
+	  matches: function matches(keyValueObj, undef) {
+	    var keys = Object.keys(keyValueObj);
+	    for (var i = 0; i < keys.length; i++) {
+	      // two checks, to ensure early return
+	      var key = keys[i];
+	      var v = this.value[key];
+	      if (v === undef) return false;
+	      if (v !== keyValueObj[key]) return false;
+	    }
+	    return true;
+	  },
+
+	  /**
+	   * Base JS object function; the value of a tree is the tree itself.
+	   */
+	  valueOf: function valueOf() {
+	    return this;
+	  },
+
+	  /**
+	   * String representation of this tree. We go with JSON formatting.
+	   */
+	  toString: function toString() {
+	    return this.toJSON();
+	  },
+
+	  /**
+	   * A sometimes more code-relevant alias for toString().
+	   */
+	  serialize: function serialize() {
+	    return this.toJSON();
+	  },
+
+	  /**
+	   * JSON representation of this tree.
+	   *
+	   * This function pairs idempotently with the constructor such
+	   * that "new Tree(oldTree.toJSON())" is equivalent to "oldTree".
+	   */
+	  toJSON: function toJSON(undef) {
+	    var v = this.value || undef;
+	    var blocks = [];
+	    v = JSON.stringify(v);
+	    blocks.push(v.substring(0, v.length - 1));
+	    var cblocks = this.children.map(function (c) {
+	      return c.toJSON();
+	    });
+	    if (cblocks.length > 0) {
+	      blocks = blocks.concat([',"__children":[']).concat(cblocks.join(',')).concat([']']);
+	    }
+	    blocks.push('}');
+	    return blocks.join('');
+	  },
+
+	  /**
+	   * Generate all paths from the root to each of the leaves, yielding
+	   * a set (array) of paths (array of node values at each step).
+	   */
+	  getAllValuePaths: function getAllValuePaths(sofar, seen) {
+	    seen = seen || [];
+	    var base = sofar ? sofar.slice() : [];
+	    if (this.value) {
+	      base.push(this.value);
+	    }
+	    if (this.children.length === 0) {
+	      seen.push(base);
+	    }
+	    this.children.map(function (c) {
+	      c.getAllValuePaths(base, seen);
+	    });
+	    return seen;
+	  },
+
+	  /**
+	   * Iterator functionality, for while(next) code, depth-first.
+	   *
+	   * If someone wants to implement a "bf" flag that switches
+	   * this to breadth-first, I will be happy to merge that in.
+	   */
+	  getIterator: function getIterator() {
+	    return new Iterator(this);
+	  },
+
+	  /**
+	   * "find next" function used for iterating over this tree.
+	   */
+	  __nextIterationTarget: function __nextIterationTarget(n) {
+	    var pos = this.children.indexOf(n);
+	    if (pos + 1 < this.children.length) {
+	      return this.children[pos + 1];
+	    }
+	    if (!this.parent) {
+	      return false;
+	    }
+	    return this.parent.__nextIterationTarget(this);
+	  }
 	};
+
+	/**
+	 * A simple iterator
+	 */
+	var Iterator = function Iterator(root) {
+	  this.node = root;
+	};
+
+	/**
+	 * Iterator API implements "hasNext()" => truth value,
+	 * and "next()" => next node in the iteration.
+	 */
+	Iterator.prototype = {
+	  hasNext: function hasNext() {
+	    return this.node !== false;
+	  },
+	  next: function next() {
+	    var n = this.node;
+	    if (n === false) return false;
+	    var _ret = n;
+	    this.node = n.children.length > 0 ? n.children[0] : n.parent.__nextIterationTarget(n);
+	    return _ret;
+	  }
+	};
+
+	module.exports = Tree;
+
+/***/ },
+/* 169 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	var Constants = __webpack_require__(165);
+	var Tiles = __webpack_require__(166);
+	var FSA = __webpack_require__(167);
+
+	// simple scoring:
+	//
+	//   1) the winner receives their tilescore from each other player
+	//   2) other players do not settle scores amongst themselves.
+	//   3) east does not win/lose double
+	//
+	// points awarded:
+	//
+	//   winning: 0
+	//   chow: 0
+	//   pung:
+	//     simple: 1
+	//     honour: 2
+	//   kong:
+	//     simple: 2
+	//     honour: 4
+	//   bonus tiles: 1 each
+	//
+	//   (tiles-in-hand score double the points)
+	//
+	// Illegal win:
+	//
+	//   player pays all other players 3 points.
+	//
+	var Scores = {
+	  WIN: 0,
+	  PAIR: 0,
+	  CHOW: 0,
+	  PUNG: 1,
+	  KONG: 2,
+	  HONOUR_MULTIPLIER: 2,
+	  CONCEALED_MULTIPLIER: 2,
+	  ILLEGAL_WIN: -5
+	};
+
+	function scoreSet(set, open, log) {
+	  var logEntry = log.length;
+	  var score = 0;
+	  if (set.length < 3) {
+	    log.push("pair");
+	    score = Scores.PAIR;
+	  } else if (set[0] !== set[1]) {
+	    log.push("chow");
+	    score = Scores.CHOW;
+	  } else {
+	    if (set[0] < Constants.HONOURS) {
+	      log.push("pung");
+	      score = Scores.PUNG;
+	    } else {
+	      log.push("pung of honours");
+	      score = Scores.HONOUR_MULTIPLIER * Scores.PUNG;
+	    }
+	    if (set.length === 4) {
+	      log[logEntry] = log[logEntry].replace('pung', 'kong');
+	      score *= Scores.KONG / Scores.PUNG;
+	    }
+	  }
+	  log[logEntry] = log[logEntry] + ": " + score;
+
+	  if (!open) {
+	    log[logEntry] = log[logEntry] + " (x" + Scores.CONCEALED_MULTIPLIER + " for concealed)";
+	    score *= Scores.CONCEALED_MULTIPLIER;
+	  }
+	  return score;
+	}
+
+	function scoreSets(sets, playerwind, windoftheround, open, log) {
+	  return sets.map(function (s) {
+	    return scoreSet(s, open, log);
+	  }).reduce(function (a, b) {
+	    return a + b;
+	  }, 0);
+	}
+
+	function scoreConcealed(tiles, haspillow, playerwind, windoftheround, log) {
+	  // we need to form all possible set/pair combinations that
+	  // these tiles can form, and then score all of them, picking
+	  // the highest value as the "scored" value.
+	  var tree = FSA.generate(tiles.slice(), haspillow ? 0 : 1);
+	  var collections = tree.getAllValuePaths();
+	  var possibleScores = collections.map(function (sets) {
+	    var templog = [];
+	    return {
+	      score: scoreSets(sets, playerwind, windoftheround, false, templog),
+	      log: templog
+	    };
+	  });
+	  var best = possibleScores.sort(function (a, b) {
+	    return b.score - a.score;
+	  })[0];
+	  best.log.forEach(function (entry) {
+	    return log.push(entry);
+	  });
+	  return best.score;
+	}
+
+	function getTileScores(player, windoftheround) {
+	  var log = [];
+	  var rscore = scoreSets(player.revealed, player.wind, windoftheround, true, log);
+	  var haspillow = player.revealed.some(function (set) {
+	    return set.length === 2;
+	  });
+	  var cscore = scoreConcealed(player.tiles, haspillow, player.wind, windoftheround, log);
+	  var bscore = player.bonus.length;
+	  if (bscore) {
+	    log.push("bonus tiles: " + bscore);
+	  }
+
+	  return {
+	    score: rscore + cscore + bscore,
+	    from: log
+	  };
+	}
+
+	function scorePlayers(players, windoftheround) {
+	  var tilescores = players.map(function (player) {
+	    return getTileScores(player, windoftheround);
+	  });
+
+	  var winner = -1;
+	  players.forEach(function (p, pid) {
+	    if (p.winner) {
+	      winner = pid;
+	    }
+	  });
+
+	  var winningScore = tilescores[winner].score;
+	  // winner gets 3x what they won with, losers get nothing =(
+	  return tilescores.map(function (scoreObj, pid) {
+	    if (pid === winner) {
+	      scoreObj.score = winningScore * 3;
+	    } else {
+	      scoreObj.from.push("pay winner: " + -winningScore);
+	      scoreObj.score = -winningScore;
+	    }
+	    return scoreObj;
+	  });
+	}
+
+	scorePlayers.processIllegalWin = function (players, player) {
+	  return players.map(function (p, pid) {
+	    if (p === player) {
+	      return {
+	        score: 3 * Scores.ILLEGAL_WIN,
+	        pid: pid,
+	        log: ['declared illegal win: ' + Scores.ILLEGAL_WIN + " (x3)"]
+	      };
+	    }
+	    return {
+	      score: -Scores.ILLEGAL_WIN,
+	      pid: pid,
+	      log: ['player ' + pid + ' declared illegal win: ' + -Scores.ILLEGAL_WIN]
+	    };
+	  });
+	};
+
+	module.exports = scorePlayers;
 
 /***/ },
 /* 170 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	var React = __webpack_require__(2);
+	var Tile = __webpack_require__(171);
+	var Constants = __webpack_require__(165);
+
+	var Wall = React.createClass({
+	  displayName: 'Wall',
+	  generateBlanks: function generateBlanks(num) {
+	    var tiles = [];
+	    while (num--) {
+	      tiles.push('concealed');
+	    }
+	    return tiles;
+	  },
+	  getInitialState: function getInitialState() {
+	    return {
+	      tiles: this.generateBlanks(144),
+	      turn: this.props.turn
+	    };
+	  },
+
+
+	  reset: function reset(prevProps, prevState) {
+	    this.setState(this.getInitialState());
+	  },
+
+	  componentDidMount: function componentDidMount() {
+	    var socket = this.props.socket;
+	    socket.on("tile", this.removeTile);
+	    socket.on("drew", this.removeTile);
+	    socket.on('compensation', this.removeCompensation);
+	    socket.on('compensated', this.removeCompensation);
+	  },
+	  removeTile: function removeTile() {
+	    var tiles = this.state.tiles;
+	    tiles.pop();
+	    this.setState({ tiles: tiles });
+	  },
+	  removeCompensation: function removeCompensation(data) {
+	    var _this = this;
+
+	    var tiles = data.tiles;
+	    tiles.forEach(function (tile) {
+	      return _this.removeTile();
+	    });
+	  },
+	  formTiles: function formTiles() {
+	    return this.state.tiles.map(function (t, p) {
+	      return React.createElement(Tile, { key: t + '-' + p, value: t });
+	    });
+	  },
+	  render: function render() {
+	    return React.createElement(
+	      'div',
+	      { className: 'wall' },
+	      this.formTiles()
+	    );
+	  }
+	});
+
+	module.exports = Wall;
+
+/***/ },
+/* 171 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	var React = __webpack_require__(2);
+	var classnames = __webpack_require__(172);
+
+	var Tile = React.createClass({
+	  displayName: 'Tile',
+
+	  getDefaultProps: function getDefaultProps() {
+	    return {
+	      tileset: 'classic',
+	      value: 'concealed'
+	    };
+	  },
+
+	  getInitialState: function getInitialState() {
+	    var base = [this.props.base || 'images/tiles', this.props.tileset, ''].join('/');
+	    var face = base + this.props.value + ".jpg";
+	    var back = base + "concealed.jpg";
+	    return { base: base, face: face, back: back, src: face };
+	  },
+
+	  render: function render() {
+	    var className = classnames("tile", {
+	      owndiscard: this.props.ownDiscard,
+	      highlight: this.props.highlight
+	    });
+	    return React.createElement('img', { className: className, src: this.state.src, onClick: this.props.onClick, title: this.props.title });
+	  }
+	});
+
+	module.exports = Tile;
+
+/***/ },
+/* 172 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;/*!
+	  Copyright (c) 2016 Jed Watson.
+	  Licensed under the MIT License (MIT), see
+	  http://jedwatson.github.io/classnames
+	*/
+	/* global define */
+
+	(function () {
+		'use strict';
+
+		var hasOwn = {}.hasOwnProperty;
+
+		function classNames () {
+			var classes = [];
+
+			for (var i = 0; i < arguments.length; i++) {
+				var arg = arguments[i];
+				if (!arg) continue;
+
+				var argType = typeof arg;
+
+				if (argType === 'string' || argType === 'number') {
+					classes.push(arg);
+				} else if (Array.isArray(arg)) {
+					classes.push(classNames.apply(null, arg));
+				} else if (argType === 'object') {
+					for (var key in arg) {
+						if (hasOwn.call(arg, key) && arg[key]) {
+							classes.push(key);
+						}
+					}
+				}
+			}
+
+			return classes.join(' ');
+		}
+
+		if (typeof module !== 'undefined' && module.exports) {
+			module.exports = classNames;
+		} else if (true) {
+			// register as 'classnames', consistent with npm package name
+			!(__WEBPACK_AMD_DEFINE_ARRAY__ = [], __WEBPACK_AMD_DEFINE_RESULT__ = function () {
+				return classNames;
+			}.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
+		} else {
+			window.classNames = classNames;
+		}
+	}());
+
+
+/***/ },
+/* 173 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	var React = __webpack_require__(2);
+	var Tile = __webpack_require__(171);
+	var Tiles = __webpack_require__(166);
+	var Constants = __webpack_require__(165);
+
+	var Discards = React.createClass({
+	  displayName: 'Discards',
+	  getInitialState: function getInitialState() {
+	    return {
+	      tiles: [],
+	      turn: this.props.turn
+	    };
+	  },
+
+
+	  reset: function reset(prevProps, prevState) {
+	    this.setState(this.getInitialState());
+	  },
+
+	  componentDidMount: function componentDidMount() {
+	    var socket = this.props.socket;
+	    socket.on("unclaimed", this.addDiscard);
+	  },
+
+	  addDiscard: function addDiscard(data) {
+	    var tiles = this.state.tiles;
+	    tiles.push(data.tile);
+	    this.setState({ tiles: tiles });
+	  },
+	  formTiles: function formTiles() {
+	    return this.state.tiles.map(function (t, p) {
+	      return React.createElement(Tile, { key: t + '-' + p, value: t, title: "discarded " + Tiles.getTileName(t) });
+	    });
+	  },
+	  render: function render() {
+	    return React.createElement(
+	      'div',
+	      { className: 'discards' },
+	      this.formTiles()
+	    );
+	  }
+	});
+
+	module.exports = Discards;
+
+/***/ },
+/* 174 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -20394,14 +21363,14 @@
 	 */
 
 	var React = __webpack_require__(2);
-	var Tile = __webpack_require__(164);
-	var Tiles = __webpack_require__(168);
-	var ClaimMenu = __webpack_require__(171);
-	var Overlay = __webpack_require__(172);
-	var Constants = __webpack_require__(166);
-	var classnames = __webpack_require__(165);
-	var socketbindings = __webpack_require__(173);
-	var md5 = __webpack_require__(174);
+	var Tile = __webpack_require__(171);
+	var Tiles = __webpack_require__(166);
+	var ClaimMenu = __webpack_require__(175);
+	var Overlay = __webpack_require__(176);
+	var Constants = __webpack_require__(165);
+	var classnames = __webpack_require__(172);
+	var socketbindings = __webpack_require__(177);
+	var md5 = __webpack_require__(178);
 
 	// the static properties we want the Player class to have.
 	var statics = {
@@ -20532,7 +21501,9 @@
 	            'span',
 	            { className: 'score' },
 	            'score: ',
-	            this.state.score
+	            this.state.score,
+	            ' ',
+	            this.props.settings.name ? "(" + this.props.settings.name + ")" : null
 	          )
 	        ),
 	        React.createElement(
@@ -21038,13 +22009,13 @@
 	module.exports = Player;
 
 /***/ },
-/* 171 */
+/* 175 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
 	var React = __webpack_require__(2);
-	var Constants = __webpack_require__(166);
+	var Constants = __webpack_require__(165);
 
 	var ClaimMenu = React.createClass({
 	  displayName: 'ClaimMenu',
@@ -21177,7 +22148,7 @@
 	module.exports = ClaimMenu;
 
 /***/ },
-/* 172 */
+/* 176 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -21236,12 +22207,12 @@
 	module.exports = Overlay;
 
 /***/ },
-/* 173 */
+/* 177 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var Player = __webpack_require__(170);
+	var Player = __webpack_require__(174);
 
 	/**
 	 * This object formalises the socket API for a player,
@@ -21257,7 +22228,7 @@
 	     */
 	    socket.on('joined', function (data) {
 	      var gameid = data.gameid;
-	      var playerposition = data.pos;
+	      var playerposition = data.playerposition;
 	      player.log("joined game", gameid, "with position", playerposition);
 	      player.setState({ gameid: gameid });
 	    });
@@ -21443,14 +22414,14 @@
 	};
 
 /***/ },
-/* 174 */
+/* 178 */
 /***/ function(module, exports, __webpack_require__) {
 
 	(function(){
-	  var crypt = __webpack_require__(175),
-	      utf8 = __webpack_require__(176).utf8,
-	      isBuffer = __webpack_require__(177),
-	      bin = __webpack_require__(176).bin,
+	  var crypt = __webpack_require__(179),
+	      utf8 = __webpack_require__(180).utf8,
+	      isBuffer = __webpack_require__(181),
+	      bin = __webpack_require__(180).bin,
 
 	  // The core
 	  md5 = function (message, options) {
@@ -21609,7 +22580,7 @@
 
 
 /***/ },
-/* 175 */
+/* 179 */
 /***/ function(module, exports) {
 
 	(function() {
@@ -21711,7 +22682,7 @@
 
 
 /***/ },
-/* 176 */
+/* 180 */
 /***/ function(module, exports) {
 
 	var charenc = {
@@ -21750,7 +22721,7 @@
 
 
 /***/ },
-/* 177 */
+/* 181 */
 /***/ function(module, exports) {
 
 	/**
@@ -21773,16 +22744,16 @@
 
 
 /***/ },
-/* 178 */
+/* 182 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
 	var React = __webpack_require__(2);
-	var Tile = __webpack_require__(164);
-	var Tiles = __webpack_require__(168);
-	var Constants = __webpack_require__(166);
-	var classnames = __webpack_require__(165);
+	var Tile = __webpack_require__(171);
+	var Tiles = __webpack_require__(166);
+	var Constants = __webpack_require__(165);
+	var classnames = __webpack_require__(172);
 
 	var OtherPlayer = React.createClass({
 	  displayName: 'OtherPlayer',
@@ -21791,7 +22762,9 @@
 	      tiles: [],
 	      bonus: [],
 	      revealed: [],
-	      turn: this.props.turn
+	      turn: this.props.turn,
+	      winner: false,
+	      ourTurn: false
 	    };
 	  },
 
@@ -21808,6 +22781,7 @@
 	    socket.on("compensated", this.addBonus);
 	    socket.on("discarded", this.removeTile);
 	    socket.on("revealed", this.revealedSet);
+	    socket.on('finish:win', this.showPlayerTiles);
 	  },
 	  formTiles: function formTiles(tiles, sets) {
 	    return tiles.map(function (t, p) {
@@ -21823,31 +22797,41 @@
 	  },
 	  render: function render() {
 	    var className = classnames("otherplayer", {
-	      ourturn: this.state.ourTurn
+	      ourturn: this.state.ourTurn === true,
+	      winner: this.state.winner === this.props.playerposition
 	    });
 
 	    return React.createElement(
 	      'div',
 	      { className: className },
 	      React.createElement(
-	        'span',
-	        { className: 'name' },
-	        this.props.label
+	        'div',
+	        null,
+	        this.props.name
 	      ),
 	      React.createElement(
-	        'span',
-	        { className: 'tiles' },
-	        this.formTiles(this.state.tiles)
-	      ),
-	      React.createElement(
-	        'span',
-	        { className: 'revealed' },
-	        this.formTiles(this.state.revealed, true)
-	      ),
-	      React.createElement(
-	        'span',
-	        { className: 'bonus' },
-	        this.formTiles(this.state.bonus)
+	        'div',
+	        null,
+	        React.createElement(
+	          'span',
+	          { className: 'name' },
+	          this.props.label
+	        ),
+	        React.createElement(
+	          'span',
+	          { className: 'tiles' },
+	          this.formTiles(this.state.tiles)
+	        ),
+	        React.createElement(
+	          'span',
+	          { className: 'revealed' },
+	          this.formTiles(this.state.revealed, true)
+	        ),
+	        React.createElement(
+	          'span',
+	          { className: 'bonus' },
+	          this.formTiles(this.state.bonus)
+	        )
 	      )
 	    );
 	  },
@@ -21897,13 +22881,55 @@
 	    var tiles = this.state.tiles;
 	    tiles.splice(0, revealedSet.length - 1);
 	    this.setState({ tiles: tiles, revealed: revealed });
+	  },
+	  showPlayerTiles: function showPlayerTiles(data) {
+	    var winner = parseInt(data.playerposition);
+	    var tiles = data.tiles[this.props.playerposition];
+	    console.log(winner, tiles);
+	    this.setState({ ourTurn: false, winner: winner, tiles: tiles });
 	  }
 	});
 
 	module.exports = OtherPlayer;
 
 /***/ },
-/* 179 */
+/* 183 */
+/***/ function(module, exports) {
+
+	"use strict";
+
+	var Settings = function Settings(id) {
+	  var _this = this;
+
+	  this.key = "mjls" + (id ? "-" + id : '');
+	  var data = this.getSavedData();
+	  if (data) {
+	    Object.keys(data).forEach(function (k) {
+	      return _this[k] = data[k];
+	    });
+	  }
+	};
+
+	Settings.prototype = {
+	  getSavedData: function getSavedData() {
+	    var data = localStorage[this.key];
+	    if (!data) return false;
+	    return JSON.parse(data);
+	  },
+	  saveData: function saveData() {
+	    localStorage[this.key] = JSON.stringify(this);
+	  },
+
+	  setName: function setName(name) {
+	    this.name = name;
+	    this.saveData();
+	  }
+	};
+
+	module.exports = Settings;
+
+/***/ },
+/* 184 */
 /***/ function(module, exports) {
 
 	module.exports = io;

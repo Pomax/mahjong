@@ -29,7 +29,7 @@
         if (cnt===4) return;
 
         var frame = document.createElement("iframe");
-        frame.src = "{{host}}/client/index.html";
+        frame.src = "{{host}}/client/index.html?localStorageId="+cnt;
         frame.onload = function() {
           next(cnt+1);
         };

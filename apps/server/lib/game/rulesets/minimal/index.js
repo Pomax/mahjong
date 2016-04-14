@@ -65,7 +65,7 @@ Ruleset.prototype = {
   canClaimSet: function(player, tile, inhandcount) {
     var instances = 0;
     player.tiles.forEach((t,idx) => { if(t===tile) instances++; });
-    return (instances >= inhandcount)
+    return (instances >= inhandcount);
   },
 
   /**

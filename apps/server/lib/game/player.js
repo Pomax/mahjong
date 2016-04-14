@@ -5,10 +5,11 @@ var Constants = require('../constants');
 var Listener = require('./protocol/listener');
 var Emitter = require('./protocol/emitter');
 
-var Player = function(game, id, socket) {
+var Player = function(game, id, name, socket) {
   this.game = game;
   this.score = 0;
   this.id = id;
+  this.name = name;
   this.socket = socket;
   this.connected = true;
   this.tiles = [];
@@ -230,8 +231,9 @@ Player.prototype = {
   /**
    * Someone won this round.
    */
-  winOccurred(playerposition, tile, winType) {
-    this.send("finish:win", { playerposition, tile, winType });
+  winOccurred(playerposition, tile, winType, players) {
+    var tiles = players.map(p => p.tiles);
+    this.send("finish:win", { playerposition, tile, winType, tiles });
     if (playerposition === this.playerposition) {
       this.winner = true;
     }

@@ -50,7 +50,7 @@ FSA.prototype = {
    * Generate *all* sets/pairs that can be formed.
    */
   generate(tiles, pair, patterns) {
-    var patterns = patterns || new Tree();
+    patterns = patterns || new Tree();
     var sets = 0;
     var tile = tiles.splice(0,1)[0];
     if (pair===1) { this.tryPair(tile, tiles.slice(), pair, sets, patterns); }

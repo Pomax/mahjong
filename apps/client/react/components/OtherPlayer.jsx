@@ -11,7 +11,9 @@ var OtherPlayer = React.createClass({
       tiles: [],
       bonus: [],
       revealed: [],
-      turn: this.props.turn
+      turn: this.props.turn,
+      winner: false,
+      ourTurn: false
     };
   },
 
@@ -27,6 +29,7 @@ var OtherPlayer = React.createClass({
     socket.on("compensated", this.addBonus);
     socket.on("discarded", this.removeTile);
     socket.on("revealed", this.revealedSet);
+    socket.on('finish:win', this.showPlayerTiles);
   },
 
   formTiles(tiles, sets) {
@@ -44,15 +47,19 @@ var OtherPlayer = React.createClass({
 
   render() {
     var className = classnames("otherplayer", {
-      ourturn: this.state.ourTurn
+      ourturn: this.state.ourTurn === true,
+      winner: this.state.winner === this.props.playerposition
     });
 
     return (
       <div className={className}>
-      <span className="name">{this.props.label}</span>
-      <span className="tiles">{this.formTiles(this.state.tiles)}</span>
-      <span className="revealed">{this.formTiles(this.state.revealed,true)}</span>
-      <span className="bonus">{this.formTiles(this.state.bonus)}</span>
+        <div>{this.props.name}</div>
+        <div>
+          <span className="name">{this.props.label}</span>
+          <span className="tiles">{this.formTiles(this.state.tiles)}</span>
+          <span className="revealed">{this.formTiles(this.state.revealed,true)}</span>
+          <span className="bonus">{this.formTiles(this.state.bonus)}</span>
+        </div>
       </div>
     );
   },
@@ -107,8 +114,14 @@ var OtherPlayer = React.createClass({
     var tiles = this.state.tiles;
     tiles.splice(0, revealedSet.length-1);
     this.setState({ tiles, revealed });
-  }
+  },
 
+  showPlayerTiles(data) {
+    var winner = parseInt(data.playerposition);
+    var tiles = data.tiles[this.props.playerposition];
+    console.log(winner, tiles);
+    this.setState({ ourTurn: false, winner, tiles });
+  }
 });
 
 module.exports = OtherPlayer;

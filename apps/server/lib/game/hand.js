@@ -245,7 +245,7 @@ Hand.prototype = {
 
         this.log("end of hand.");
         players.forEach((player, idx) => {
-          player.winOccurred(playerposition, tile, winType);
+          player.winOccurred(playerposition, tile, winType, this.players);
         });
 
         // compute scores

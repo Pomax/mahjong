@@ -137,7 +137,9 @@ var Player = React.createClass({
             { this.state.kongs.map(k => <button key={k} onClick={this.claimConcealedKong(k)}>{Tiles.getTileName(k)}</button>) }
             </span>
             <span className="score">
-              score: { this.state.score }
+              score: { this.state.score } {
+                this.props.settings.name ? "(" + this.props.settings.name + ")" : null
+              }
             </span>
           </div>
           <div className={dclasses} onClick={this.discardClicked}>

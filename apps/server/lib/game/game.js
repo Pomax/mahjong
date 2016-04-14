@@ -8,8 +8,9 @@ var Player = require('./player');
 var Hand = require('./hand');
 var Wall = require('./wall');
 
-var Game = function(manager, ruleset, id) {
+var Game = function(manager, name, ruleset, id) {
   this.manager = manager;
+  this.name = name;
   this.ruleset = ruleset;
   this.id = id;
 
@@ -26,7 +27,7 @@ Game.prototype = {
     this.hands = [];
   },
 
-  addPlayer: function(playerid, socket) {
+  addPlayer: function(playerid, playername, socket) {
     // do not accept more than four players for any game
     if (this.players.length === 4) {
       return false;
@@ -36,20 +37,29 @@ Game.prototype = {
     // set up a new player for this client.
     var gameid = this.id;
     var playerposition = this.players.length;
-    var player = new Player(this, playerid, socket);
+    var player = new Player(this, playerid, playername, socket);
     this.players.push(player);
     this.log("added player " + playerid);
 
     // set up protocol listener and emitter, with known security values
     var securities = {gameid, playerid, playerposition};
-    this.listenFor = new Listener(socket, securities);
-    this.notify = new Emitter(socket, securities);
+    var notify = new Emitter(socket, securities);
 
     // let the player know they joined a particular game.
-    this.notify.joined(gameid, playerid, playerposition);
+    notify.joined(gameid, playerid, playerposition);
+  },
 
-    // when four players have joined a game, start that game.
-    if (this.players.length === 4) { this.startGame(); }
+  removePlayer: function(playerid) {
+    // FIXME: TODO: this can leave players lingering in a game??
+    var pos = -1;
+    this.players.some((p,_pos) => {
+      if (p.id === playerid) {
+        pos = _pos;
+      }
+    });
+    if (pos > -1) {
+      this.players.splice(pos,1);
+    }
   },
 
   handleDisconnect: function(socket) {
@@ -69,15 +79,36 @@ Game.prototype = {
     return this.players.length;
   },
 
-  startGame: function() {
-    this.log("starting game");
+  readyGame: function() {
+    this.log("readying game");
     var hand = new Hand(this, this.ruleset, this.hands.length, this.players);
     this.hands.push(hand);
-    hand.start();
+    this.readies = 0;
+    this.players.forEach(player => {
+      player.socket.emit("readygame", {
+        gameid: this.id,
+        playerid: player.id,
+        players: this.players.map(p => p.name)
+      });
+      player.socket.on("readygame", data => this.ready(player) );
+    });
+  },
+
+  ready: function(player) {
+    console.log("client for " + player.id + " is ready to play");
+    this.readies++;
+    player.socket.removeAllListeners("readygame");
+    if(this.readies < this.players.length) return;
+    this.startGame();
+  },
+
+  startGame: function() {
+    this.log("starting game");
+    this.hands.slice(-1)[0].start();
   },
 
   remove: function() {
-    // killing off this game
+    // kill off this game
     this.log("removing game "+this.id);
   }
 };

@@ -18,7 +18,7 @@ function Tree(value, allowIndirectManipulation) {
       delete this.value.__children;
     }
   }
-};
+}
 
 Tree.prototype = {
   /**
@@ -65,7 +65,7 @@ Tree.prototype = {
    */
   find: function(keyValueObj) {
     if (this.matches(keyValueObj)) return this;
-    c = this.children;
+    var c = this.children;
     // ensure early return
     for (var i=0, r; i<c.length; i++) {
       r = c[i].find(keyValueObj);
@@ -85,7 +85,7 @@ Tree.prototype = {
       var v = this.value[key];
       if(v === undef) return false;
       if(v !== keyValueObj[key]) return false;
-    };
+    }
     return true;
   },
 
@@ -125,7 +125,7 @@ Tree.prototype = {
     if (cblocks.length > 0) {
       blocks = blocks.concat([',"__children":[']).concat(cblocks.join(',')).concat([']']);
     }
-    blocks.push('}')
+    blocks.push('}');
     return blocks.join('');
   },
 
@@ -157,8 +157,6 @@ Tree.prototype = {
    */
   __nextIterationTarget: function(n) {
     var pos = this.children.indexOf(n);
-    if (pos===-1) {
-    }
     if (pos+1<this.children.length) {
       return this.children[pos+1];
     }
@@ -189,6 +187,6 @@ Iterator.prototype = {
     this.node = (n.children.length>0) ? n.children[0] : n.parent.__nextIterationTarget(n);
     return _ret;
   }
-}
+};
 
 module.exports = Tree;
