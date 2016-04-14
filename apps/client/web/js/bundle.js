@@ -19784,8 +19784,6 @@
 	  readyGame: function readyGame(data) {
 	    var _this3 = this;
 
-	    console.log(data);
-	    console.log("switching UI from lobby to game mode");
 	    this.setState({ viewLobby: false, playerNames: data.players }, function () {
 	      _this3.state.socket.emit("readygame", data);
 	    });
@@ -20174,8 +20172,6 @@
 	      set.concealed = true;
 	    }
 
-	    console.log(claimType, winType, set);
-
 	    if (claimType !== Constants.CONCEALED_KONG) {
 	      tiles.push(tile);
 	    }
@@ -20201,8 +20197,6 @@
 	    if (winType === Constants.PUNG) {
 	      set = this.formSet(tile, 3);
 	    }
-
-	    console.log(claimType, winType, set);
 
 	    tiles.push(tile);
 	    set.forEach(function (tile) {
@@ -22885,7 +22879,6 @@
 	  showPlayerTiles: function showPlayerTiles(data) {
 	    var winner = parseInt(data.playerposition);
 	    var tiles = data.tiles[this.props.playerposition];
-	    console.log(winner, tiles);
 	    this.setState({ ourTurn: false, winner: winner, tiles: tiles });
 	  }
 	});

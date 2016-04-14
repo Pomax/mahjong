@@ -95,7 +95,6 @@ Game.prototype = {
   },
 
   ready: function(player) {
-    console.log("client for " + player.id + " is ready to play");
     this.readies++;
     player.socket.removeAllListeners("readygame");
     if(this.readies < this.players.length) return;

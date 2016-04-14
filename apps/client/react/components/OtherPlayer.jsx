@@ -119,7 +119,6 @@ var OtherPlayer = React.createClass({
   showPlayerTiles(data) {
     var winner = parseInt(data.playerposition);
     var tiles = data.tiles[this.props.playerposition];
-    console.log(winner, tiles);
     this.setState({ ourTurn: false, winner, tiles });
   }
 });

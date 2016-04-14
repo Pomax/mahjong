@@ -79,9 +79,9 @@ Player.prototype = {
   verify(digest, tiles, bonus, revealed) {
     var localDigest = this.getDigest();
     var passed = (digest === localDigest);
-    console.log("verifying",this.playerposition);
-    console.log("local tiles:", this.tiles.sort(), this.bonus.sort(), this.revealed.sort());
-    console.log("remote tiles:", tiles.sort(), bonus.sort(), revealed.sort());
+    //console.log("verifying",this.playerposition);
+    //console.log("local tiles:", this.tiles.sort(), this.bonus.sort(), this.revealed.sort());
+    //console.log("remote tiles:", tiles.sort(), bonus.sort(), revealed.sort());
     this.send("verification", { result: passed });
   },
 

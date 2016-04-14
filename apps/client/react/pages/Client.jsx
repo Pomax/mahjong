@@ -99,8 +99,6 @@ var Client = React.createClass({
   },
 
   readyGame(data) {
-    console.log(data);
-    console.log("switching UI from lobby to game mode");
     this.setState({ viewLobby: false, playerNames: data.players }, () => {
       this.state.socket.emit("readygame", data);
     });

@@ -118,8 +118,6 @@ Ruleset.prototype = {
       set.concealed = true;
     }
 
-    console.log(claimType, winType, set);
-
     if (claimType !== Constants.CONCEALED_KONG) {
       tiles.push(tile);
     }
@@ -138,8 +136,6 @@ Ruleset.prototype = {
     if (winType === Constants.PAIR)  { set = this.formSet(tile, 2); }
     if (winType  <= Constants.CHOW3) { set = this.formChow(tile, winType); }
     if (winType === Constants.PUNG)  { set = this.formSet(tile, 3); }
-
-    console.log(claimType, winType, set);
 
     tiles.push(tile);
     set.forEach(tile => {

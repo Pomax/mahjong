@@ -45,9 +45,7 @@ GameManager.prototype = {
   },
 
   manageConnection(socket) {
-    console.log("making connection with client");
     this.listenFor(socket);
-    console.log("emitting 'connected'");
     socket.emit('connected');
     this.notifyGameListUpdate();
   },
