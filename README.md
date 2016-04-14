@@ -6,7 +6,7 @@ And for those who think mahjong is a single-player tile matching game: it's not.
 
 ## Running things
 
-You'll need [Node.js](https://nodejs.org) to run this project, which at this point I kind of expect everyone has installed anyway. If not, install that first. You'll also need `git`, of course, but you're looking at a project on github so that part shouldn't have needed mention.
+You'll need a modern version of [Node.js](https://nodejs.org) to run this project (as this project uses ES6 in lots of places), which at this point I kind of expect everyone has installed anyway. If not, install that first. You'll also need `git`, of course, but you're looking at a project on github so that part shouldn't have needed mention.
 
 With Node.js installed, the simplest way to run things is to `git clone` this repo, run `npm install` in the `./mahjong` dir that makes (to get all the dependencies installed), and to then run `npm start` in the same dir to start up both the server (which runs from `./apps/server/server.js`) and run a live-compile for the client code (compiled using the webpack config in the base dir, with `./apps/client/react/App.jsx` as entry point).
 
@@ -26,6 +26,12 @@ I've seen socket.io completely ignore, or not ever get, socket data if too much 
 **status: close to alpha release**
 
 This is a work in progress, so there's plenty that doesn't work right now, hopefully I can take this line out of the README.md in the near future.
+
+## License?
+
+While this code is being developed, everything in this repository is "all rights reserved". You have permission to clone this repo to run the code, but you can't modify and then redistribute the code, and you most certainly aren't permitted to run the code and make that accessible to the world at large. 
+
+These restrictions will be greatly relaxed once the code gets closer to "releasable" state.
 
 ## Contributing
 
