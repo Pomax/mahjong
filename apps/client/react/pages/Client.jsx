@@ -59,29 +59,30 @@ var Client = React.createClass({
     if (this.state.viewLobby) {
       return <Lobby settings={this.state.settings} socket={socket} readyGame={this.readyGame}/>;
     }
-
-    var others = [0,1,2,3].map(pos => {
-      if (pos === this.state.playerposition) return null;
-      return <OtherPlayer ref={"player"+pos} name={this.state.playerNames[pos]} label={Player.windKanji[pos]} socket={socket} key={pos} playerposition={pos} />;
-    });
-
-    others.splice(
-      this.state.playerposition,
-      1,
-      <Player key="player" settings={this.state.settings} socket={socket} playerid={this.state.playerid} gameid={this.state.gameid} onNextHand={this.nextHand}/>
-    );
-
     return (
-      <div>
-        <div className="players">
-          { others }
-        </div>
+      <div className="client">
+        <div className="players">{ this.formPlayers(socket) }</div>
         <div className="handinfo">
           <Discards ref="discards" socket={socket}/>
           <Wall ref="wall" socket={socket} />
         </div>
       </div>
     );
+  },
+
+  formPlayers(socket) {
+    // generate generic player except for ourselves
+    var players = [0,1,2,3].map(pos => {
+      if (pos === this.state.playerposition) return null;
+      return <OtherPlayer ref={"player"+pos} name={this.state.playerNames[pos]} label={Player.windKanji[pos]} socket={socket} key={pos} playerposition={pos} />;
+    });
+    // and then insert "us" into that set based on our play position
+    players.splice(
+      this.state.playerposition,
+      1,
+      <Player key="player" settings={this.state.settings} socket={socket} playerid={this.state.playerid} gameid={this.state.gameid} onNextHand={this.nextHand}/>
+    );
+    return players;
   },
 
   nextHand() {

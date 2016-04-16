@@ -21,7 +21,7 @@ var plugins = [];
 if(process.argv.indexOf("--prod") === -1) {
   plugins.push(new webpack.HotModuleReplacementPlugin());
 } else if(process.argv.indexOf("--prod") > -1) {
-  //plugins.push(new webpack.optimize.UglifyJsPlugin());
+  plugins.push(new webpack.optimize.UglifyJsPlugin());
 }
 
 // And the final config that webpack will read in.

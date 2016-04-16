@@ -5,10 +5,11 @@
   "description": "A websocket-based client/server implementation for mahjong (real mahjong, not 'solitaire')",
   "main": "index.js",
   "scripts": {
+    "client:less": "less-watch-compiler apps/client/web/css/less apps/client/web/css",
     "client:build": "webpack --prod --progress --colors --watch",
     "client:dev": "webpack-dev-server --progress --colors --hot --inline --content-base public/",
     "server": "node apps/server/server.js",
-    "start": "npm-run-all --parallel client:build server"
+    "start": "npm-run-all --parallel client:less client:build server"
   },
   "author": "Pomax",
   "devDependencies": {
@@ -24,6 +25,8 @@
     "eslint-plugin-react": "^3.16.1",
     "express": "^4.13.4",
     "habitat": "^3.1.2",
+    "less": "^2.6.1",
+    "less-watch-compiler": "^1.2.3",
     "md5": "^2.1.0",
     "npm-run-all": "^1.7.0",
     "react": "^0.14.7",

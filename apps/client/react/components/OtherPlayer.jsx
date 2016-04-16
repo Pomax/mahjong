@@ -47,7 +47,7 @@ var OtherPlayer = React.createClass({
   },
 
   render() {
-    var className = classnames("otherplayer", {
+    var className = classnames("other player", {
       ourturn: this.state.ourTurn === true,
       winner: this.state.winner === this.props.playerposition
     });

@@ -1,0 +1,166 @@
+/**
+ * Client-specific code
+ */
+.client {
+  font-size: 3vw;
+  display: flex;
+  width: 100%;
+  height: 100%;
+  justify-content: space-between;
+  flex-direction: column;
+
+  @handinfo: 6em;
+
+  .players {
+    display: flex;
+    width: 100%;
+    height: calc(100% - @handinfo);
+    justify-content: space-between;
+    flex-direction: column;
+
+    .player:not(.other) {
+      border: 1px solid black;
+      border-width: 1px 0;
+      background: #449944;
+      color: white;
+
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      height: 7rem;
+      width: 100%;
+
+      .tile {
+        width: 1.7em;
+      }
+
+      &.winner { background: #ffe691; }
+      &.draw   { background: #ffe9e9; }
+
+     .kongs-and-scores {
+        position: absolute;
+        right: 6.5em;
+        bottom: 0.2em;
+      }
+
+      .score {
+        font-size: 80%;
+      }
+
+      .kongs button {
+        padding: 0px;
+        border: medium none;
+        margin: 0px 3px;
+        border-radius: 3px;
+      }
+
+      .tiles { display: flex; }
+      .open { display: flex; }
+    }
+
+    .player.other {
+      background: white;
+      color: black;
+
+      justify-content: center;
+
+      img { width: 4%; }
+      span + span { margin-left: 1em; }
+      .name { vertical-align: 14px; }
+
+      &.ourturn {
+        background-image: url(../images/waiting.gif);
+        background-position: right center;
+        background-repeat: no-repeat;
+      }
+
+      &.winner { background: #ffe691; }
+      & + .player.other { border-top: 1px solid black; }
+      &:last-child { border-bottom: 1px solid black; }
+    }
+  }
+
+  .tile {
+    border: 1px solid black;
+    border-radius: 2px;
+    margin: 1px;
+    background: white;
+
+    &.highlight {
+      border-bottom: 5px solid black;
+      margin-bottom: -3px;
+    }
+
+    &.owndiscard {
+      opacity: 0.5;
+    }
+  }
+
+
+  .discard {
+    position: absolute;
+    top: 0;
+    right: 0;
+    height: 100%;
+    width: 6em;
+
+    background: #449944;
+    padding: calc(58px / 2);
+    box-sizing: border-box;
+    background-size: 100% 100%;
+    border-left: 1px solid black;
+
+    &.east { background-image: url(../images/winds/east.png); }
+    &.south { background-image: url(../images/winds/south.png); }
+    &.west { background-image: url(../images/winds/west.png); }
+    &.north { background-image: url(../images/winds/north.png); }
+
+    .tile { width: 82%; }
+
+    &.menu {
+      padding: 0;
+
+      .winmenu {
+        background: blue;
+      }
+
+      button {
+        width: 100%;
+        height: calc(100% / 6);
+        font-size: 85%;
+        border: 1px solid grey;
+        & + button {
+          margin-top: 2px;
+        }
+        &.chow {
+          width: 33%;
+          display: inline-block;
+          padding: 0;
+          font-size: 70%;
+        }
+      }
+    }
+  }
+
+  .handinfo {
+    display: flex;
+    width: 100%;
+    height: @handinfo;
+    justify-content: space-between;
+    flex-direction: column;
+
+    background: rgb(217, 233, 222);
+
+    .wall {
+      margin: 0.5em;
+      height: @handinfo / 2;
+      img { width: 1%; }
+    }
+
+    .discards {
+      margin: 0.5em;
+      height: @handinfo / 2;
+      img { width: 4%; }
+    }
+  }
+}
