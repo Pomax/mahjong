@@ -40,7 +40,7 @@ var Client = React.createClass({
     };
   },
 
-  componentWillMount: function() {
+  componentWillMount() {
     this.state.socket.on('confirm', data => {
       var gameid = data.gameid;
       var handid = data.handid;
@@ -50,41 +50,38 @@ var Client = React.createClass({
     });
   },
 
+  componentWillUnmount() {
+    this.state.socket.disconnect();
+  },
+
   render() {
     var socket = this.state.socket;
-    if (this.state.viewLobby) { return this.renderLobby(socket); }
+    if (this.state.viewLobby) {
+      return <Lobby settings={this.state.settings} socket={socket} readyGame={this.readyGame}/>;
+    }
 
-    var others = (
-      <div>
-        <div>Waiting for other players to join the game...</div>
-      </div>
+    var others = [0,1,2,3].map(pos => {
+      if (pos === this.state.playerposition) return null;
+      return <OtherPlayer ref={"player"+pos} name={this.state.playerNames[pos]} label={Player.windKanji[pos]} socket={socket} key={pos} playerposition={pos} />;
+    });
+
+    others.splice(
+      this.state.playerposition,
+      1,
+      <Player key="player" settings={this.state.settings} socket={socket} playerid={this.state.playerid} gameid={this.state.gameid} onNextHand={this.nextHand}/>
     );
-    var handinfo = null;
 
-    if (this.state.playerposition>-1) {
-      others = [0,1,2,3].map(pos => {
-        if (pos === this.state.playerposition) return null;
-        return <OtherPlayer ref={"player"+pos} name={this.state.playerNames[pos]} label={Player.windKanji[pos]} socket={socket} key={pos} playerposition={pos} />;
-      });
-      handinfo = (
+    return (
+      <div>
+        <div className="players">
+          { others }
+        </div>
         <div className="handinfo">
           <Discards ref="discards" socket={socket}/>
           <Wall ref="wall" socket={socket} />
         </div>
-      );
-    }
-
-    return (
-      <div>
-        <Player settings={this.state.settings} socket={socket} playerid={this.state.playerid} gameid={this.state.gameid} onNextHand={this.nextHand}/>
-        <div className="others">{ others }</div>
-        { handinfo }
       </div>
     );
-  },
-
-  renderLobby(socket) {
-    return <Lobby settings={this.state.settings} socket={socket} readyGame={this.readyGame}/>;
   },
 
   nextHand() {

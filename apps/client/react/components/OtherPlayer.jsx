@@ -26,6 +26,7 @@ var OtherPlayer = React.createClass({
     socket.on("dealt", this.addTiles);
     socket.on("tile", this.otherPlayerTile);
     socket.on("drew", this.addTile);
+    socket.on("claimed", this.claimedTile);
     socket.on("compensated", this.addBonus);
     socket.on("discarded", this.removeTile);
     socket.on("revealed", this.revealedSet);
@@ -90,6 +91,12 @@ var OtherPlayer = React.createClass({
     this.setState({ tiles, ourTurn: true });
   },
 
+  claimedTile(data) {
+    if(this.ours(data)) {
+      this.setState({ ourTurn: true });
+    }
+  },
+
   addBonus(data) {
     if(!this.ours(data)) return;
     var bonus = this.state.bonus.concat(data.tiles);
@@ -100,7 +107,7 @@ var OtherPlayer = React.createClass({
     if(!this.ours(data)) return;
     var tiles = this.state.tiles;
     tiles.pop();
-    this.setState({ tiles });
+    this.setState({ tiles, ourTurn: false });
   },
 
   revealedSet(data) {

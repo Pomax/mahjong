@@ -19710,8 +19710,6 @@
 	      playerposition: -1
 	    };
 	  },
-
-
 	  componentWillMount: function componentWillMount() {
 	    var _this = this;
 
@@ -19723,53 +19721,39 @@
 	      _this.setState({ gameid: gameid, handid: handid, playerid: playerid, playerposition: playerposition });
 	    });
 	  },
-
+	  componentWillUnmount: function componentWillUnmount() {
+	    this.state.socket.disconnect();
+	  },
 	  render: function render() {
 	    var _this2 = this;
 
 	    var socket = this.state.socket;
 	    if (this.state.viewLobby) {
-	      return this.renderLobby(socket);
+	      return React.createElement(Lobby, { settings: this.state.settings, socket: socket, readyGame: this.readyGame });
 	    }
 
-	    var others = React.createElement(
-	      'div',
-	      null,
-	      React.createElement(
-	        'div',
-	        null,
-	        'Waiting for other players to join the game...'
-	      )
-	    );
-	    var handinfo = null;
+	    var others = [0, 1, 2, 3].map(function (pos) {
+	      if (pos === _this2.state.playerposition) return null;
+	      return React.createElement(OtherPlayer, { ref: "player" + pos, name: _this2.state.playerNames[pos], label: Player.windKanji[pos], socket: socket, key: pos, playerposition: pos });
+	    });
 
-	    if (this.state.playerposition > -1) {
-	      others = [0, 1, 2, 3].map(function (pos) {
-	        if (pos === _this2.state.playerposition) return null;
-	        return React.createElement(OtherPlayer, { ref: "player" + pos, name: _this2.state.playerNames[pos], label: Player.windKanji[pos], socket: socket, key: pos, playerposition: pos });
-	      });
-	      handinfo = React.createElement(
-	        'div',
-	        { className: 'handinfo' },
-	        React.createElement(Discards, { ref: 'discards', socket: socket }),
-	        React.createElement(Wall, { ref: 'wall', socket: socket })
-	      );
-	    }
+	    others.splice(this.state.playerposition, 1, React.createElement(Player, { key: 'player', settings: this.state.settings, socket: socket, playerid: this.state.playerid, gameid: this.state.gameid, onNextHand: this.nextHand }));
 
 	    return React.createElement(
 	      'div',
 	      null,
-	      React.createElement(Player, { settings: this.state.settings, socket: socket, playerid: this.state.playerid, gameid: this.state.gameid, onNextHand: this.nextHand }),
 	      React.createElement(
 	        'div',
-	        { className: 'others' },
+	        { className: 'players' },
 	        others
 	      ),
-	      handinfo
+	      React.createElement(
+	        'div',
+	        { className: 'handinfo' },
+	        React.createElement(Discards, { ref: 'discards', socket: socket }),
+	        React.createElement(Wall, { ref: 'wall', socket: socket })
+	      )
 	    );
-	  },
-	  renderLobby: function renderLobby(socket) {
-	    return React.createElement(Lobby, { settings: this.state.settings, socket: socket, readyGame: this.readyGame });
 	  },
 	  nextHand: function nextHand() {
 	    this.refs.discards.reset();
@@ -22772,6 +22756,7 @@
 	    socket.on("dealt", this.addTiles);
 	    socket.on("tile", this.otherPlayerTile);
 	    socket.on("drew", this.addTile);
+	    socket.on("claimed", this.claimedTile);
 	    socket.on("compensated", this.addBonus);
 	    socket.on("discarded", this.removeTile);
 	    socket.on("revealed", this.revealedSet);
@@ -22853,6 +22838,11 @@
 	    tiles.push('concealed');
 	    this.setState({ tiles: tiles, ourTurn: true });
 	  },
+	  claimedTile: function claimedTile(data) {
+	    if (this.ours(data)) {
+	      this.setState({ ourTurn: true });
+	    }
+	  },
 	  addBonus: function addBonus(data) {
 	    if (!this.ours(data)) return;
 	    var bonus = this.state.bonus.concat(data.tiles);
@@ -22862,7 +22852,7 @@
 	    if (!this.ours(data)) return;
 	    var tiles = this.state.tiles;
 	    tiles.pop();
-	    this.setState({ tiles: tiles });
+	    this.setState({ tiles: tiles, ourTurn: false });
 	  },
 	  revealedSet: function revealedSet(data) {
 	    if (!this.ours(data)) return;

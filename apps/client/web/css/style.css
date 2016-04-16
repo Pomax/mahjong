@@ -57,9 +57,7 @@ p + p {
   border-radius: 3px;
 }
 
-.player .score {
-
-}
+.player .score {}
 
 .player .tiles { display: block; min-height: 58px; }
 .player .open { display: block; min-height: 58px; }
@@ -135,10 +133,37 @@ p + p {
 .discards { margin: 0.5em; }
 .discards img { width: 4%; }
 
-.others { margin: 0.5em; }
-.others img { width: 4%; }
-.others span + span { margin-left: 1em; }
-.others .name { vertical-align: 14px; }
+.players .otherplayer { margin: 1px; border: 1px solid transparent; padding: 5px; }
+.players .otherplayer img { width: 4%; }
+.players .otherplayer span + span { margin-left: 1em; }
+.players .otherplayer .name { vertical-align: 14px; }
+
+.players .otherplayer.ourturn {
+  background-image: url(../images/waiting.gif);
+  background-position: right center;
+  background-repeat: no-repeat;
+}
+
+.players .otherplayer.winner { background: #ffe691; }
+.players .otherplayer + .otherplayer { border-top: 1px solid black; }
+.players .otherplayer:last-child { border-bottom: 1px solid black; }
+
+.player { background: #449944; color: white; }
+.player.winner { background: #ffe691; }
+.player.draw   { background: #ffe9e9; }
+
+.handinfo {
+  position: absolute;
+  bottom: 0px;
+  background: rgb(217, 233, 222);
+  border-top: 1px solid black;
+}
+
+
+/**
+ * GAME LOBBY STYLING
+ */
+
 
 .lobby .games:before {
   color: black;
@@ -223,19 +248,4 @@ p + p {
   padding: 1em;
   display: inline-block;
   min-width: 40em;
-}
-
-.player.active { background: #449944; color: white; }
-.player.winner { background: #ffe691; }
-.player.draw   { background: #ffe9e9; }
-
-.otherplayer { margin: 1px; border: 1px solid transparent; padding: 5px; }
-.otherplayer.ourturn { margin: 1px; border: 1px solid darkolivegreen; }
-.otherplayer.winner { background: #ffe691; }
-
-.handinfo {
-  position: absolute;
-  bottom: 0px;
-  background: rgb(217, 233, 222);
-  border-top: 1px solid black;
 }

@@ -136,9 +136,6 @@ Hand.prototype = {
    * ...
    */
   startPlay: function() {
-    this.ready++;
-    if (this.ready<this.players.length) return;
-
     this.log("starting wall:", this.wall.tiles.slice(0).join(','));
     this.players.forEach((player, playerposition) => {
       // deal a player their initial tiles
