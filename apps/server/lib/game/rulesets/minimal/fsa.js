@@ -1,7 +1,7 @@
 var logger = require('../../../logger');
 var Constants = require('../../../constants');
 var Tiles = require('../../tiles');
-var Tree = require('../../../trees');
+var Tree = require('../../../../../lib/trees');
 
 var debug = false;
 

@@ -550,7 +550,7 @@ var Player = React.createClass({
     if (this.state.mode === Player.OWN_TURN) {
       var win = confirm("Would you like to declare a win?");
       if (win) {
-        win = confirm("Are you sure? You may be penalized for a bad declaration");
+        win = confirm("Are you sure? You may be penalized for an invalid declaration...");
         if (win) {
           this.send("declare:win");
         }

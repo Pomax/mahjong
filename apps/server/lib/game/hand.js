@@ -192,9 +192,9 @@ Hand.prototype = {
       player.discarded(playerposition,tile);
     });
 
-    // We will wait 3 seconds for all claims to come in.
-    // If none do, we continue the round.
+    // We will wait all claims to come in. If none do, we continue the round.
     var timeout = this.hand_timeout || Constants.HAND_TIMEOUT;
+    this.claims = [];
     this.roundTimeout = setTimeout(this.next.bind(this, tile), timeout);
   },
 
@@ -202,82 +202,106 @@ Hand.prototype = {
    * ...
    */
   next: function(discardTile) {
-    this.players.forEach(player => player.unclaimed(discardTile));
-    var oldplayer = this.currentPlayer;
-    this.currentPlayer = (oldplayer + 1) % this.players.length;
-    this.log("active player:",oldplayer,"=>",this.currentPlayer);
-    this.deal();
+    if (this.claims.length === 0) {
+      this.players.forEach(player => player.unclaimed(discardTile));
+      var oldplayer = this.currentPlayer;
+      this.currentPlayer = (oldplayer + 1) % this.players.length;
+      this.log("active player:",oldplayer,"=>",this.currentPlayer);
+      this.deal();
+    }
+
+    // claims pending
+    else { this.processClaims(discardTile); }
   },
 
   /**
    * ...
    */
   handleClaim: function(playerid, playerposition, tile, claimType, winType) {
-    // if someone lays claim, we stop our next-player's-turn timeout
-    clearTimeout(this.roundTimeout);
-    this.roundTimeout = false;
+    var player = this.players[playerposition];
+    var canClaim = this.ruleset.canClaim(player, tile, claimType, winType);
+    if (!canClaim) {
+      player.declineClaim(tile, claimType);
+    }
+    this.claims.push({ player, tile, claimType, winType, canClaim });
+    if (this.claims.length === 3) {
+      clearTimeout(this.roundTimeout);
+      this.roundTimeout = false;
+      this.processClaims();
+    }
+  },
 
-    // who's claiming this discard, and for what?
+  /**
+   * ...
+   */
+  processClaims: function(discardTile) {
+    // copy and reset the claims array, to prevent infinite recursion when we hit next() later.
+    var claims = this.claims.filter(e => e.canClaim);
+    this.claims = [];
+    claims.sort((a,b) => b.claimType - a.claimType);
+    // it's possible that everyone submitted a nonsense claim, so despite
+    // having three claims, none of them are worth bothering with:
+    if (claims.length === 0) {
+      return this.next(discardTile);
+    }
+    // at least 1 person has a good claim, so award the claim and go into claim processing
+    var best = claims.splice(0,1)[0];
+    this.awardClaim(best.player.id, best.player.playerposition, best.tile, best.claimType, best.winType);
+  },
+
+  /**
+   * ...
+   */
+  awardClaim: function(playerid, playerposition, tile, claimType, winType) {
     var players = this.players;
     var player = players[playerposition];
 
-    // is this a legal claim?
-    this.log(playerposition,"("+playerid+"/"+player.id+")","claims discard as", claimType);
+    this.log("player",playerposition,"can claim",tile,"as",claimType,"(wintype:"+winType+")");
 
-    // FIXME: TODO: actually wait for all claims to come in before awarding a claim.
-    if (this.ruleset.canClaim(player, tile, claimType, winType)) {
-      this.log("player",playerposition,"can claim",tile,"as",claimType,"(wintype:"+winType+")");
+    // if this was a winning claim, the hand is over.
+    if (claimType === Constants.WIN) {
+      this.log("player",playerposition,"("+player.id+")","has won.");
+      player.awardWinningClaim(this.ruleset, tile, claimType, winType);
 
-      // if this was a winning claim, the hand is over.
-      if (claimType === Constants.WIN) {
-        this.log("player",playerposition,"("+player.id+")","has won.");
-        player.awardWinningClaim(this.ruleset, tile, claimType, winType);
-
-        this.log("notifying players of win");
-        players.forEach((player, idx) => {
-          if (idx!==playerposition) {
-            player.claimOccurred(playerposition, tile, winType);
-          }
-        });
-
-        this.log("end of hand.");
-        players.forEach((player, idx) => {
-          player.winOccurred(playerposition, tile, winType, this.players);
-        });
-
-        // compute scores
-        this.ruleset.score(players, this.windoftheround).forEach((balance, pid) => {
-          this.players[pid].adjustBalance(balance);
-        });
-
-        // and now we wait (well, not really) for "restartready" events from players
-        this.restartready = 0;
-      }
-
-      // if it wasn't, the claim is let through and play continues
-      else {
-        player.acceptClaim(this.ruleset, tile, claimType, winType);
-
-        // if this was a kong, player needs a compesation tile.
-        if(claimType === Constants.KONG) {
-          var tile = this.wall.drawSupplement();
-          player.getKongCompensation(tile);
+      this.log("notifying players of win");
+      players.forEach((player, idx) => {
+        if (idx!==playerposition) {
+          player.claimOccurred(playerposition, tile, winType);
         }
+      });
 
-        // notify other players of claim
-        this.players.forEach((player, idx) => {
-          if (idx===playerposition) return;
-          player.claimOccurred(playerposition, tile, claimType);
-        })
+      this.log("end of hand.");
+      players.forEach((player, idx) => {
+        player.winOccurred(playerposition, tile, winType, this.players);
+      });
 
-        // mark claiming player the active player
-        this.currentPlayer = playerposition;
+      // compute scores
+      this.ruleset.score(players, this.windoftheround).forEach((balance, pid) => {
+        this.players[pid].adjustBalance(balance);
+      });
+
+      // and now we wait (well, not really) for "restartready" events from players
+      this.restartready = 0;
+    }
+
+    // if it wasn't, the claim is let through and play continues
+    else {
+      player.acceptClaim(this.ruleset, tile, claimType, winType);
+
+      // if this was a kong, player needs a compesation tile.
+      if(claimType === Constants.KONG) {
+        var tile = this.wall.drawSupplement();
+        player.getKongCompensation(tile);
       }
 
-    } else {
-      // decline the claim and advance the game.
-      player.declineClaim(tile, claimType);
-      this.next(tile);
+      // notify other players of claim
+      this.players.forEach((player, idx) => {
+        if (idx===playerposition) return;
+        player.claimOccurred(playerposition, tile, claimType);
+      })
+
+      // mark claiming player the active player
+      this.currentPlayer = playerposition;
     }
   },
 
