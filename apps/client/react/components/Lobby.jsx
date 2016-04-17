@@ -86,10 +86,12 @@ var Lobby = React.createClass({
                   <div className="rules">rules: {game.ruleset}</div>
                   <div className="count">players: {game.players.length} ({ game.players.join(', ') })</div>
                   {
-                    joined ?
+                    game.players.length < 4 ? joined ?
                     <button onClick={this.leaveGame}>LEAVE</button>
                     :
                     <button onClick={evt => this.joinGame(gameid)}>JOIN</button>
+                    :
+                    <button>This game has started already</button>
                   }
                 </div>
               );
