@@ -1,7 +1,9 @@
-var logger = require('../../../logger');
-var Constants = require('../../../constants');
+var logger = require('../../../../../../lib/logger');
+var Constants = require('../../../../../../lib/constants');
 var Tiles = require('../../tiles');
 var FSA = require('./fsa');
+var AI = require('./ai');
+
 var scoreplayers = require('./scoring');
 
 var Ruleset = function() {
@@ -11,6 +13,8 @@ var Ruleset = function() {
 Ruleset.prototype = {
 
   END_HAND_ON_ILLEGAL_WIN: true,
+
+  getAI: function() { return AI; },
 
   resolveIllegalWin: function(players, player) {
     return scoreplayers.processIllegalWin(players, player);

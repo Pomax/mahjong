@@ -1,4 +1,4 @@
-var Constants = require('../../../constants');
+var Constants = require('../../../../../../lib/constants');
 var Tiles = require('../../tiles');
 var FSA = require('./fsa');
 

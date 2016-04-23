@@ -1,7 +1,7 @@
 var md5 = require('md5');
 
-var logger = require('../logger');
-var Constants = require('../constants');
+var logger = require('../../../../lib/logger');
+var Constants = require('../../../../lib/constants');
 var Listener = require('./protocol/listener');
 var Emitter = require('./protocol/emitter');
 

@@ -1,5 +1,5 @@
-var uid = require('../uid');
-var logger = require('../logger');
+var uid = require('../../../../lib/uid');
+var logger = require('../../../../lib/logger');
 
 var Listener = require('./protocol/listener');
 var Emitter = require('./protocol/emitter');
@@ -56,6 +56,7 @@ GameManager.prototype = {
     // player actions outside of playing games
     socket.on('newgame', data => this.makeNewGame(socket, data));
     socket.on('joingame', data => this.joinPlayerToGame(socket, data));
+    socket.on('addbot', data => this.joinBotToGame(data));
     socket.on('leavegame', data => this.removePlayerFromGame(socket, data));
     // always good to handle:
     socket.on('disconnect', data => this.disconnectPlayer(socket, data));
@@ -81,6 +82,16 @@ GameManager.prototype = {
     var game = this.getGame(gameid);
     game.addPlayer(playerid, playername, socket);
     socket.emit("joinedgame", { gameid, playerid });
+    this.notifyGameListUpdate();
+    // Should we start this game?
+    if (game.players.length === 4) { game.readyGame(); }
+  },
+
+  joinBotToGame(data) {
+    var botid = this.nextPlayerId();
+    var gameid = data.gameid;
+    var game = this.getGame(gameid);
+    game.addBot(botid);
     this.notifyGameListUpdate();
     // Should we start this game?
     if (game.players.length === 4) { game.readyGame(); }

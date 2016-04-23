@@ -1,5 +1,5 @@
-var logger = require('../logger');
-var Constants = require('../constants');
+var logger = require('../../../../lib/logger');
+var Constants = require('../../../../lib/constants');
 
 var Listener = require('./protocol/listener');
 var Emitter = require('./protocol/emitter');
@@ -25,6 +25,17 @@ Game.prototype = {
     this.players.forEach(player => player.reset());
     this.players = [];
     this.hands = [];
+  },
+
+  addBot: function(botid) {
+    // set up a new player for this client.
+    var gameid = this.id;
+    var playerposition = this.players.length;
+    var AI = this.ruleset.getAI();
+    var player = new AI(this, botid);
+    player.isBot = true;
+    this.players.push(player);
+    this.log("added bot " + botid);
   },
 
   addPlayer: function(playerid, playername, socket) {
@@ -85,6 +96,10 @@ Game.prototype = {
     this.hands.push(hand);
     this.readies = 0;
     this.players.forEach(player => {
+      if (player.isBot) {
+        // bots are automatically ready to play
+        return this.ready(player);
+      }
       player.socket.emit("readygame", {
         gameid: this.id,
         playerid: player.id,
@@ -96,7 +111,9 @@ Game.prototype = {
 
   ready: function(player) {
     this.readies++;
-    player.socket.removeAllListeners("readygame");
+    if (!player.isBot) {
+      player.socket.removeAllListeners("readygame");
+    }
     if(this.readies < this.players.length) return;
     this.startGame();
   },

@@ -93,6 +93,10 @@ var Lobby = React.createClass({
                     :
                     <button>This game has started already</button>
                   }
+                  {
+                    (game.players[0] === this.state.playername) ?
+                    <button onClick={evt => this.addBot(gameid)}>add bot</button> : null
+                  }
                 </div>
               );
             })
@@ -127,7 +131,6 @@ var Lobby = React.createClass({
     this.setState({ ruleset: evt.target.value });
   },
 
-
   // player wants to make a new game
   newGame() {
     var playername = this.props.settings.name || false;
@@ -148,6 +151,13 @@ var Lobby = React.createClass({
       playername: this.props.settings.name
     });
     // leads to the server sending "joinedgame"
+  },
+
+  // add a bot to this game
+  addBot(gameid) {
+    this.props.socket.emit("addbot", {
+      gameid
+    });
   },
 
   // player wants to leave a game that they joined,

@@ -1,5 +1,5 @@
-var logger = require('../logger');
-var Constants = require('../constants');
+var logger = require('../../../../lib/logger');
+var Constants = require('../../../../lib/constants');
 var Tiles = require('./tiles');
 
 var Wall = function () {

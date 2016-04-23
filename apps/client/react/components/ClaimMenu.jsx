@@ -1,5 +1,5 @@
 var React = require('react');
-var Constants = require('../../../server/lib/constants');
+var Constants = require('../../../../lib/constants');
 
 var ClaimMenu = React.createClass({
 

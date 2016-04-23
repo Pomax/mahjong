@@ -1,5 +1,5 @@
-var logger = require('../logger');
-var Constants = require('../constants');
+var logger = require('../../../../lib/logger');
+var Constants = require('../../../../lib/constants');
 var Listener = require('./protocol/listener');
 var Player = require('./player');
 var Wall = require('./wall');
@@ -31,7 +31,7 @@ Hand.prototype = {
   /**
    * Called by players (via socket) to signal they are ready to play the next hand.
    */
-  handleRestartReady: function() {
+  handleRestartReady() {
     this.log("received a restartready");
     this.restartready++;
     // we want to wait to make sure players are ready before we begin the next hand.
@@ -42,7 +42,7 @@ Hand.prototype = {
   /**
    * called after a hand is won, or drawn.
    */
-  startNewHand: function(won) {
+  startNewHand(won) {
     this.log("starting next hand");
 
     // do we need to rotate the players?
@@ -77,7 +77,7 @@ Hand.prototype = {
   /**
    * ...
    */
-  start: function() {
+  start() {
     this.log("turn",this.turn,"start");
     this.ready = 0;
     this.players.forEach((player, playerposition) => {
@@ -90,7 +90,7 @@ Hand.prototype = {
   /**
    * ...
    */
-  initialSetup: function(player, playerposition) {
+  initialSetup(player, playerposition) {
     // set up protocol listener and emitter, with known security values
     var gameid = this.game.id;
     var handid = this.id;
@@ -99,33 +99,35 @@ Hand.prototype = {
     var securities = { gameid, handid, playerid, playerposition };
 
     // set up the protocol listener and emitter for this player
-    if (Object.keys(this.listeners).length < this.players.length) {
-      this.log("setting up socket listeners for player",playerposition);
+    if (!player.isBot) {
+      if (Object.keys(this.listeners).length < this.players.length) {
+        this.log("setting up socket listeners for player",playerposition);
 
-      this.mustMatch = Object.keys(securities);
-      var listener = new Listener(player.socket, securities);
-      this.listeners[playerid] = listener;
+        this.mustMatch = Object.keys(securities);
+        var listener = new Listener(player.socket, securities);
+        this.listeners[playerid] = listener;
 
-      // set up protocol handling for actions taken by players while playing a hand.
-      listener.discard(this);
-      listener.claim(this);
-      listener.compensate(this);
-      listener.reveal(this);
-      listener.verify(this);
-      listener.confirm(this);
-      listener.restartready(this);
-      listener.kongDeclaration(this);
-      listener.winDeclaration(this);
+        // set up protocol handling for actions taken by players while playing a hand.
+        listener.discard(this);
+        listener.claim(this);
+        listener.compensate(this);
+        listener.reveal(this);
+        listener.verify(this);
+        listener.confirm(this);
+        listener.restartready(this);
+        listener.kongDeclaration(this);
+        listener.winDeclaration(this);
 
-    } else {
-      this.listeners[playerid].updateSecurities(securities);
+      } else {
+        this.listeners[playerid].updateSecurities(securities);
+      }
     }
 
     var state = {gameid, handid, playerid, playerposition};
     player.bindHand(this, state);
   },
 
-  handleConfirmed: function(playerposition) {
+  handleConfirmed(playerposition) {
     this.ready++;
     this.log(playerposition,"confirmed, ",this.ready,"players ready");
     if (this.ready<this.players.length) return;
@@ -135,7 +137,7 @@ Hand.prototype = {
   /**
    * ...
    */
-  startPlay: function() {
+  startPlay() {
     this.log("starting wall:", this.wall.tiles.slice(0).join(','));
     this.players.forEach((player, playerposition) => {
       // deal a player their initial tiles
@@ -157,7 +159,7 @@ Hand.prototype = {
   /**
    * ...
    */
-  deal: function() {
+  deal() {
     var tile = this.wall.draw();
     if (tile === Constants.NOTILE) {
       this.log("hand was a draw");
@@ -168,14 +170,17 @@ Hand.prototype = {
     }
 
     var cpos = this.currentPlayer;
+    var player = this.players[cpos];
+
     this.log("dealing",tile,"to",cpos);
     this.log("tiles left in the wall:", this.wall.playlength());
-    this.players[cpos].deal(tile);
+    player.deal(tile);
     this.players.forEach((player,pos) => {
       if (pos===cpos) return;
       this.log("notifying",pos,"a tile was dealt");
       player.drew(cpos);
     });
+    if (player.isBot) { player.doDiscard(); }
 
     this.log("player",cpos,"tiles:",this.players[cpos].tiles.sort());
   },
@@ -183,7 +188,9 @@ Hand.prototype = {
   /**
    * ...
    */
-  handleDiscard: function(playerposition, tile) {
+  handleDiscard(playerposition, tile) {
+    this.claims = [];
+
     // FIXME: TODO: give the player a grace period to take back the discard.
     //              Because we're all human here. Unless it's an AI. Then: too bad.
     this.log("player",playerposition,"discarded",tile);
@@ -194,14 +201,13 @@ Hand.prototype = {
 
     // We will wait all claims to come in. If none do, we continue the round.
     var timeout = this.hand_timeout || Constants.HAND_TIMEOUT;
-    this.claims = [];
     this.roundTimeout = setTimeout(this.next.bind(this, tile), timeout);
   },
 
   /**
    * ...
    */
-  next: function(discardTile) {
+  next(discardTile) {
     if (this.claims.length === 0) {
       this.players.forEach(player => player.unclaimed(discardTile));
       var oldplayer = this.currentPlayer;
@@ -211,30 +217,34 @@ Hand.prototype = {
     }
 
     // claims pending
-    else { this.processClaims(discardTile); }
-  },
-
-  /**
-   * ...
-   */
-  handleClaim: function(playerid, playerposition, tile, claimType, winType) {
-    var player = this.players[playerposition];
-    var canClaim = this.ruleset.canClaim(player, tile, claimType, winType);
-    if (!canClaim) {
-      player.declineClaim(tile, claimType);
-    }
-    this.claims.push({ player, tile, claimType, winType, canClaim });
-    if (this.claims.length === 3) {
+    else {
       clearTimeout(this.roundTimeout);
       this.roundTimeout = false;
-      this.processClaims();
+      this.processClaims(discardTile);
     }
   },
 
   /**
    * ...
    */
-  processClaims: function(discardTile) {
+  handleClaim(playerid, playerposition, tile, claimType, winType) {
+    var player = this.players[playerposition];
+    var canClaim = false;
+    if (claimType === Constants.NOTILE) {
+      player.declineClaim(tile, claimType);
+    } else {
+      canClaim = this.ruleset.canClaim(player, tile, claimType, winType);
+      if (!canClaim) {
+        player.declineClaim(tile, claimType);
+      }
+    }
+    this.claims.push({ player, tile, claimType, winType, canClaim });
+  },
+
+  /**
+   * ...
+   */
+  processClaims(discardTile) {
     // copy and reset the claims array, to prevent infinite recursion when we hit next() later.
     var claims = this.claims.filter(e => e.canClaim);
     this.claims = [];
@@ -252,7 +262,7 @@ Hand.prototype = {
   /**
    * ...
    */
-  awardClaim: function(playerid, playerposition, tile, claimType, winType) {
+  awardClaim(playerid, playerposition, tile, claimType, winType) {
     var players = this.players;
     var player = players[playerposition];
 
@@ -308,7 +318,7 @@ Hand.prototype = {
   /**
    * ...
    */
-  handleCompensate: function(playerid, playerposition, tiles) {
+  handleCompensate(playerid, playerposition, tiles) {
     // FIXME: TODO: this should probably be handled in the player object?
     var fair = true;
     for(var i=0; i<tiles.length; i++) {
@@ -338,7 +348,7 @@ Hand.prototype = {
   /**
    * ...
    */
-  handleReveal: function(playerposition, set, concealed) {
+  handleReveal(playerposition, set, concealed) {
     this.players.forEach((p, pos) => {
       if (pos === playerposition) return;
       p.revealedSet(playerposition, set, concealed);
@@ -348,14 +358,14 @@ Hand.prototype = {
   /**
    * ...
    */
-  handleVerify: function(playerposition, digest, tiles, bonus, revealed) {
+  handleVerify(playerposition, digest, tiles, bonus, revealed) {
     this.players[playerposition].verify(digest, tiles, bonus, revealed);
   },
 
   /**
    * A player wants to declare a kong in hand.
    */
-  handleKongDeclaration: function(playerposition, tile) {
+  handleKongDeclaration(playerposition, tile) {
     var player = this.players[playerposition];
     if (player.hasKong(tile)) {
       var compensation = this.wall.drawSupplement();
@@ -368,7 +378,7 @@ Hand.prototype = {
   /**
    * A player wants to verify that they can win with their current hand.
    */
-  handleWinDeclaration: function(playerposition) {
+  handleWinDeclaration(playerposition) {
     var players = this.players,
         player = players[playerposition];
 

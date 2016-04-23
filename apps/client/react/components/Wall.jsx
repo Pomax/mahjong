@@ -1,6 +1,6 @@
 var React = require('react');
 var Tile = require('../components/Tile.jsx');
-var Constants = require('../../../server/lib/constants');
+var Constants = require('../../../../lib/constants');
 
 var Wall = React.createClass({
 

@@ -1,7 +1,7 @@
 var React = require('react');
 var Tile = require('../components/Tile.jsx');
 var Tiles = require('../../../server/lib/game/tiles');
-var Constants = require('../../../server/lib/constants');
+var Constants = require('../../../../lib/constants');
 
 var Discards = React.createClass({
 
