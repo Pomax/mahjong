@@ -1,7 +1,7 @@
 var React = require('react');
 var Tile = require('../components/Tile.jsx');
-var Tiles = require('../../../server/lib/game/tiles');
-var Constants = require('../../../../lib/constants');
+var Tiles = require('../../../../lib/game/tiles');
+var Constants = require('../../../../lib/game/constants');
 
 var Discards = React.createClass({
 
@@ -32,7 +32,7 @@ var Discards = React.createClass({
   },
 
   render() {
-    return <div className="discards">{ this.formTiles() }</div>;
+    return <div className="discards row">{ this.formTiles() }</div>;
   }
 
 });

@@ -1,13 +1,5 @@
-var Player = require('../react/components/Player.jsx');
-
-/**
- * This object formalises the socket API for a player,
- * where messages sent to it over a socket by the game
- * server get turned into UI behaviour by the Player.jsx
- * class.
- */
 module.exports = {
-  bind: function(socket, player) {
+  bind: function(socket, player, onSocketBound) {
 
     /**
      * Received from the server upon joining a game.
@@ -16,7 +8,7 @@ module.exports = {
       var gameid = data.gameid;
       var playerposition = data.playerposition;
       player.log("joined game", gameid,"with position",playerposition);
-      player.setState({ gameid });
+      player.joinedGame(gameid);
     });
 
     /**
@@ -85,8 +77,8 @@ module.exports = {
      * player drew a tile and is now deciding what to do.
      */
     socket.on('drew', data => {
-      player.log("player", data.player, "received tile");
-      player.setState({ discard: false, mode: Player.OUT_OF_TURN});
+      player.log("player", data.playerposition, "received tile");
+      player.otherPlayerDrew();
     });
 
     /**
@@ -96,7 +88,7 @@ module.exports = {
       var tile = data.tile;
       var pos = data.playerposition;
       player.log("saw discard of tile", tile,"by player",pos);
-      player.setState({ discard: tile, discardPlayer: pos });
+      player.otherPlayerDiscarded(tile, pos);
     });
 
     /**
@@ -120,9 +112,10 @@ module.exports = {
      * Received from the server when another player claims a discard.
      */
     socket.on('claimed', data => {
-      player.setState({
-        discard: false
-      });
+      var pos = data.playerposition;
+      var tile = data.tile;
+      var claimType = data.claimType;
+      player.otherPlayerClaimed(pos, tile, claimType);
     });
 
     /**
@@ -193,5 +186,7 @@ module.exports = {
       console.log("player claimed win, but could not win.");
     });
 
+    // signal done, if necessary
+    if (onSocketBound) { onSocketBound(); }
   }
 };

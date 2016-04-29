@@ -3,7 +3,8 @@ var fs = require('fs');
 var path = require('path');
 var express = require('express');
 var app = express();
-var gameManager = require('./lib/game/game-manager');
+
+var gameManager = require('../../lib/game/game-manager');
 var habitat = require('habitat');
 habitat.load(path.join(__dirname, "..", "..", ".env"));
 
@@ -38,5 +39,5 @@ var server = app.listen(PORT, () => {
 
 // set up socket.io protocol
 require('socket.io').listen(server).on('connection', function (socket) {
-  gameManager.manageConnection(socket);
+  gameManager.manageConnection(HOST, socket);
 });

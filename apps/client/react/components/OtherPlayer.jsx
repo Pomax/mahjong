@@ -1,7 +1,7 @@
 var React = require('react');
 var Tile = require('../components/Tile.jsx');
-var Tiles = require('../../../server/lib/game/tiles');
-var Constants = require('../../../../lib/constants');
+var Tiles = require('../../../../lib/game/tiles');
+var Constants = require('../../../../lib/game/constants');
 var classnames = require('classnames');
 
 var OtherPlayer = React.createClass({
@@ -47,7 +47,7 @@ var OtherPlayer = React.createClass({
   },
 
   render() {
-    var className = classnames("other player", {
+    var className = classnames("row", "other player", {
       ourturn: this.state.ourTurn === true,
       winner: this.state.winner === this.props.playerposition
     });

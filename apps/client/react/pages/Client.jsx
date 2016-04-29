@@ -61,11 +61,9 @@ var Client = React.createClass({
     }
     return (
       <div className="client">
-        <div className="players">{ this.formPlayers(socket) }</div>
-        <div className="handinfo">
-          <Discards ref="discards" socket={socket}/>
-          <Wall ref="wall" socket={socket} />
-        </div>
+        { this.formPlayers(socket) }
+        <Discards ref="discards" socket={socket}/>
+        <Wall ref="wall" socket={socket} />
       </div>
     );
   },
@@ -80,7 +78,7 @@ var Client = React.createClass({
     players.splice(
       this.state.playerposition,
       1,
-      <Player key="player" settings={this.state.settings} socket={socket} playerid={this.state.playerid} gameid={this.state.gameid} onNextHand={this.nextHand}/>
+      <Player key="player" settings={this.state.settings} socket={socket} playerid={this.state.playerid} gameid={this.state.gameid} ruleset={this.state.ruleset} onNextHand={this.nextHand}/>
     );
     return players;
   },
@@ -96,8 +94,8 @@ var Client = React.createClass({
     }
   },
 
-  readyGame(data) {
-    this.setState({ viewLobby: false, playerNames: data.players }, () => {
+  readyGame(data, ruleset) {
+    this.setState({ viewLobby: false, playerNames: data.players, ruleset }, () => {
       this.state.socket.emit("readygame", data);
     });
   }

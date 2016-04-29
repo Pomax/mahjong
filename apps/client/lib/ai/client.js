@@ -1,34 +1,18 @@
-/**
- * TODO:
- *
- * - allow the user to claim that they have won
- * - allow a user to declare a self-drawn kong
- *
- */
-
-var React = require('react');
-var classnames = require('classnames');
+var io = require('socket.io-client');
 var md5 = require('md5');
 
-var Constants = require('../../../../lib/game/constants');
-var rulesets = require('../../../../lib/game/rulesets');
+var PlayConstants = require('../../lib/constants');
+var logger = require('../../../../lib/logger');
 var Tiles = require('../../../../lib/game/tiles');
-
+var Constants = require('../../../../lib/game/constants');
 var socketbindings = require('../../lib/socketbindings');
-
-var Tile = require('../components/Tile.jsx');
-var ClaimMenu = require('../components/ClaimMenu.jsx');
-var Overlay = require('../components/Overlay.jsx');
-
-// the static properties we want the Player class to have.
-var statics = require('../../lib/constants');
 
 // The base state of a player when a hand is played.
 var baseState = {
   // game data
   gameid: -1,
   playerposition: -1,
-  mode: statics.OUT_OF_TURN,
+  mode: PlayConstants.OUT_OF_TURN,
   balance: '',
   // hand information
   dealtTile: -1,
@@ -45,8 +29,51 @@ var baseState = {
   winType: false
 };
 
-var Player = React.createClass({
-  statics: statics,
+var AIPlayer = function(botNameID, server, gameid, AI) {
+  var botName = "AI player " + botNameID;
+  this.log = logger(botName);
+  this.log("start up bot");
+
+  this.log("bootstrapping AI player state");
+  this.state = {};
+
+  var state = Object.assign({
+    socket: io.connect(server),
+    gameid: gameid,
+    handid: -1,
+    playerid: -1,
+    playername: botName,
+    score: 0
+  }, baseState);
+
+  this.setState(state, () => {
+    this.log("state bound, binding socket for listening");
+    socketbindings.bind(this.state.socket, this, () => {
+      // Make sure we can respond to the "ready for game" call,
+      // which is normally handled through the client/lobby,
+      // which AI players (obviously) do not participate in.
+      this.state.socket.on("readygame", data => {
+        this.log("readygame received, acknowledging...");
+        this.state.socket.emit("readygame", data);
+      });
+      // And then join the game we were built to join.
+      this.log("joining game",gameid);
+      this.joinGame(gameid);
+    });
+
+    this.log("bootstrapping ruleset-specific AI backing");
+    this.ai = new AI(this);
+  });
+};
+
+AIPlayer.prototype = {
+  setState(props, finishedSettingState) {
+    Object.keys(props).forEach(key => this.state[key] = props[key]);
+    if (finishedSettingState) {
+      finishedSettingState = finishedSettingState.bind(this);
+      setTimeout(finishedSettingState, 1);
+    }
+  },
 
   log() {
     var msg = Array.from(arguments).join(' ');
@@ -62,25 +89,15 @@ var Player = React.createClass({
     this.state.socket.emit(evt, payload);
   },
 
-  getInitialState() {
-    return Object.assign({
-      socket: this.props.socket,
-      // game data
-      gameid: -1,
-      handid: -1,
-      playerid: -1,
-      ruleset: this.props.ruleset,
-      score: 0
-    }, baseState);
-  },
-
   resetState(done) {
     this.setState(baseState, done);
   },
 
-  componentDidMount() {
-    var socket = this.state.socket;
-    socketbindings.bind(socket, this);
+  joinGame(gameid) {
+    this.state.socket.emit("joingame", {
+      gameid,
+      playername: this.state.playername
+    });
   },
 
   joinedGame(gameid) {
@@ -88,172 +105,23 @@ var Player = React.createClass({
   },
 
   makeReady(gameid, handid, playerid, playerposition, score) {
-
-    // TODO: figure out a way to add in an AI wrapper effectively.
-    var ruleset = new rulesets[this.props.ruleset]();
-    var AI = ruleset.getAI();
-    var ai = new AI(this);
-    var useAI = (typeof window !== "undefined") ? (window.location.search.indexOf('useAI=true')!==-1) : false;
-
-    var state = { gameid, handid, playerid, playerposition, score, balance:'', ai, useAI };
-
+    var state = { gameid, handid, playerid, playerposition, score, balance:'' };
     this.setState(state, () => {
       this.send("confirmed", state);
     });
   },
 
   isWinner() {
-    return (this.state.mode === Player.HAND_OVER) && (this.state.winner === this.state.playerposition);
+    return (this.state.mode === PlayConstants.HAND_OVER) && (this.state.winner === this.state.playerposition);
   },
 
   isLoser() {
-    return (this.state.mode === Player.HAND_OVER) && (this.state.winner !== this.state.playerposition);
+    return (this.state.mode === PlayConstants.HAND_OVER) && (this.state.winner !== this.state.playerposition);
   },
 
   isDraw() {
-    return (this.state.mode === Player.HAND_OVER) && (this.state.winner === -1);
+    return (this.state.mode === PlayConstants.HAND_OVER) && (this.state.winner === -1);
   },
-
-  /**
-   * Render the player UI
-   */
-  render() {
-    var winner = this.isWinner(),
-        loser = this.isLoser(),
-        draw = this.isDraw();
-
-    var classes = classnames(
-      "player",
-      {
-        active: this.state.mode === Player.OWN_TURN,
-        winner: winner,
-        loser: loser,
-        draw: draw
-      }
-    );
-
-    var dclasses = classnames(
-      "discard",
-      Player.winds[this.state.playerposition],
-      {
-        menu: this.state.claimMenu
-      }
-    );
-
-    return (
-      <div className="double row">
-        { this.formOverlay(winner, loser, draw) }
-        <div className={classes}>
-
-          <div className="metadata">
-            <div className="kongs-and-scores">
-              <span className="kongs">
-              {
-                this.state.mode === Player.OWN_TURN ?
-                  this.state.kongs.map(k => <button key={k} onClick={this.claimConcealedKong(k)}>{Tiles.getTileName(k)}</button>)
-                  : null
-              }
-              </span>
-              <span className="score">
-                score: { this.state.score } {
-                  this.props.settings.name ? "(" + this.props.settings.name + ")" : null
-                }
-              </span>
-            </div>
-
-            <div className={dclasses} onClick={this.discardClicked}>
-            { this.renderDiscard() }
-            </div>
-          </div>
-
-          <div className="row tiles">{ this.renderTiles(this.state.tiles, this.state.mode === Player.HAND_OVER, this.state.dealtTile) }</div>
-          <div className="row open">
-            <span className="bonus">{ this.renderTiles(this.state.bonus, true) }</span>
-            <span className="revealed">{ this.renderRevealed() }</span>
-          </div>
-        </div>
-      </div>
-    );
-  },
-
-  formOverlay(winner, loser, draw) {
-    if (this.state.mode !== Player.HAND_OVER) {
-      return null;
-    }
-    var content = '';
-    if (draw) { content = "The hand was a draw..."; }
-    else if (winner) { content = "You won the hand!"; }
-    else if (loser) { content = "Player "+this.state.winner+" won the hand."; }
-    return (
-      <Overlay>
-        {content}
-        <pre>
-          {JSON.stringify(this.state.balance,false,2)}
-        </pre>
-      </Overlay>
-    );
-  },
-
-  /**
-   * Show the currently available discard
-   */
-  renderDiscard() {
-    if (this.state.discard === false) {
-      if (this.state.winner !== false) {
-        return <button onClick={this.restartReady}>Ready</button>;
-      }
-      return null;
-    }
-    if (this.state.claimMenu) {
-      var chowPos = (this.state.discardPlayer+1) % 4;
-      var mayChow = (chowPos === this.state.playerposition);
-      return <ClaimMenu claim={this.claimDiscard} mayChow={mayChow}/>;
-    }
-    var ownDiscard = this.state.discardPlayer === this.state.playerposition;
-    var onClick = ownDiscard ? null : this.claimMenu;
-    var title = ownDiscard ? "your discard" : "discard tile "+Tiles.getTileName(this.state.discard)+", click to claim it!";
-    return <Tile value={this.state.discard} ownDiscard={ownDiscard} onClick={onClick} title={title} />;
-  },
-
-  /**
-   * Render the "open" tiles for this player
-   */
-  renderRevealed() {
-    var tiles = [];
-    this.state.revealed.forEach((set,p1) => {
-      set.forEach((tile,p2) => {
-        tiles.push(<Tile key={`${tile}-${p1}-${p2}`} value={tile} title={"revealed tile "+Tiles.getTileName(tile)}/>);
-      });
-    });
-    return tiles;
-  },
-
-  /**
-   * Render the in-hand tiles for this player
-   */
-  renderTiles(tiles, inactive, tileHighlight) {
-    if (tiles.length === 0) {
-      return null;
-    }
-    tiles.sort((a,b) => a-b);
-    return tiles.map((tile,pos) => {
-      var key = tile + '-' + pos;
-      var onclick = inactive ? null : this.handleTileSelect(tile);
-
-      var highlight = false;
-      if (tile === tileHighlight && this.state.mode === Player.OWN_TURN) {
-        highlight = true;
-        tileHighlight = -1;
-      }
-      var ourTurn = (this.state.mode === Player.OWN_TURN);
-      var title = Tiles.getTileName(tile) + " (" + tile + ")" + (ourTurn && !inactive ? ", click to discard" : '');
-      return <Tile highlight={highlight} key={key} value={tile} onClick={onclick} title={title}/>;
-    });
-  },
-
-
-  // ==========================================================================================
-
 
   // make the playe reset in preparation for the next hand.
   restartReady() {
@@ -295,50 +163,31 @@ var Player = React.createClass({
     this.setState({
       dealtTile: tile,
       tiles: tiles,
-      mode: Player.OWN_TURN,
+      mode: PlayConstants.OWN_TURN,
       discard: false
     }, this.filterForBonus);
-  },
-
-  // Let the AI determine how to play for this client.
-  determinePlay() {
-    this.state.ai.updateStrategy();
-    if (this.state.mode === Player.OWN_TURN) {
-      var tile = this.state.ai.determineDiscard();
-      if (tile === Constants.NOTILE) {
-        this.log("we're not discarding, so we must have won.");
-      } else {
-        // We do this on a timeout to make it *look* like the AI
-        // needed  some time to think about what to do.
-        setTimeout(() => this.discardTile(tile), 400);
-      }
-    }
   },
 
   otherPlayerDrew() {
     this.setState({
       discard: false,
-      mode: Player.OUT_OF_TURN
+      mode: PlayConstants.OUT_OF_TURN
     });
   },
 
   otherPlayerDiscarded(discard, discardPlayer) {
-    this.setState({ discard, discardPlayer });
-
-    // let AI handle this?
-    if (this.state.useAI) {
-      var claim = this.state.ai.determineClaim(discard, discardPlayer);
+    this.setState({ discard, discardPlayer }, () => {
+      var claim = this.ai.determineClaim(discard, discardPlayer);
       if (claim.tile !== Constants.NOTILE) {
         this.claimDiscard(claim.claimType, claim.winType);
       }
-    }
+    });
   },
 
   otherPlayerClaimed(playerposition, tile, claimType) {
-    this.setState({
-      discard: false
-    });
+    this.setState({ discard: false });
   },
+
 
   /**
    * When a player is dealt a tile, filter out any bonus tiles and make
@@ -375,17 +224,33 @@ var Player = React.createClass({
     });
   },
 
-
   // check if this player has any concealed kongs in their hand
   checkKong(tiles) {
+    this.log("checking for kongs-in-hand");
     var counter = {};
     tiles.forEach(t => counter[t] = (counter[t]||0) + 1);
     var kongs = Object.keys(counter).filter(c => counter[c]===4);
-    this.setState({ kongs }, () => {
-      if (this.state.useAI) {
-        this.determinePlay();
+
+    // checkKong is the last call in all tile reception chains,
+    // so we ask the AI component to perform a play here:
+    this.setState({ kongs }, this.determinePlay);
+  },
+
+  // Let the AI determine how to play for this client.
+  determinePlay() {
+    this.log("updating strategy");
+    this.ai.updateStrategy();
+    if (this.state.mode === PlayConstants.OWN_TURN) {
+      this.log("determining what to discard");
+      var tile = this.ai.determineDiscard();
+      if (tile === Constants.NOTILE) {
+        this.log("we're not discarding, so we must have won.");
+      } else {
+        // We do this on a timeout to make it *look* like the AI
+        // needed  some time to think about what to do.
+        setTimeout(() => this.discardTile(tile), 400);
       }
-    });
+    }
   },
 
   // Called by the button to claim a concealed kong. Sends a
@@ -419,25 +284,11 @@ var Player = React.createClass({
       });
 
       // notify server of our reveal
-      this.send("reveal", { set, concealed: true });
+      this.send("reveal", { set:set, concealed: true });
 
     } else {
       this.log("not allowed to claim concealed kong for " + tile);
     }
-  },
-
-  /**
-   * Click-handler for tiles.
-   */
-  handleTileSelect(tile) {
-    return (evt) => {
-      if (this.state.mode === Player.OWN_TURN) {
-        // players can discard any tile from their playable tile
-        // set during their own turn, but not at any other time.
-        this.discardTile(tile);
-      }
-      // Clicking on tiles at any other point in time does nothing.
-    };
   },
 
   /**
@@ -455,23 +306,12 @@ var Player = React.createClass({
     this.setState({
       dealtTile: -1,
       tiles,
-      mode: Player.OUT_OF_TURN
+      mode: PlayConstants.OUT_OF_TURN
     }, () => {
       this.send("discard", {
         tile: tile
       });
     });
-  },
-
-  /**
-   * Toggle the internal flag that renders the claim menu rather than
-   * the currently available discard tile.
-   */
-  claimMenu() {
-    this.setState({ claimMenu: true });
-    // Should this interrupt the play? It feels like it shouldn't,
-    // as that would give players a way to take more time than is
-    // allotted for a decision.
   },
 
   /**
@@ -496,7 +336,6 @@ var Player = React.createClass({
     this.log("claim for", tile, "("+claimType+")", "was accepted");
 
     // remove tile from hand twice and form set.
-    // FIXME: TODO: synchronize this with server/lib/game/player.js
     var set = [];
     if (claimType === Constants.WIN && winType === Constants.PAIR) { set = this.formSet(tile,2); }
     if (claimType <= Constants.CHOW3) { set = this.formChow(tile, claimType); }
@@ -514,17 +353,14 @@ var Player = React.createClass({
     var revealed = this.state.revealed;
     revealed.push(set);
 
-
     this.setState({
       tiles,
       revealed,
       discard: false,
-      mode: Player.OWN_TURN
+      mode: PlayConstants.OWN_TURN
     }, () => {
       this.verify();
-      if (this.state.useAI) {
-        this.determinePlay();
-      }
+      this.determinePlay();
     });
 
     // notify server of our reveal
@@ -574,9 +410,6 @@ var Player = React.createClass({
    * If we did not pass verification, we need to inspect the game logs immediately.
    */
   verification(result) {
-    if (result === false) {
-      alert("player "+this.state.playerposition+" failed hand verification!");
-    }
     this.log("verification:",result);
   },
 
@@ -601,7 +434,7 @@ var Player = React.createClass({
    */
   finish(playerposition, tile, winType) {
     this.setState({
-      mode: Player.HAND_OVER,
+      mode: PlayConstants.HAND_OVER,
       discard: false,
       winner: playerposition,
       winTile: tile,
@@ -614,23 +447,12 @@ var Player = React.createClass({
    */
   updateScore(score, balance) {
     this.setState({ score, balance });
-  },
-
-  /**
-   * Clicking the discard instead of discard, on your own turn,
-   * will ask you whether you want to claim that you have just won.
-   */
-  discardClicked(evt) {
-    if (this.state.mode === Player.OWN_TURN) {
-      var win = confirm("Would you like to declare a win?");
-      if (win) {
-        win = confirm("Are you sure? You may be penalized for an invalid declaration...");
-        if (win) {
-          this.send("declare:win");
-        }
-      }
-    }
   }
-});
+};
 
-module.exports = Player;
+AIPlayer.nextId = (function() {
+  var id = 0;
+  return () => ++id;
+}());
+
+module.exports = AIPlayer;

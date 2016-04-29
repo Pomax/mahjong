@@ -5,7 +5,7 @@
  * reconnecting if the socket breaks at any point in time).
  */
 var React = require('react');
-var rulesets = require('../../../server/lib/game/rulesets');
+var rulesets = require('../../../../lib/game/rulesets');
 
 var Lobby = React.createClass({
 
@@ -29,7 +29,7 @@ var Lobby = React.createClass({
 
     // sent in response to a newgame request by the player
     this.props.socket.on("madegame", data => {
-      this.joinGame(data.gameid);
+      this.joinGame(data.gameid, data.ruleset);
       console.log("server made game", data.gameid);
     });
 
@@ -38,7 +38,8 @@ var Lobby = React.createClass({
       // show user as joined for this game
       this.setState({
         gameid: parseInt(data.gameid),
-        playerid: parseInt(data.playerid)
+        playerid: parseInt(data.playerid),
+        ruleset: data.ruleset
       });
       console.log(data.playerid, "joined game", data.gameid);
     });
@@ -58,7 +59,7 @@ var Lobby = React.createClass({
     // to switch over the UI to game play mode.
     this.props.socket.on("readygame", data => {
       console.log("readygame received");
-      this.props.readyGame(data);
+      this.props.readyGame(data, this.state.ruleset);
     });
   },
 
@@ -86,16 +87,16 @@ var Lobby = React.createClass({
                   <div className="rules">rules: {game.ruleset}</div>
                   <div className="count">players: {game.players.length} ({ game.players.join(', ') })</div>
                   {
-                    game.players.length < 4 ? joined ?
-                    <button onClick={this.leaveGame}>LEAVE</button>
-                    :
-                    <button onClick={evt => this.joinGame(gameid)}>JOIN</button>
-                    :
-                    <button>This game has started already</button>
+                    (game.players[0] === this.state.playername) ?
+                    <button className="bot" onClick={evt => this.addBot(gameid)}>add bot</button> : null
                   }
                   {
-                    (game.players[0] === this.state.playername) ?
-                    <button onClick={evt => this.addBot(gameid)}>add bot</button> : null
+                    game.players.length < 4 ? joined ?
+                    <button className="leave" onClick={this.leaveGame}>LEAVE</button>
+                    :
+                    <button className="join" onClick={evt => this.joinGame(gameid)}>JOIN</button>
+                    :
+                    <button className="full">This game has started already</button>
                   }
                 </div>
               );
@@ -145,7 +146,7 @@ var Lobby = React.createClass({
   },
 
   // player wants to join an existing game
-  joinGame(gameid) {
+  joinGame(gameid, ruleset) {
     this.props.socket.emit("joingame", {
       gameid,
       playername: this.props.settings.name

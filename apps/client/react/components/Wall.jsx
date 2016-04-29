@@ -1,6 +1,6 @@
 var React = require('react');
 var Tile = require('../components/Tile.jsx');
-var Constants = require('../../../../lib/constants');
+var Constants = require('../../../../lib/game/constants');
 
 var Wall = React.createClass({
 
@@ -45,7 +45,7 @@ var Wall = React.createClass({
   },
 
   render() {
-    return <div className="wall">{ this.formTiles() }</div>;
+    return <div className="wall row">{ this.formTiles() }</div>;
   }
 
 });
