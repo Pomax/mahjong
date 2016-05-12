@@ -5,7 +5,7 @@
   "description": "A websocket-based client/server implementation for mahjong (real mahjong, not 'solitaire')",
   "main": "index.js",
   "scripts": {
-    "client:less": "less-watch-compiler apps/client/web/css/less apps/client/web/css",
+    "client:less": "less-watch-compiler apps/client/web/css/less apps/client/web/css style.less",
     "client:build": "webpack --prod --progress --colors --watch",
     "client:dev": "webpack-dev-server --progress --colors --hot --inline --content-base public/",
     "server": "node apps/server/server.js",

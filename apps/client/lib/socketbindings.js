@@ -7,7 +7,7 @@ module.exports = {
     socket.on('joined', data => {
       var gameid = data.gameid;
       var playerposition = data.playerposition;
-      player.log("joined game", gameid,"with position",playerposition);
+//      player.log("joined game", gameid,"with position",playerposition);
       player.joinedGame(gameid);
     });
 
@@ -29,7 +29,7 @@ module.exports = {
     socket.on('sethand', data => {
       var tiles = data.tiles;
       tiles.sort((a,b) => a - b);
-      player.log("received", tiles.join(','));
+//      player.log("received", tiles.join(','));
       // respond with a request to verify this player's tiles
       player.setInitialTiles(tiles, () => { player.verify(); });
     });
@@ -47,7 +47,7 @@ module.exports = {
      */
     socket.on('compensation', data => {
       var tiles = data.tiles;
-      player.log("received compensation", tiles.join(','));
+//      player.log("received compensation", tiles.join(','));
       player.addCompensationTiles(tiles);
     });
 
@@ -58,7 +58,7 @@ module.exports = {
     socket.on('compensated', data => {
       var playerposition = data.playerposition;
       var tiles = data.tiles;
-      player.log("player",playerposition,"received compensation for",tiles);
+//      player.log("player",playerposition,"received compensation for",tiles);
     });
 
     /**
@@ -68,7 +68,7 @@ module.exports = {
     socket.on('tile', data => {
       var tile = data.tile;
       var playerid = data.playerid;
-      player.log("received tile", tile);
+//      player.log("received tile", tile);
       player.addTile(tile);
     });
 
@@ -77,7 +77,7 @@ module.exports = {
      * player drew a tile and is now deciding what to do.
      */
     socket.on('drew', data => {
-      player.log("player", data.playerposition, "received tile");
+//      player.log("player", data.playerposition, "received tile");
       player.otherPlayerDrew();
     });
 
@@ -87,7 +87,7 @@ module.exports = {
     socket.on('discarded', data => {
       var tile = data.tile;
       var pos = data.playerposition;
-      player.log("saw discard of tile", tile,"by player",pos);
+//      player.log("saw discard of tile", tile,"by player",pos);
       player.otherPlayerDiscarded(tile, pos);
     });
 
@@ -97,7 +97,7 @@ module.exports = {
      * itself is bad, or because another player had a better claim).
      */
     socket.on('declined', data => {
-      player.log("claim for", data.tile, "("+data.claimType+")", "was declined");
+//      player.log("claim for", data.tile, "("+data.claimType+")", "was declined");
     });
 
     /**
@@ -115,6 +115,7 @@ module.exports = {
       var pos = data.playerposition;
       var tile = data.tile;
       var claimType = data.claimType;
+//      player.log("player",pos,"claimed",claimType);
       player.otherPlayerClaimed(pos, tile, claimType);
     });
 
@@ -124,14 +125,14 @@ module.exports = {
     socket.on('revealed', data => {
       var playerpos = data.playerposition;
       var revealed = data.revealed;
-      player.log("player",playerpos,"played",revealed);
+//      player.log("player",playerpos,"played",revealed);
     });
 
     /**
      * End of a round, round ended in a draw.
      */
     socket.on('finish:draw', data => {
-      player.log("hand was a draw...");
+//      player.log("hand was a draw...");
       player.finishDraw();
     });
 
@@ -142,13 +143,13 @@ module.exports = {
       var playerposition = parseInt(data.playerposition);
       var tile = parseInt(data.tile);
       var winType = parseInt(data.winType);
-      player.log("hand was a won by", playerposition);
+//      player.log("hand was a won by", playerposition);
       player.finishWin(playerposition, tile, winType);
     });
 
     socket.on('finish:win:illegal', data => {
       var playerposition = parseInt(data.playerposition);
-      player.log("player", playerposition,"declared an illegal win.");
+//      player.log("player", playerposition,"declared an illegal win.");
       player.finishDraw(playerposition);
     });
 

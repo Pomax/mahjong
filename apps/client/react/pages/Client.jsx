@@ -36,7 +36,8 @@ var Client = React.createClass({
       gameid: -1,
       playerid: -1,
       handid: -1,
-      playerposition: -1
+      playerposition: -1,
+      currentPlayer: -1
     };
   },
 
@@ -47,6 +48,15 @@ var Client = React.createClass({
       var playerid = data.playerposition;
       var playerposition = data.playerposition;
       this.setState({ gameid, handid, playerid, playerposition });
+    });
+
+    this.state.socket.on("drew", data => {
+      this.setState({ currentPlayer: this.state.playerposition });
+    });
+
+    this.state.socket.on("tile", data => {
+      var playerposition = data.playerposition;
+      this.setState({ currentPlayer: playerposition });
     });
   },
 
@@ -72,7 +82,8 @@ var Client = React.createClass({
     // generate generic player except for ourselves
     var players = [0,1,2,3].map(pos => {
       if (pos === this.state.playerposition) return null;
-      return <OtherPlayer ref={"player"+pos} name={this.state.playerNames[pos]} label={Player.windKanji[pos]} socket={socket} key={pos} playerposition={pos} />;
+      var active = (pos === this.state.currentPlayer);
+      return <OtherPlayer ref={"player"+pos} active={active} playerposition={pos} name={this.state.playerNames[pos]} wind={Player.windKanji[pos]} socket={socket} key={pos} />;
     });
     // and then insert "us" into that set based on our play position
     players.splice(

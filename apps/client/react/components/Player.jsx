@@ -63,6 +63,8 @@ var Player = React.createClass({
   },
 
   getInitialState() {
+    var useAI = (typeof window !== "undefined") ? (window.location.search.indexOf('useAI=true')!==-1) : false;
+
     return Object.assign({
       socket: this.props.socket,
       // game data
@@ -70,7 +72,8 @@ var Player = React.createClass({
       handid: -1,
       playerid: -1,
       ruleset: this.props.ruleset,
-      score: 0
+      score: 0,
+      useAI: useAI
     }, baseState);
   },
 
@@ -88,14 +91,10 @@ var Player = React.createClass({
   },
 
   makeReady(gameid, handid, playerid, playerposition, score) {
-
-    // TODO: figure out a way to add in an AI wrapper effectively.
     var ruleset = new rulesets[this.props.ruleset]();
     var AI = ruleset.getAI();
     var ai = new AI(this);
-    var useAI = (typeof window !== "undefined") ? (window.location.search.indexOf('useAI=true')!==-1) : false;
-
-    var state = { gameid, handid, playerid, playerposition, score, balance:'', ai, useAI };
+    var state = { gameid, handid, playerid, playerposition, score, balance:'', ai };
 
     this.setState(state, () => {
       this.send("confirmed", state);
@@ -177,7 +176,7 @@ var Player = React.createClass({
   },
 
   formOverlay(winner, loser, draw) {
-    if (this.state.mode !== Player.HAND_OVER) {
+    if (this.state.mode !== Player.HAND_OVER || this.state.useAI) {
       return null;
     }
     var content = '';
@@ -303,15 +302,31 @@ var Player = React.createClass({
   // Let the AI determine how to play for this client.
   determinePlay() {
     this.state.ai.updateStrategy();
+
+    // If this is our turn, we should also decide whether we've
+    // won, and if not, which tile to discard.
     if (this.state.mode === Player.OWN_TURN) {
-      var tile = this.state.ai.determineDiscard();
-      if (tile === Constants.NOTILE) {
-        this.log("we're not discarding, so we must have won.");
-      } else {
-        // We do this on a timeout to make it *look* like the AI
-        // needed  some time to think about what to do.
-        setTimeout(() => this.discardTile(tile), 400);
+      // If we have any concealed kongs, we declare those,
+      // because the compensation tile might let us win.
+      if (this.state.kongs.length > 0) {
+        return this.claimConcealedKong(this.state.kongs[0]);
       }
+
+      // If we don't, let's figure out what to discard. This function
+      // will return Constants.NOTILE if we've won, because if we've
+      // won we don't want to discard anything.
+
+//      this.log("determining what to discard");
+      var tile = this.state.ai.determineDiscard();
+
+      // Did we win?
+      if (tile === Constants.NOTILE) {
+//        this.log("we're not discarding, so we must have won.");
+//        this.log(this.state.tiles, this.state.revealed, this.state.bonus);
+      }
+
+      // We did not win, discard the tile we determined was the best discard.
+      else { this.discardTile(tile); }
     }
   },
 
@@ -374,7 +389,6 @@ var Player = React.createClass({
       this.send("compensate", { tiles: bonus });
     });
   },
-
 
   // check if this player has any concealed kongs in their hand
   checkKong(tiles) {
@@ -444,6 +458,8 @@ var Player = React.createClass({
    * Player discards a tile from their set of playable tiles.
    */
   discardTile(tile) {
+    console.trace();
+
     this.log("discarding tile", tile);
     var tiles = this.state.tiles;
     var pos = tiles.indexOf(tile);
@@ -513,7 +529,6 @@ var Player = React.createClass({
 
     var revealed = this.state.revealed;
     revealed.push(set);
-
 
     this.setState({
       tiles,

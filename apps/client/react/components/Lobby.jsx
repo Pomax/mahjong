@@ -10,13 +10,16 @@ var rulesets = require('../../../../lib/game/rulesets');
 var Lobby = React.createClass({
 
   getInitialState() {
+    var useAI = (typeof window !== "undefined") ? (window.location.search.indexOf('useAI=true')!==-1) : false;
+
     return {
       games: {},
       gamename: "",
       playername: this.props.settings.name,
       ruleset: Object.keys(rulesets)[0],
       gameid: -1,
-      playerid: -1
+      playerid: -1,
+      useAI: useAI
     };
   },
 
@@ -104,9 +107,19 @@ var Lobby = React.createClass({
         }</div>
 
         <div className="new">
-          Game name: <input type="text" ref="gamename" value={this.state.gamename} onChange={this.updateGameName}/>
-          Ruleset: { this.getRulesets() }
-          <button onClick={this.newGame}>start a new game</button>
+          <div>
+            <label>Game name: </label>
+            <input type="text" ref="gamename" value={this.state.gamename} onChange={this.updateGameName}/>
+          </div>
+
+          <div>
+            <label>Ruleset: </label>
+            { this.getRulesets() }
+          </div>
+
+          <div>
+            <button onClick={this.newGame}>start a new game</button>
+          </div>
         </div>
       </div>
     );
@@ -140,7 +153,8 @@ var Lobby = React.createClass({
     this.props.socket.emit("newgame", {
       name,
       ruleset,
-      playername
+      playername,
+      timeout: this.state.useAI ? 400 : false
     });
     // leads to the server sending "madegame"
   },

@@ -39,27 +39,34 @@ var OtherPlayer = React.createClass({
         var title = t!=="concealed" ? Tiles.getTileName(t) : "another player's tile";
         return <Tile key={t+'-'+p} value={t} title={title} />;
       }
-      return t.map((v,p) => {
-        v = t.concealed && p>0? 'concealed' : v;
-        return <Tile key={v+'-'+p} value={v} title={Tiles.getTileName(v)} />;
-      });
+      return (
+        <div className="set">{
+          t.map((v,p) => {
+            v = (t.concealed && p>0) ? 'concealed' : v;
+            return <Tile key={v+'-'+p} value={v} title={Tiles.getTileName(v)} />;
+          })
+        }</div>
+      );
     });
   },
 
   render() {
-    var className = classnames("row", "other player", {
+    var active = this.props.active ? "active" : '';
+    var className = classnames("row", "other player", active, {
       ourturn: this.state.ourTurn === true,
       winner: this.state.winner === this.props.playerposition
     });
 
     return (
       <div className={className}>
-        <div>{this.props.name}</div>
         <div>
-          <span className="name">{this.props.label}</span>
-          <span className="tiles">{this.formTiles(this.state.tiles)}</span>
-          <span className="revealed">{this.formTiles(this.state.revealed,true)}</span>
+          <div>
+             <span className="name">{this.props.name}</span>
+             <span className="wind">{this.props.wind}</span>
+          </div>
           <span className="bonus">{this.formTiles(this.state.bonus)}</span>
+          <span className="revealed">{this.formTiles(this.state.revealed,true)}</span>
+          <span className="tiles">{this.formTiles(this.state.tiles)}</span>
         </div>
       </div>
     );
@@ -70,7 +77,10 @@ var OtherPlayer = React.createClass({
   },
 
   addTiles(data) {
+    if (!this.isMounted()) return;
+
     if(!this.ours(data)) return;
+
     var tiles = this.state.tiles;
     var num = data.tileCount;
     while(num--) { tiles.push('concealed'); }
@@ -78,52 +88,70 @@ var OtherPlayer = React.createClass({
   },
 
   otherPlayerTile(data) {
+    if (!this.isMounted()) return;
+
     this.setState({ ourTurn: false });
   },
 
   addTile(data) {
+    if (!this.isMounted()) return;
+
     if(!this.ours(data)) {
       this.setState({ ourTurn: false });
       return;
     }
+
     var tiles = this.state.tiles;
     tiles.push('concealed');
     this.setState({ tiles, ourTurn: true });
   },
 
   claimedTile(data) {
+    if (!this.isMounted()) return;
+
     if(this.ours(data)) {
       this.setState({ ourTurn: true });
     }
   },
 
   addBonus(data) {
+    if (!this.isMounted()) return;
+
     if(!this.ours(data)) return;
     var bonus = this.state.bonus.concat(data.tiles);
     this.setState({ bonus });
   },
 
   removeTile(data) {
+    if (!this.isMounted()) return;
+
     if(!this.ours(data)) return;
+
     var tiles = this.state.tiles;
     tiles.pop();
     this.setState({ tiles, ourTurn: false });
   },
 
   revealedSet(data) {
+    if (!this.isMounted()) return;
+
     if(!this.ours(data)) return;
+
     var playerpos = data.playerposition;
     var revealedSet = data.revealed;
     revealedSet.concealed = data.concealed;
 
     var revealed = this.state.revealed;
     revealed.push(revealedSet);
+
     var tiles = this.state.tiles;
     tiles.splice(0, revealedSet.length-1);
     this.setState({ tiles, revealed });
   },
 
   showPlayerTiles(data) {
+    if (!this.isMounted()) return;
+
     var winner = parseInt(data.playerposition);
     var tiles = data.tiles[this.props.playerposition];
     this.setState({ ourTurn: false, winner, tiles });
