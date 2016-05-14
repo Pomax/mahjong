@@ -29,6 +29,7 @@
     "less-watch-compiler": "^1.2.3",
     "md5": "^2.1.0",
     "npm-run-all": "^1.7.0",
+    "pirates": "^2.1.1",
     "react": "^0.14.7",
     "react-dom": "^0.14.7",
     "react-router": "^2.0.0",
