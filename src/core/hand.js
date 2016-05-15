@@ -1,7 +1,5 @@
 'use strict';
 
-var fs = require('fs');
-
 var Constants = require('./constants');
 var Wall = require('./wall');
 
@@ -9,15 +7,15 @@ var Wall = require('./wall');
  * A hand represents a single round of play
  */
 var stages = {
-  PRESTART: "prestart",
-  STARTING: "starting",
-  INITIALDEAL: "intial deal",
-  PLAYERTURN: "player turn",
-  DISCARD: "discard",
-  CLAIM: "claim",
-  REVEAL: "reveal",
-  DRAW: "finished:draw",
-  WON: "finished:won"
+  PRESTART: 'prestart',
+  STARTING: 'starting',
+  INITIALDEAL: 'intial deal',
+  PLAYERTURN: 'player turn',
+  DISCARD: 'discard',
+  CLAIM: 'claim',
+  REVEAL: 'reveal',
+  DRAW: 'finished:draw',
+  WON: 'finished:won'
 };
 
 class Hand {
@@ -29,13 +27,11 @@ class Hand {
     this.windOfTheRound = windOfTheRound;
     this.windOffset = windOffset;
     this.wall = new Wall(this);
-//    fs.appendFileSync("walls.txt", this.wall.toString() + "\n");
-    this.claimTimeout = 5000;
+    this.claimTimeoutInterval = 5000;
     this.setStage(stages.PRESTART);
   }
 
   setStage(stage) {
-    //console.log('HAND STAGE => ${stage}');
     this.stage = stage;
   }
 
@@ -53,17 +49,17 @@ class Hand {
    *
    *  | bonus request =>
    *  | - deal compensation tile to requesting player
-   *  | - wait for player to signal new bonus request or "no request"
+   *  | - wait for player to signal new bonus request or 'no request'
    *
-   *  all players signal "negative" bonus request =>
+   *  all players signal 'negative' bonus request =>
   (A) - deal tile to active player
    *  - wait for bonus request
    *
    *  | bonus request =>
   (B) | - deal compensation tile to active player
-   *  | - wait for player to signal new bonus request or "no request"
+   *  | - wait for player to signal new bonus request or 'no request'
    *
-   *  active player signaled "negative" bonus request =>
+   *  active player signaled 'negative' bonus request =>
   (C) - wait for discard by player
    *
    *  discard by active player =>
@@ -91,14 +87,14 @@ class Hand {
    *
    */
   start() {
-    if (this.started) { return console.error("cannot start: hand already in progress."); }
-    if (this.finished) { return console.error("cannot start: hand already finished."); }
+    if (this.started) { return console.error('cannot start: hand already in progress.'); }
+    if (this.finished) { return console.error('cannot start: hand already finished.'); }
 
     this.setStage(stages.STARTING);
     this.started = true;
     this.activePlayer = this.players[0];
 
-    console.log("\nStarting hand ${this.id}\n\n");
+    console.log('\nStarting hand ${this.id}\n\n');
     this.ready = {};
     this.players.forEach((player,position) => {
       var seat = (position + this.windOffset) % this.players.length;
@@ -111,7 +107,7 @@ class Hand {
    */
   readyFromPlayer(player) {
     if (this.stage !== stages.STARTING) {
-      return console.error("player reported ready outside of the STARTING stage: ignored.");
+      return console.error('player reported ready outside of the STARTING stage: ignored.');
     }
 
     this.ready[player.name] = true;
@@ -139,7 +135,7 @@ class Hand {
   listenForBonusRequests() {
     this.pendingBonusRequests = {};
     this.players.forEach(player => {
-      this.pendingBonusRequests[player.name] = "pending";
+      this.pendingBonusRequests[player.name] = 'pending';
     });
   }
 
@@ -148,11 +144,11 @@ class Hand {
    */
   bonusRequestFromPlayer(player, bonusTilesToReplace) {
     if (this.stage !== stages.INITIALDEAL) {
-      return console.error("player requesting bonus tile compensation outside of the INITIALDEAL stage: ignored.");
+      return console.error('player requesting bonus tile compensation outside of the INITIALDEAL stage: ignored.');
     }
 
     if (!bonusTilesToReplace || bonusTilesToReplace.length === 0) {
-      this.pendingBonusRequests[player.name] = "handled";
+      this.pendingBonusRequests[player.name] = 'handled';
     } else {
       this.sendBonusCompensationTiles(player, bonusTilesToReplace);
       // leave state as pending, as the compensation could contain bonus tiles
@@ -161,7 +157,7 @@ class Hand {
     var playerNames = Object.keys(this.pendingBonusRequests);
     var pending = false;
     for (let name of playerNames) {
-      if (this.pendingBonusRequests[name] === "pending") {
+      if (this.pendingBonusRequests[name] === 'pending') {
         pending = true;
         break;
       }
@@ -189,12 +185,12 @@ class Hand {
   dealToActivePlayer() {
     this.setStage(stages.PLAYERTURN);
     if (this.finished) {
-      return console.error("cannot deal tile: hand already finished.");
+      return console.error('cannot deal tile: hand already finished.');
     }
 
     var tile = this.wall.draw();
     if (tile === Constants.NOTILE) {
-      console.log("wall exhausted (during deal)");
+      console.log('wall exhausted (during deal)');
       return this.handWasDrawn();
     }
     this.activePlayer.deal(tile);
@@ -205,7 +201,7 @@ class Hand {
    */
   bonusRequestFromActivePlayer(bonusTileToReplace) { // only ever for 1 tile
     if (this.stage !== stages.PLAYERTURN) {
-      return console.error("player requesting bonus tile compensation outside of the PLAYERTURN stage: ignored.");
+      return console.error('player requesting bonus tile compensation outside of the PLAYERTURN stage: ignored.');
     }
 
     this.sendBonusCompensationTile(this.activePlayer, bonusTileToReplace);
@@ -218,11 +214,25 @@ class Hand {
     var compensation = this.wall.drawSupplement();
 
     if (compensation === Constants.NOTILE) {
-      console.log("wall exhausted (during compensation)");
+      console.log('wall exhausted (during compensation)');
       return this.handWasDrawn();
     }
 
-    player.sendBonusCompensationTiles(compensation);
+    player.sendBonusCompensationTiles([compensation]);
+  }
+
+  /**
+   * ...
+   */
+  kongRequestFromPlayer(player, kong) {
+    var compensation = this.wall.drawSupplement();
+
+    if (compensation === Constants.NOTILE) {
+      console.log('wall exhausted (during compensation)');
+      return this.handWasDrawn();
+    }
+
+    player.sendKongCompensationTile(compensation);
   }
 
   /**
@@ -230,18 +240,24 @@ class Hand {
    */
   discardReceivedFromPlayer(discardingPlayer, tile, selfdrawn) {
     if (this.stage !== stages.PLAYERTURN) {
-      return console.error("player discard a tile outside of the PLAYERTURN stage: ignored.");
+      return console.error('player discard a tile outside of the PLAYERTURN stage: ignored.');
+    }
+
+    if (discardingPlayer !== this.activePlayer) {
+      console.error('${discardingPlayer.name} just discarded during turn of ${this.activePlayer.name}...');
+      processing.exit(1);
     }
 
     if (tile === Constants.NOTILE) {
+      discardingPlayer.winner = true;
       return this.handWasWon(discardingPlayer, selfdrawn);
     }
 
     this.setStage(stages.DISCARD);
     this.currentDiscard = tile;
     this.listenForClaims();
+    this.claimTimeout = setTimeout(() => this.processClaims(), this.claimTimeoutInterval);
     this.players.forEach(player => player.tileWasDiscarded(discardingPlayer, tile));
-    this.claimTimeout = setTimeout(() => this.processClaims, this.claimTimeout);
   }
 
   /**
@@ -250,7 +266,7 @@ class Hand {
   listenForClaims() {
     this.claims = {};
     this.players.forEach(player => {
-      this.claims[player.name] = "pending";
+      this.claims[player.name] = 'pending';
     });
   }
 
@@ -259,7 +275,7 @@ class Hand {
    */
   claimReceivedFromPlayer(player, claim) {
     if (this.stage !== stages.DISCARD) {
-      return console.error("player claimed a discard tile outside of the DISCARD stage: ignored.");
+      return console.error('player claimed a discard tile outside of the DISCARD stage: ignored.');
     }
 
     claim.player = player;
@@ -269,7 +285,7 @@ class Hand {
 
     var pending = false;
     for (let name of playerNames) {
-      if (this.claims[name] === "pending") {
+      if (this.claims[name] === 'pending') {
         pending = true;
         break;
       }
@@ -286,7 +302,7 @@ class Hand {
    */
   processClaims() {
     if (this.stage !== stages.DISCARD) {
-      return console.error("processClaims called outside of the DISCARD stage: ignored.");
+      return console.error('processClaims called outside of the DISCARD stage: ignored.');
     }
 
     this.setStage(stages.CLAIM);
@@ -326,7 +342,7 @@ class Hand {
    */
   rewardClaim(claim) {
     if (this.stage !== stages.CLAIM) {
-      return console.error("rewardClaim called outside of the CLAIM stage: ignored.");
+      return console.error('rewardClaim called outside of the CLAIM stage: ignored.');
     }
     this.activePlayer = claim.player;
     delete claim.player;
@@ -340,7 +356,7 @@ class Hand {
    */
   revealReceivedFromPlayer(revealingPlayer, tiles) {
     if (this.stage !== stages.REVEAL) {
-      return console.error("player revealed outside of the REVEAL stage: ignored.");
+      return console.error('player revealed outside of the REVEAL stage: ignored.');
     }
     this.players.forEach(player => player.setWasRevealed(revealingPlayer, tiles));
     this.setStage(stages.PLAYERTURN);
@@ -361,6 +377,7 @@ class Hand {
    * ...
    */
   handWasDrawn() {
+    console.log("\n\n");
     this.setStage(stages.DRAW);
     this.finished = true;
     this.draw = true;
@@ -372,6 +389,7 @@ class Hand {
    * ...
    */
   handWasWon(winner, selfdrawn) {
+    console.log("\n\n");
     this.setStage(stages.WON);
     this.finished = true;
     this.winner = winner;
@@ -384,7 +402,7 @@ class Hand {
    */
   handAcknowledgedByPlayer(player) {
     if (this.stage !== stages.DRAW && this.stage !== stages.WON) {
-      return console.error("player acknowledged outside of the DRAW/WON stage: ignored.");
+      return console.error('player acknowledged outside of the DRAW/WON stage: ignored.');
     }
 
     this.acknowledged[player.name] = true;

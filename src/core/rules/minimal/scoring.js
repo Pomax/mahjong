@@ -1,3 +1,5 @@
+'use strict'
+
 var Constants = require('../../constants');
 var Tiles = require('../../tiles');
 var FSA = require('./fsa');
@@ -94,9 +96,9 @@ function scoreConcealed(tiles, haspillow, playerwind, windoftheround, log) {
 
 function getTileScores(player, windoftheround) {
   var log = [];
-  var rscore = scoreSets(player.revealed, player.wind, windoftheround, true, log);
+  var rscore = scoreSets(player.revealed, player.position, windoftheround, true, log);
   var haspillow = player.revealed.some(set => set.length===2);
-  var cscore = scoreConcealed(player.tiles, haspillow, player.wind, windoftheround, log);
+  var cscore = scoreConcealed(player.tiles, haspillow, player.position, windoftheround, log);
   var bscore = player.bonus.length;
   if (bscore) { log.push("bonus tiles: " + bscore); }
 
@@ -108,7 +110,6 @@ function getTileScores(player, windoftheround) {
 
 function scorePlayers(players, windoftheround) {
   var tilescores = players.map(player => getTileScores(player, windoftheround));
-
   var winner = -1;
   players.forEach((p,pid) => { if(p.winner) { winner = pid; }} );
 

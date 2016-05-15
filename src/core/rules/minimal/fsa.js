@@ -1,15 +1,19 @@
-var logger = require('../../../logger');
-var Tree = require('../../../trees');
+'use strict'
+
+var Tree = require('../../../lib/trees');
 var Constants = require('../../constants');
 var Tiles = require('../../tiles');
 
-var debug = false;
+class FSA {
+  constructor() {
+    this.debug = false;
+  }
 
-var FSA = function() {
-  this.log = debug ? logger("fsa") : ()=>{};
-};
+  log() {
+    if (this.debug)
+      console.log.apply(console, arguments);
+  }
 
-FSA.prototype = {
   /**
    * Check to see if there is *any* winning pattern possible.
    */
@@ -44,7 +48,7 @@ FSA.prototype = {
     if (success) return true;
 
     return false;
-  },
+  }
 
   /**
    * Generate *all* sets/pairs that can be formed.
@@ -58,7 +62,7 @@ FSA.prototype = {
     this.tryPung(tile, tiles.slice(), pair, sets, patterns);
     this.tryKong(tile, tiles.slice(), pair, sets, patterns);
     return patterns;
-  },
+  }
 
   tryPair(tile, tiles, pair, sets, patterns) {
     // remove duplicate
@@ -72,7 +76,7 @@ FSA.prototype = {
       return this.generate(tiles, pair-1, patterns.add([tile, tile]));
     }
     return this.check(tiles, pair-1, sets);
-  },
+  }
 
   tryChow(tile, tiles, pair, sets, patterns) {
     var success;
@@ -112,25 +116,25 @@ FSA.prototype = {
     // FIXME: TODO: This can be cleaned up, but the current code follows
     //              the "make it work, then clean it up" methodology.
     return false;
-  },
+  }
 
   tryChow1(tile, tiles, pair, sets, patterns) {
     var t1 = tile + 1,
         t2 = tile + 2;
     return this.tryChowX(tile, t1, t2, tiles, pair, sets, patterns);
-  },
+  }
 
   tryChow2(tile, tiles, pair, sets, patterns) {
     var t1 = tile - 1,
         t2 = tile + 1;
     return this.tryChowX(tile, t1, t2, tiles, pair, sets, patterns);
-  },
+  }
 
   tryChow3(tile, tiles, pair, sets, patterns) {
     var t1 = tile - 2,
         t2 = tile - 1;
     return this.tryChowX(tile, t1, t2, tiles, pair, sets, patterns);
-  },
+  }
 
   tryChowX(tile, t1, t2, tiles, pair, sets, patterns) {
     // remove first tile
@@ -149,7 +153,7 @@ FSA.prototype = {
       return this.generate(tiles, pair, patterns.add([tile,t1,t2].sort()));
     }
     return this.check(tiles, pair, sets-1);
-  },
+  }
 
   tryPung(tile, tiles, pair, sets, patterns) {
     // remove first duplicate
@@ -168,7 +172,7 @@ FSA.prototype = {
       return this.generate(tiles, pair, patterns.add([tile, tile, tile]));
     }
     return this.check(tiles, pair, sets-1);
-  },
+  }
 
   tryKong(tile, tiles, pair, sets, patterns) {
     // remove first duplicate

@@ -1,7 +1,5 @@
 'use strict';
 
-var fs = require('fs');
-
 var Constants = require('./constants');
 var rulesets = require('./rules');
 var Hand = require('./hand');
@@ -13,7 +11,8 @@ class Game {
   constructor(manager, id, rulesetName) {
     this.manager = manager;
     this.id = id;
-    this.ruleset = rulesets[rulesetName];
+    this.rulesetName = rulesetName;
+    this.ruleset = new rulesets[rulesetName]();
     this.windOffset = 0;
     this.windOfTheRound = this.ruleset.getStartWind();
     this.players = {};
@@ -46,7 +45,7 @@ class Game {
 
   createHand() {
     var players = Object.keys(this.players).map(name => this.players[name]);
-    var hand = new Hand(this, this.hands.length, players, this.windOfTheRound, this.windOffset);
+    var hand = this.hand = new Hand(this, this.hands.length, players, this.windOfTheRound, this.windOffset);
     this.hands.push(hand);
     return hand;
   }
@@ -68,11 +67,6 @@ class Game {
   }
 
   handWasDrawn() {
-    // FIXME: TODO: code goes here
-    //
-    // - Rotate winds, if rules say that should happen.
-    //     This really means rotating the players, as position [0] counts as East.
-    // - Start a new hand.
     this.draws++;
     this.windOffset++;
     if (this.windOffset % this.playerCount === 0) { this.windOfTheRound++; }
@@ -80,21 +74,13 @@ class Game {
     if (this.windOfTheRound < 4) {
       this.start();
     } else {
-      console.log("GAME OVER (${this.hands.length} hands played, ${this.draws} draws, ${this.wins} wins)\n");
-      setTimeout(process.exit,250);
+      this.end();
     }
   }
 
   handWasWon(winner) {
-    // FIXME: TODO: code goes here
-    //
-    // - Score players.
-    // - Rotate winds, if rules say that should happen.
-    //     This really means rotating the players, as position [0] counts as East.
-    // - Start a new hand.
-    console.log("\n${winner.name} (playing seat ${winner.position}) won!\n");
-//    var data = fs.readFileSync("walls.txt").toString().split("\n").filter(l => !!l);
-//    fs.appendFileSync("winners.txt", data.slice(-1) + "\n");
+    console.log('\n${winner.name} (playing seat ${winner.position}) won!\n');
+    this.resolveScores(this.hand);
     this.wins++;
     this.windOffset++;
     if (this.windOffset % this.playerCount === 0) { this.windOfTheRound++; }
@@ -102,13 +88,24 @@ class Game {
     if (this.windOfTheRound < 4) {
       this.start();
     } else {
-      console.log("GAME OVER (${this.hands.length} hands played, ${this.draws} draws, ${this.wins} wins)\n");
-      setTimeout(process.exit,250);
+      this.end();
     }
   }
 
-  resolveScores(winner) {
-    // FIXME: TODO: code goes here.
+  end() {
+    console.log('GAME OVER (${this.hands.length} hands played, ${this.draws} draws, ${this.wins} wins)\n');
+    console.log('Final scores:\n', JSON.stringify(this.scores,false,2));
+    setTimeout(process.exit,250);
+  }
+
+  resolveScores(hand) {
+    var players = this.hand.players;
+    var scores = this.ruleset.score(players, this.windOfTheRound);
+    players.forEach((player,pid) => {
+      let scoreObject = scores[pid];
+      this.scores[player.name] += scoreObject.score;
+      player.recordScore(scoreObject);
+    });
   }
 
   // General purpose

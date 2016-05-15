@@ -1,22 +1,17 @@
-var logger = require('../../../logger');
+'use strict'
+
 var Constants = require('../../constants');
-var GameTracker = require('../../game-tracker');
+var GameTracker = require('../../gametracker');
 
-var AI = function(client) {
-  this.tracker = new GameTracker();
-  this.log = logger(client.state.playername);
+class AI {
+  constructor(client) {
+    this.tracker = new GameTracker();
 
-  // expose the client's tilebank as a local property
-  Object.defineProperty(this, "tiles", {
-    get: () => client.state.tiles.slice()
-  });
-
-  Object.defineProperty(this, "onNextHand", {
-    get: () => client.props ? client.props.onNextHand : false
-  });
-};
-
-AI.prototype = {
+    // expose the client's tilebank as a local property
+    Object.defineProperty(this, "tiles", {
+      get: () => client.tiles.map(v => parseInt(v))
+    });
+  }
 
   // Update strategy based on someone discarding
   updateStrategy(discardTile) {
@@ -33,8 +28,7 @@ AI.prototype = {
     Object.keys(this.required).forEach(k => {
       text.push(k + " (" + this.required[k].claimType + ")");
     });
-//    this.log("required:\n", "  ", text.join(', '));
-  },
+  }
 
   // Do we want to lay claim to a discard?
   determineClaim(tile, playerposition) {
@@ -48,12 +42,12 @@ AI.prototype = {
       };
     }
     return { tile: nothing, claimType: nothing, winType: nothing };
-  },
+  }
 
   // What do we discard?
   determineDiscard() {
     return this.determineDiscardNaively();
-  },
+  }
 
   // ============================================================
 
@@ -97,7 +91,7 @@ AI.prototype = {
     });
 
     this.required = required;
-  },
+  }
 
   /**
    * Given that we're a simple, pung-hungry AI player,
@@ -108,7 +102,7 @@ AI.prototype = {
     if (count === 2) return Constants.PUNG;
     if (count === 3) return Constants.KONG;
     console.error("count for "+tile+" is < 2...?", " ("+count+") ", this.tiles);
-  },
+  }
 
   /**
    * Just throw out anything that we don't require. Since we
@@ -116,8 +110,6 @@ AI.prototype = {
    * also our "do not discard" list.
    */
   determineDiscardNaively() {
-//    this.log(this.tiles);
-
     if (this.tiles.length === 0) {
       return Constants.NOTILE;
     }
