@@ -2,7 +2,8 @@
 
 var Constants = require('../../constants');
 var GameTracker = require('../../gametracker');
-var fastwin = require('../../strategies/fastwin');
+var FSA = require('./fsa');
+var determineRequirements = require('../../strategies/fastwin');
 
 class AI {
   constructor(client) {
@@ -11,6 +12,11 @@ class AI {
     // expose the client's tilebank as a local property
     Object.defineProperty(this, "tiles", {
       get: () => client.tiles.map(v => parseInt(v))
+    });
+
+    // expose the client's number of sets revealed as a local property
+    Object.defineProperty(this, "setsPlayed", {
+      get: () => client.revealed.length
     });
   }
 
@@ -59,10 +65,11 @@ class AI {
    * throw away based on probabilities and scores.
    */
   updateStrategyNaively() {
+    this.required = {};
+
     // do we only have a single tile? If so, we want another one of those.
     if (this.tiles.length === 1) {
       var tile = this.tiles[0];
-      this.required = {};
       this.required[tile] = {
         probability: this.tracker.getProbability(tile),
         claimType: Constants.WIN,
@@ -71,52 +78,16 @@ class AI {
       return;
     }
 
-    /*
-    // if not, let's get some pungs
-    var counts = [];
-    this.tiles.forEach(tile => {
-      if(!counts[tile]) counts[tile]=0;
-      counts[tile]++;
-    });
-
-    var required = {};
-    counts.forEach((count, tile) => {
-      if(count>1) {
-        var probability = this.tracker.getProbability(tile);
-        if (probability > 0) {
-          required[tile] = {
-            claimType: this.getClaimTypeFor(tile, count),
-            probability: probability
-          };
-        }
-      }
-    });
-    */
-
-    var required = [];
-    var checked = fastwin(this.tiles);
+    // We have more than one tile: run the logic that can determine which
+    // tiles we need, and for what purposes, to get closer to winning.
+    var checked = determineRequirements(this.tiles, this.tracker);
     Object.keys(checked).forEach(tile => {
-      let p = this.tracker.getProbability(tile);
-      if (p > 0.00001) {
-        required[tile] = {
-          probability: p,
-          claimType: Math.max.apply(Math, checked[tile])
-        };
-      }
+      this.required[tile] = {
+        claimType: Math.max.apply(Math, checked[tile]),
+        probability: this.tracker.getProbability(tile)
+      };
     });
-    this.required = required;
   }
-
-  /**
-   * Given that we're a simple, pung-hungry AI player,
-   * we really only care about whether we can form a
-   * pung or a kong. We'll always prefer the latter.
-  getClaimTypeFor(tile, count) {
-    if (count === 3) return Constants.KONG;
-    if (count === 2) return Constants.PUNG;
-    console.error("count for "+tile+" is < 2...?", " ("+count+") ", this.tiles);
-  }
-  */
 
   /**
    * Just throw out anything that we don't require. Since we
@@ -124,28 +95,30 @@ class AI {
    * also our "do not discard" list.
    */
   determineDiscardNaively() {
-    if (this.tiles.length === 0) {
+    // first off: have we won?
+    if (FSA.check(this.tiles, 1, this.setsPlayed)) {
       return Constants.NOTILE;
     }
 
-    // do we only have two tiles, and are they the same? we win!
-    if (this.tiles.length === 2 && this.tiles[0] === this.tiles[1]) {
-      return Constants.NOTILE;
-    }
+    var discard = 0;
 
-    // We've not won... throw out any tile we don't need.
+    // If we're still in this function, we've not won.
+    // As such, throw out any tile that we don't require
+
     var discards = this.tiles.slice().filter(tile => !this.required[tile]);
-    var discard;
-
     if (discards.length > 0) {
       discard = (Math.random() * discards.length)|0;
       return discards[discard];
     }
 
-    // we're going to have to throw something we can use for a pung.
-    // for now, any will do, but FIXME: TODO: pick the tile with lowest
-    // prodbability to get.
-    discard = (Math.random() * this.tiles.length)|0;
+    // Of course, if everything in our hand is also marked
+    // as required (a hand made up of pairs, for instance)
+    // then discard whichever tile has the lowest draw
+    // probability.
+
+    var minProb = 1;
+    var probabilities = this.tiles.map(tile => this.tracker.getProbability(tile));
+    probabilities.forEach((p,i) => {if (p < minProb) { minProb = p; discard = i; }});
     return this.tiles[discard];
   }
 };

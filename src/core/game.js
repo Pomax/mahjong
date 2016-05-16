@@ -45,7 +45,7 @@ class Game {
 
   createHand() {
     var players = Object.keys(this.players).map(name => this.players[name]);
-    var hand = this.hand = new Hand(this, this.hands.length, players, this.windOfTheRound, this.windOffset);
+    var hand = this.hand = new Hand(this, 1 + this.hands.length, players, this.windOfTheRound, this.windOffset);
     this.hands.push(hand);
     return hand;
   }
@@ -68,9 +68,11 @@ class Game {
 
   handWasDrawn() {
     this.draws++;
+    console.log('end of hand ${this.hands.length}, wind offset: ${this.windOffset}, wotr: ${this.windOfTheRound}');
     this.windOffset++;
-    if (this.windOffset % this.playerCount === 0) { this.windOfTheRound++; }
-    console.log('\nend of hand ${this.hands.length}, wind offset: ${this.windOffset}, wotr: ${this.windOfTheRound}\n');
+    if (this.windOffset % this.playerCount === 0) {
+      this.windOfTheRound++;
+    }
     if (this.windOfTheRound < 4) {
       this.start();
     } else {
@@ -79,12 +81,14 @@ class Game {
   }
 
   handWasWon(winner) {
-    console.log('\n${winner.name} (playing seat ${winner.position}) won!\n');
+    console.log('${winner.name} (playing seat ${winner.position}) won!');
     this.resolveScores(this.hand);
     this.wins++;
+    console.log('end of hand ${this.hands.length}, wind offset: ${this.windOffset}, wotr: ${this.windOfTheRound}');
     this.windOffset++;
-    if (this.windOffset % this.playerCount === 0) { this.windOfTheRound++; }
-    console.log('\nend of hand ${this.hands.length}, wind offset: ${this.windOffset}, wotr: ${this.windOfTheRound}\n');
+    if (this.windOffset % this.playerCount === 0) {
+      this.windOfTheRound++;
+    }
     if (this.windOfTheRound < 4) {
       this.start();
     } else {
@@ -93,7 +97,7 @@ class Game {
   }
 
   end() {
-    console.log('GAME OVER (${this.hands.length} hands played, ${this.draws} draws, ${this.wins} wins)\n');
+    console.log('GAME OVER (${this.hands.length} hands played, ${this.draws} draws, ${this.wins} wins)');
     console.log('Final scores:\n', JSON.stringify(this.scores,false,2));
     setTimeout(process.exit,250);
   }

@@ -13,9 +13,13 @@ class Client {
     this.name = name;
     this.reset();
     var io = require('socket.io-client');
-    console.log('connecting to port ${port}...');
+    this.log('connecting to port ${port}...');
     var socket = this.socket = io.connect('http://localhost:${port}');
     this.setSocketBindings(port, socket, afterBinding);
+  }
+
+  log() {
+    //consose.log.apply(console, arguments);
   }
 
   reset() {
@@ -57,7 +61,7 @@ class Client {
     if (bonus.length > 0) {
       this.bonus = this.bonus.concat(bonus);
       this.tiles = this.tiles.map(v => parseInt(v)).filter(t => t < Constants.PLAYTILES);
-      console.log('requesting compensation for bonus tiles ${bonus}');
+      this.log('requesting compensation for bonus tiles ${bonus}');
     }
     this.socket.emit('bonus-request', { tiles: this.bonus });
   }
@@ -74,7 +78,7 @@ class Client {
     if (tile !== Constants.NOTILE) {
       var pos = this.tiles.indexOf(tile);
       this.tiles.splice(pos,1);
-      console.log(this.name, 'discarding: ', tile);
+      this.log(this.name, 'discarding: ', tile);
     }
     this.socket.emit('discard-tile', { tile });
   }
@@ -93,7 +97,7 @@ class Client {
   processClaimAward(data) {
     var tile = parseInt(data.tile);
     var claim = data.claim;
-    console.log('${this.name} was allowed to form a ${Constants.setNames[data.claim.claimType]} with tile ${tile}');
+    this.log('${this.name} was allowed to form a ${Constants.setNames[data.claim.claimType]} with tile ${tile}');
 
     // figure out what we were actually awarded
     var tiles = false;
@@ -139,21 +143,19 @@ class Client {
    * ...
    */
   processHandScore(scoreObject) {
-    //console.log('${this.name} received score object',scoreObject);
+    //this.log('${this.name} received score object',scoreObject);
   }
 
   /**
    * ...
    */
   verify(data) {
-    var localDigest = digest(this.tiles, this.bonus, this.revealed);
-    var match = (data.digest === localDigest);
-    if (!match) {
-      console.log("verification mismatch.");
-      console.log("client:", this.tiles, this.bonus, this.revealed);
-      console.log("server:", data.tiles, data.bonus, data.revealed);
-    }
-    this.socket.emit("verify-result", { tiles: this.tiles, bonus: this.bonus, revealed: this.revealed, match });
+    this.socket.emit("verify-result", {
+      tiles: this.tiles,
+      bonus: this.bonus,
+      revealed: this.revealed,
+      digest: digest(this.tiles, this.bonus, this.revealed)
+    });
   }
 
   /**
@@ -161,28 +163,28 @@ class Client {
    */
   setSocketBindings(port, socket, afterBinding) {
     socket.on('connect', data => {
-      console.log('connected on port ${port}');
+      this.log('connected on port ${port}');
 
       socket.on('getready', data => {
-        console.log('instructed to get ready by the server on ${port}');
+        this.log('instructed to get ready by the server on ${port}');
         this.setGameData(data);
         socket.emit('ready');
       });
 
       socket.on('initial-tiles', data => {
-        console.log('initial tiles for ${this.name}: ', data.tiles);
+        this.log('initial tiles for ${this.name}: ', data.tiles);
         this.tiles = data.tiles.map(v => parseInt(v));
         this.checkBonus();
       });
 
       socket.on('bonus-compensation', data => {
-        console.log('bonus compensation tiles for ${this.name}: ', data.tiles);
+        this.log('bonus compensation tiles for ${this.name}: ', data.tiles);
         this.tiles = this.tiles.concat(data.tiles.map(v => parseInt(v)));
         this.checkBonus();
       })
 
       socket.on('turn-tile', data => {
-        console.log(this.name, 'received turn tile: ', data.tile);
+        this.log(this.name, 'received turn tile: ', data.tile);
         this.addTile(parseInt(data.tile));
       });
 
@@ -197,7 +199,7 @@ class Client {
       });
 
       socket.on('kong-compensation', data => {
-        console.log('kong compensation tile for ${this.name}: ', data.tile);
+        this.log('kong compensation tile for ${this.name}: ', data.tile);
         this.addTile(parseInt(data.tile));
       });
 
@@ -218,14 +220,15 @@ class Client {
       });
 
       socket.on('hand-drawn', data => {
-        console.log('${this.name} in seat ${this.currentGame.position} registered that the hand was a draw.');
+        this.log('${this.name} in seat ${this.currentGame.position} registered that the hand was a draw.');
+        console.log(this.name, this.tiles, this.bonus, this.revealed);
         socket.emit('hand-acknowledged');
       });
 
       socket.on('hand-won', data => {
         var selfdrawn = data.selfdrawn ? '(self-drawn) ' : '';
-        console.log('${this.name} in seat ${this.currentGame.position} registered that the hand was won ${selfdrawn}by player in seat ${data.winner}.');
-        console.log(this.tiles, this.bonus, this.revealed);
+        this.log('${this.name} in seat ${this.currentGame.position} registered that the hand was won ${selfdrawn}by player in seat ${data.winner}.');
+        console.log(this.name, this.tiles, this.bonus, this.revealed);
         socket.emit('hand-acknowledged');
       });
 

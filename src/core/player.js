@@ -58,7 +58,6 @@ class Player {
   }
 
   readyFromClient(data) {
-    console.log('ready received from client');
     this.hand.readyFromPlayer(this);
   }
 
@@ -171,16 +170,17 @@ class Player {
 
   verify(next) {
     this.pendingVerififcation = next;
-    // request the connected player to verify that their knowledge of
-    // what should be in their hand and on the table matches what
-    // the system considers the player's state.
-    var localDigest = digest(this.tiles, this.bonus, this.revealed);
-    this.connector.publish('verify', { tiles: this.tiles, bonus: this.bonus, revealed: this.revealed, digest: localDigest });
+    this.connector.publish('verify');
   }
 
   verifyResultFromClient(data) {
-    if (!data.match) {
+    // request the connected player to verify that their knowledge of
+    // what should be in their hand and on the table matches what
+    // the system considers the player's state.
+    if (data.digest !== digest(this.tiles, this.bonus, this.revealed)) {
       console.error('verification failed for ${this.name}');
+      console.log('local tile situation:', this.tiles, this.bonus, this.revealed);
+      console.log('client tile situation:', data.tiles, data.bonus, data.revealed);
       process.exit(1);
     }
     if (this.pendingVerififcation) {

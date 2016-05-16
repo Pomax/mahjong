@@ -2,6 +2,7 @@
 
 var Constants = require('./constants');
 var Wall = require('./wall');
+var Tiles = require('./tiles');
 
 /**
  * A hand represents a single round of play
@@ -18,6 +19,8 @@ var stages = {
   WON: 'finished:won'
 };
 
+var debug = false;
+
 class Hand {
 
   constructor(game, id, players, windOfTheRound, windOffset) {
@@ -29,6 +32,11 @@ class Hand {
     this.wall = new Wall(this);
     this.claimTimeoutInterval = 5000;
     this.setStage(stages.PRESTART);
+    // used at some point in the code.
+    this.currentDiscard = false;
+    this.discardingPlayer = false;
+
+    this.log = () => debug ? console.log.apply(console, arguments) : false;
   }
 
   setStage(stage) {
@@ -94,7 +102,7 @@ class Hand {
     this.started = true;
     this.activePlayer = this.players[0];
 
-    console.log('\nStarting hand ${this.id}\n\n');
+    console.log('Starting hand ${this.id}');
     this.ready = {};
     this.players.forEach((player,position) => {
       var seat = (position + this.windOffset) % this.players.length;
@@ -255,6 +263,7 @@ class Hand {
 
     this.setStage(stages.DISCARD);
     this.currentDiscard = tile;
+    this.discardingPlayer = discardingPlayer;
     this.listenForClaims();
     this.claimTimeout = setTimeout(() => this.processClaims(), this.claimTimeoutInterval);
     this.players.forEach(player => player.tileWasDiscarded(discardingPlayer, tile));
@@ -307,10 +316,11 @@ class Hand {
 
     this.setStage(stages.CLAIM);
     var playerNames = Object.keys(this.claims);
-    var valid = playerNames.filter(name => this.isValidClaim(this.claims[name]));
+    var valid = playerNames.filter(name => this.isValidClaim(name, this.claims[name]));
 
     // nothing to do
     if (valid.length === 0) {
+      this.log('no valid claims were received.');
       return this.nextDeal();
     }
 
@@ -323,13 +333,23 @@ class Hand {
   /**
    * ...
    */
-  isValidClaim(claim) {
+  isValidClaim(name, claim) {
     var ct = claim.claimType;
     if (ct === Constants.NOTHING) {
       return false;
     }
+
     if (ct <= Constants.CHOW3) {
-      return claim.player.position === (this.discardingPlayer + 1) % this.players.length;
+      // check if the claim is legal, based on seating
+      if (claim.player.position !== (this.discardingPlayer.position + 1) % this.players.length) return false;
+      // check if the chow is for a numbered tile
+      var face = Tiles.getTileNumber(this.currentDiscard);
+      if (face === false) return false;
+      // check if the tile's value allows for the claim type issued
+      if (face === 0 && ct !== Constants.CHOW1) return false;
+      if (face === 1 && ct === Constants.CHOW3) return false;
+      if (face === 7 && ct === Constants.CHOW1) return false;
+      if (face === 8 && ct !== Constants.CHOW3) return false;
     }
     return true;
   }
@@ -353,6 +373,7 @@ class Hand {
     delete claim.player;
     this.activePlayer.award(this.currentDiscard, claim);
     this.currentDiscard = false;
+    this.discardingPlayer = false;
     this.setStage(stages.REVEAL);
   }
 
@@ -382,7 +403,6 @@ class Hand {
    * ...
    */
   handWasDrawn() {
-    console.log("\n\n");
     this.setStage(stages.DRAW);
     this.finished = true;
     this.draw = true;
@@ -394,7 +414,6 @@ class Hand {
    * ...
    */
   handWasWon(winner, selfdrawn) {
-    console.log("\n\n");
     this.setStage(stages.WON);
     this.finished = true;
     this.winner = winner;
