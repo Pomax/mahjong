@@ -2,6 +2,7 @@
 
 var Constants = require('../../constants');
 var GameTracker = require('../../gametracker');
+var fastwin = require('../../strategies/fastwin');
 
 class AI {
   constructor(client) {
@@ -70,6 +71,7 @@ class AI {
       return;
     }
 
+    /*
     // if not, let's get some pungs
     var counts = [];
     this.tiles.forEach(tile => {
@@ -89,7 +91,19 @@ class AI {
         }
       }
     });
+    */
 
+    var required = [];
+    var checked = fastwin(this.tiles);
+    Object.keys(checked).forEach(tile => {
+      let p = this.tracker.getProbability(tile);
+      if (p > 0.00001) {
+        required[tile] = {
+          probability: p,
+          claimType: Math.max.apply(Math, checked[tile])
+        };
+      }
+    });
     this.required = required;
   }
 
@@ -97,12 +111,12 @@ class AI {
    * Given that we're a simple, pung-hungry AI player,
    * we really only care about whether we can form a
    * pung or a kong. We'll always prefer the latter.
-   */
   getClaimTypeFor(tile, count) {
-    if (count === 2) return Constants.PUNG;
     if (count === 3) return Constants.KONG;
+    if (count === 2) return Constants.PUNG;
     console.error("count for "+tile+" is < 2...?", " ("+count+") ", this.tiles);
   }
+  */
 
   /**
    * Just throw out anything that we don't require. Since we

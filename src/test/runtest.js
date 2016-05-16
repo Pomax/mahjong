@@ -1,8 +1,8 @@
 // server setup
 'use strict'
 
-var Client = require('./client');
-var Manager = require('../manager');
+var Client = require('../client/basic/client');
+var Manager = require('../core/manager');
 
 var gm = new Manager();
 var game = gm.createGame('minimal');

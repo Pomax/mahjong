@@ -1,9 +1,9 @@
 'use strict'
 
-var Constants = require('../constants');
-var Tiles = require('../tiles');
-var rulesets = require('../rules')
-var digest = require('../digest');
+var Constants = require('../../core/constants');
+var Tiles = require('../../core/tiles');
+var rulesets = require('../../core/rules')
+var digest = require('../../core/digest');
 
 /**
  * A client without an interface
@@ -219,18 +219,13 @@ class Client {
 
       socket.on('hand-drawn', data => {
         console.log('${this.name} in seat ${this.currentGame.position} registered that the hand was a draw.');
-        // console.log('  tiles:', this.tiles);
-        // console.log('  bonus', this.bonus);
-        // console.log('  on the table', this.revealed);
         socket.emit('hand-acknowledged');
       });
 
       socket.on('hand-won', data => {
         var selfdrawn = data.selfdrawn ? '(self-drawn) ' : '';
         console.log('${this.name} in seat ${this.currentGame.position} registered that the hand was won ${selfdrawn}by player in seat ${data.winner}.');
-        // console.log('  tiles:', this.tiles);
-        // console.log('  bonus', this.bonus);
-        // console.log('  on the table', this.revealed);
+        console.log(this.tiles, this.bonus, this.revealed);
         socket.emit('hand-acknowledged');
       });
 

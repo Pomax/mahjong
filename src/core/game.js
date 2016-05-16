@@ -28,7 +28,7 @@ class Game {
   addPlayer(player) {
     this.players[player.name] = player;
     this.playerCount++;
-    this.scores[player.name] = 2000; // FIXME: TODO: this is specified by the ruleset
+    this.scores[player.name] = this.ruleset.STARTING_POINTS;
     if (Object.keys(this.players).length === 4) { this.start(); }
   }
 

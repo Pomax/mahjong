@@ -11,6 +11,7 @@ class Ruleset {
 
   constructor() {
     this.END_HAND_ON_ILLEGAL_WIN = true;
+    this.STARTING_POINTS = 0;
   }
 
   getStartWind() {

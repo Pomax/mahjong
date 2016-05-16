@@ -5,7 +5,7 @@
   "description": "A websocket-based client/server implementation for mahjong (real mahjong, not 'solitaire')",
   "main": "index.js",
   "scripts": {
-    "test": "node src/core/test/test.js"
+    "test": "node src/test/test.js"
   },
   "author": "Pomax",
   "devDependencies": {

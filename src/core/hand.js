@@ -324,17 +324,22 @@ class Hand {
    * ...
    */
   isValidClaim(claim) {
-    // FIXME: TODO: add in actual validity checks
-    return claim.claimType > Constants.NOTHING;
+    var ct = claim.claimType;
+    if (ct === Constants.NOTHING) {
+      return false;
+    }
+    if (ct <= Constants.CHOW3) {
+      return claim.player.position === (this.discardingPlayer + 1) % this.players.length;
+    }
+    return true;
   }
 
   /**
    * ...
    */
   getBestClaim(claims) {
-    // FIXME: TODO: add more code?
-    claims.sort((a,b) => b.claimType - a.claimType);
-    return claims[0];
+    // FIXME: TODO: ensure ties between "win" calls are resolved correctly
+    return claims.sort((a,b) => b.claimType - a.claimType)[0];
   }
 
   /**
