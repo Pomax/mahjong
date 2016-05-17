@@ -11,6 +11,7 @@ var debug = false;
  * A client without an interface
  */
 class Client {
+  // redirecting constructor, as JS does not allow super.constructor calls...
   constructor(name, port, afterBinding) {
     this.name = name;
     this.reset();
@@ -28,6 +29,10 @@ class Client {
     this.tiles = [];
     this.bonus = [];
     this.revealed = [];
+    this.players = [];
+    [0,1,2,3].forEach(position => {
+      this.players[position] = {name:'', position, handSize: 0, revealed: [], bonus: []};
+    });
   }
 
   setupAI(ruleset) {
@@ -41,7 +46,11 @@ class Client {
   setGameData(data) {
     this.reset();
     this.currentGame = data;
+    this.currentGame.turn = 0;
     this.setupAI(data.ruleset);
+    data.playerNames.forEach((name,position) => {
+      this.players[position].name = name;
+    });
   }
 
   /**
@@ -51,6 +60,7 @@ class Client {
    */
   setInitialTiles(tiles) {
     this.tiles = tiles.map(v => parseInt(v));
+    this.players.forEach(player => { player.handSize = this.tiles.length; });
     this.checkDealBonus();
   }
 
@@ -85,20 +95,22 @@ class Client {
    * to a player. If this is a bonus tile, it is put
    * in the bonus bank, and a new tile is requested.
    */
-  checkDrawBonus(tile) {
+  checkDrawBonus(tile, wallSize) {
     if (tile >= Constants.BONUS) {
       this.bonus.push(tile);
       this.log('${this.name} drew bonus tile, requesting draw bonus compensation');
       return this.socket.emit('draw-bonus-request', { tile });
     }
-    this.addTile(tile);
+    this.addTile(tile, wallSize);
   }
 
   /**
    * Add a tile to the client's hand (prefiltered for
    * bonus tiles, so we know this is a normal tile).
    */
-  addTile(tile) {
+  addTile(tile, wallSize) {
+    this.currentGame.turn++;
+    this.currentGame.wallSize = wallSize;
     this.tiles.push(tile);
     this.ai.tracker.gained(this.currentGame.position, tile);
     this.ai.updateStrategy();
@@ -125,34 +137,38 @@ class Client {
   /**
    * Determine whether we want to claim a discarded tile
    */
-  determineClaim(data) {
-    this.ai.updateStrategy(data.tile);
-    return this.ai.determineClaim(data.tile);
+  determineClaim(from, tile, sendClaim) {
+    this.ai.updateStrategy(tile);
+    sendClaim(this.ai.determineClaim(tile));
   }
 
   /**
    * Process an awarded claim, leading to a reveal notification
    */
   processClaimAward(data) {
+    this.currentGame.turn++;
+
     var tile = parseInt(data.tile);
     var claim = data.claim;
+
     this.log('${this.name} was allowed to form a ${Constants.setNames[data.claim.claimType]} with tile ${tile}');
 
     // figure out what we were actually awarded
     var tiles = false;
     if(claim.claimType <= Constants.CHOW3) {
-      if(claim.claimType === Constants.CHOW1) tiles = [tile,tile+1,tile+2];
-      if(claim.claimType === Constants.CHOW2) tiles = [tile-1,tile,tile+1];
-      if(claim.claimType === Constants.CHOW3) tiles = [tile-2,tile-1,tile];
+      if(claim.claimType === Constants.CHOW1) { tiles = [tile,tile+1,tile+2]; }
+      if(claim.claimType === Constants.CHOW2) { tiles = [tile-1,tile,tile+1]; }
+      if(claim.claimType === Constants.CHOW3) { tiles = [tile-2,tile-1,tile]; }
     }
+    else if(claim.claimType === Constants.PUNG) { tiles = [tile, tile, tile]; }
+    else if(claim.claimType === Constants.KONG) { tiles = [tile, tile, tile, tile]; }
     else if(claim.claimType === Constants.WIN)  {
-      tiles = [tile, tile];
-    }
-    else if(claim.claimType === Constants.PUNG) {
-      tiles = [tile, tile, tile];
-    }
-    else if(claim.claimType === Constants.KONG) {
-      tiles = [tile, tile, tile, tile];
+      if(claim.winType === Constants.PAIR)  { tiles = [tile, tile]; }
+      if(claim.winType === Constants.CHOW1) { tiles = [tile,tile+1,tile+2]; }
+      if(claim.winType === Constants.CHOW2) { tiles = [tile-1,tile,tile+1]; }
+      if(claim.winType === Constants.CHOW3) { tiles = [tile-2,tile-1,tile]; }
+      if(claim.winType === Constants.PUNG)  { tiles = [tile, tile, tile]; }
+      if(claim.winType === Constants.KONG)  { tiles = [tile, tile, tile, tile]; }
     }
 
     // process and reveal the tiles
@@ -173,10 +189,22 @@ class Client {
   /**
    * ...
    */
-  recordReveal(player, tiles) {
-    this.ai.tracker.revealed(player, tiles);
+  recordReveal(playerPosition, tiles) {
+    this.ai.tracker.revealed(playerPosition, tiles);
     this.ai.updateStrategy();
+    var player = this.players[playerPosition];
+    player.revealed.push(tiles);
+    player.handSize -= tiles.length;
   }
+
+  /**
+   * ...
+   */
+  recordBonus(playerPosition, tiles) {
+    var player = this.players[playerPosition];
+    player.bonus = player.bonus.concat(tiles);
+  }
+
 
   /**
    * ...
@@ -198,11 +226,20 @@ class Client {
   }
 
   /**
+   * ...
+   */
+  socketPreBindings(socket) {
+    // ...
+  }
+
+  /**
    * Set up the listening side of the client protocol.
    */
   setSocketBindings(port, socket, afterBinding) {
     socket.on('connect', data => {
       this.log('connected on port ${port}');
+
+      this.socketPreBindings(socket);
 
       socket.on('getready', data => {
         this.log('instructed to get ready by the server on ${port}');
@@ -222,17 +259,23 @@ class Client {
 
       socket.on('turn-tile', data => {
         this.log(this.name, 'received turn tile: ', data.tile);
-        this.checkDrawBonus(parseInt(data.tile));
+        this.checkDrawBonus(parseInt(data.tile), parseInt(data.wallSize));
       });
 
       socket.on('draw-bonus-compensation', data => {
         this.log('draw bonus compensation tile for ${this.name}: ', data.tile);
-        this.checkDrawBonus(parseInt(data.tile));
+        this.checkDrawBonus(parseInt(data.tile), parseInt(data.wallSize));
       });
 
       socket.on('tile-discarded', data => {
-        var claim = this.determineClaim(data);
-        socket.emit('claim-discard', claim);
+        var from = parseInt(data.from);
+        var tile = parseInt(data.tile);
+        if (parseInt(from) === this.currentGame.position) {
+          return socket.emit('claim-discard', { claimType: Constants.NOTHING });
+        }
+        var claim = this.determineClaim(from, tile, claim => {
+          socket.emit('claim-discard', claim);
+        });
       });
 
       socket.on('claim-awarded', data => {
@@ -242,7 +285,7 @@ class Client {
 
       socket.on('kong-compensation', data => {
         this.log('kong compensation tile for ${this.name}: ', data.tile);
-        this.checkDrawBonus(parseInt(data.tile));
+        this.checkDrawBonus(parseInt(data.tile), parseInt(data.wallSize));
       });
 
       socket.on('player-revealed', data => {
@@ -251,14 +294,12 @@ class Client {
           if (data.tiles.length < 4) this.discardTile();
           // if it WAS a kong, we need to wait for our compensation tile.
         } else {
-          this.recordReveal(data.from, data.tiles);
+          this.recordReveal(parseInt(data.from), data.tiles);
         }
       });
 
       socket.on('player-revealed-bonus', data => {
-        // Necessary for interface updates, but we don't need
-        // to do anything with this event in an interfaceless
-        // client...
+        this.recordBonus(parseInt(data.by), data.tiles)
       });
 
       socket.on('hand-drawn', data => {

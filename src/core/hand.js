@@ -204,7 +204,7 @@ class Hand {
       return console.error('player requesting bonus tile compensation outside of the PLAYERTURN stage: ignored.');
     }
     var compensation = this.wall.drawSupplement();
-    receivingPlayer.sendDrawBonusCompensationTile(compensation);
+    receivingPlayer.sendDrawBonusCompensationTile(compensation, this.wall.playlength());
     this.players.forEach(player => {
       player.bonusCompensationTileSent(receivingPlayer, [bonusTileToReplace]);
     });
@@ -225,7 +225,7 @@ class Hand {
       this.log('wall exhausted (during deal)');
       return this.handWasDrawn();
     }
-    this.activePlayer.deal(tile);
+    this.activePlayer.deal(tile, this.wall.playlength());
   }
 
   /**
@@ -264,7 +264,7 @@ class Hand {
       return this.handWasDrawn();
     }
 
-    player.sendKongCompensationTile(compensation);
+    player.sendKongCompensationTile(compensation, this.wall.playlength());
   }
 
   /**

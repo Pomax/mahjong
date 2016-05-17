@@ -21,10 +21,11 @@ class Connector {
   setSocket(socket) {
     this.socket = socket;
 
-    socket.on('error', (e) => {
-      console.error("Something went horribly wrong...")
-      console.error(e);
-    });
+    // socket.on('error', (e) => {
+    //   console.error("Something went horribly wrong...")
+    //   console.error(e);
+    //   console.trace();
+    // });
 
     if (debug) console.log('socket on port ${this.port} established.');
     this.ready = true;

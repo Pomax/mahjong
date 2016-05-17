@@ -114,7 +114,6 @@ var adjectives = [
   'bony',
   'boring',
   'bossy',
-  'both',
   'bouncy',
   'bountiful',
   'bowed',
@@ -639,8 +638,6 @@ var adjectives = [
   'known',
   'kooky',
   'kosher',
-  '',
-  'L',
   'lame',
   'lanky',
   'large',
@@ -1942,6 +1939,7 @@ var animals = [
 
 module.exports = function getRandomCombination() {
   var some = adjectives[(Math.random() * adjectives.length) |0];
+  some = some.substring(0,1).toUpperCase() + some.substring(1).toLowerCase();
   var animal = animals[(Math.random() * animals.length) | 0];
   return some + ' ' + animal;
 };

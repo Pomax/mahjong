@@ -108,10 +108,10 @@ class Player {
     this.hand.drawBonusRequestFromPlayer(this, tile);
   }
 
-  sendDrawBonusCompensationTile(tile) {
+  sendDrawBonusCompensationTile(tile, wallSize) {
     this.tile = this.tiles.push(tile);
     this.tiles.sort(Constants.sort);
-    this.connector.publish('draw-bonus-compensation', { tile });
+    this.connector.publish('draw-bonus-compensation', { tile, wallSize });
   }
 
   // ---
@@ -125,17 +125,17 @@ class Player {
     this.hand.kongRequestFromPlayer(this, data.tiles);
   }
 
-  sendKongCompensationTile(tile) {
+  sendKongCompensationTile(tile, wallSize) {
     this.tiles.push(tile);
     this.tiles.sort(Constants.sort);
-    this.connector.publish('kong-compensation', { tile });
+    this.connector.publish('kong-compensation', { tile, wallSize });
   }
 
-  deal(tile) {
+  deal(tile, wallSize) {
     this.verify(() => {
       this.tiles.push(tile);
       this.tiles.sort(Constants.sort);
-      this.connector.publish('turn-tile', { tile });
+      this.connector.publish('turn-tile', { tile, wallSize });
     });
   }
 
