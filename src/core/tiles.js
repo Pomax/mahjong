@@ -49,6 +49,9 @@ var Tiles = {
   },
   fromShortForm: function(str) {
     return Constants.TILENUMBERS[str];
+  },
+  getPositionWind: function(num) {
+    return ['E','S','W','N'][num];
   }
 };
 

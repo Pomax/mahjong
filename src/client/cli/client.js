@@ -1,6 +1,7 @@
 'use strict'
 
 var inquirer = require('inquirer');
+var colors = require('colors');
 
 var Constants = require('../../core/constants');
 var Tiles = require('../../core/tiles');
@@ -41,6 +42,9 @@ class Client {
     this.bonus = [];
     this.revealed = [];
     this.players = [];
+    [0,1,2,3].forEach(position => {
+      this.players[position] = {name:'', position, handSize: 0, revealed: [], bonus: []};
+    });
   }
 
   setupAI(ruleset) {
@@ -58,7 +62,7 @@ class Client {
     this.currentGame.tile = 0;
     this.setupAI(data.ruleset);
     data.playerNames.forEach((name,position) => {
-      this.players[position] = {name, position, handSize: 0, revealed: [], bonus: []};
+      this.players[position].name = name;
     });
   }
 
@@ -148,20 +152,38 @@ class Client {
    * The puny human manual discard system
    */
   discardTileManually(cleandeal) {
+    function colorize(sets) {
+      var replace = (t) => {
+        if (t.length===1) {
+          if (t==='c') return colors.red.bgWhite('C');
+          if (t==='f') return colors.green.bgWhite('F');
+          return colors.blue.bgWhite(t.toUpperCase());
+        }
+        if (t.indexOf('b')===0) return colors.green.bgWhite(t.replace('b',''));
+        if (t.indexOf('c')===0) return colors.red.bgWhite(t.replace('c',''));
+        if (t.indexOf('d')===0) return colors.blue.bgWhite(t.replace('d',''));
+        if (t.indexOf('s')===0) return colors.red.bgWhite(t.replace('s',''));
+        if (t.indexOf('f')===0) return colors.blue.bgWhite(t.replace('f',''));
+      };
+      sets.forEach(set => set.forEach((t,i) => set[i] = replace(t) ));
+    };
+
     var tiles = this.tiles;
-    var tileSituation = ['[hand ${this.currentGame.handid}, tile ${this.currentGame.tile}]\n'];
+    var tileSituation = [colors.green('[hand ${this.currentGame.handid}, tile ${this.currentGame.tile}]\n')];
     this.players.forEach(player => {
-      let information = ['[seat ${player.position}, ${player.name}]'];
+      let information = [colors.black.bgWhite('[${Tiles.getPositionWind(player.position)}]') + ' ${player.name}:'];
       if (player.position === this.currentGame.position) {
+        var playtiles = tiles.sort(Constants.sort).map(tile => Tiles.getShortForm(tile));
         var revealed = "nothing on the table,";
         if (this.revealed.length>0) {
-          revealed = '[' + this.revealed.map(set => set.map(tile => Tiles.getShortForm(tile)).join(',')).join('|') + '] on the table,';
+          revealed = this.revealed.map(set => set.map(tile => Tiles.getShortForm(tile)));
         }
         var bonus = "no bonus tiles";
         if (this.bonus.length>0) {
-          bonus = 'bonus tiles: ' + this.bonus.map(tile => Tiles.getShortForm(tile)).join(',');
+          bonus = this.bonus.map(tile => Tiles.getShortForm(tile));
         }
-        information = information.concat([ tiles.sort(Constants.sort).map(tile => Tiles.getShortForm(tile)).join(','), '-', revealed, bonus ]);
+        colorize([playtiles, bonus]);
+        information = information.concat([ playtiles.join(''), '-', revealed, bonus ]);
       } else {
         var revealed = "nothing on the table,";
         if (player.revealed.length>0) {
@@ -349,6 +371,15 @@ class Client {
   }
 
   /**
+   * ..
+   */
+  recordBonus(playerPosition, tiles) {
+    var player = this.players[playerPosition];
+    console.log('${player.name} received bonus tile(s) ', tiles.map(tile => Tiles.getShortForm(tile)));
+    player.bonus = player.bonus.concat(tiles);
+  }
+
+  /**
    * ...
    */
   processHandScore(scoreObject) {
@@ -432,14 +463,12 @@ class Client {
           if (data.tiles.length < 4) this.discardTileManually();
           // if it WAS a kong, we need to wait for our compensation tile.
         } else {
-          this.recordReveal(data.from, data.tiles);
+          this.recordReveal(parseInt(data.from), data.tiles);
         }
       });
 
       socket.on('player-revealed-bonus', data => {
-        // Necessary for interface updates, but we don't need
-        // to do anything with this event in an interfaceless
-        // client...
+        this.recordBonus(parseInt(data.by), data.tiles)
       });
 
       socket.on('hand-drawn', data => {

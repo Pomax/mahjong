@@ -108,11 +108,8 @@ class Hand {
     this.activePlayer = this.players[0];
 
     var playerNames = this.players.map(player => player.name);
-    var playerNames = this.players.map(player => player.name);
-    var roll = this.windOffset;
-    while (roll--) {
-      playerNames = playerNames.push(playerNames.shift());
-    }
+    var roll = this.windOffset % 4;
+    while (roll--) { playerNames = [playerNames.pop()].concat(playerNames); }
 
     this.log('Starting hand ${this.id}');
     this.ready = {};

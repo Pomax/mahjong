@@ -5,7 +5,8 @@
   "description": "A websocket-based client/server implementation for mahjong (real mahjong, not 'solitaire')",
   "main": "index.js",
   "scripts": {
-    "test": "node src/test/test.js"
+    "test": "node src/test/test.js",
+    "cli": "node src/client/cli/test.js"
   },
   "author": "Pomax",
   "devDependencies": {
@@ -16,6 +17,7 @@
     "babel-preset-react": "^6.5.0",
     "brain": "^0.7.0",
     "classnames": "^2.2.3",
+    "colors": "^1.1.2",
     "eslint": "^2.1.0",
     "eslint-loader": "^1.2.1",
     "eslint-plugin-react": "^3.16.1",
