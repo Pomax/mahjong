@@ -43,6 +43,12 @@ var Tiles = {
     var set = [];
     for(var i=suit; i<suit+Constants.NUMMOD; i++) { set.push(i); }
     return set;
+  },
+  getShortForm: function(tn) {
+    return Constants.SHORTFORMS[tn];
+  },
+  fromShortForm: function(str) {
+    return Constants.TILENUMBERS[str];
   }
 };
 

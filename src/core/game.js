@@ -4,6 +4,8 @@ var Constants = require('./constants');
 var rulesets = require('./rules');
 var Hand = require('./hand');
 
+var debug = false;
+
 /**
  * A game is effectively a "hand manager".
  */
@@ -29,7 +31,9 @@ class Game {
     this.players[player.name] = player;
     this.playerCount++;
     this.scores[player.name] = this.ruleset.STARTING_POINTS;
-    if (Object.keys(this.players).length === 4) { this.start(); }
+    if (this.playerCount === 4) {
+      this.start();
+    }
   }
 
   removePlayer(name) {

@@ -1,5 +1,7 @@
 'use strict';
 
+var debug = false;
+
 class Connector {
   constructor(sendPortInformation) {
     this.queue = [];
@@ -19,12 +21,12 @@ class Connector {
   setSocket(socket) {
     this.socket = socket;
 
-    socket.on('error', () => {
+    socket.on('error', (e) => {
       console.error("Something went horribly wrong...")
-      console.error(arguments);
+      console.error(e);
     });
 
-    console.log('socket on port ${this.port} established.');
+    if (debug) console.log('socket on port ${this.port} established.');
     this.ready = true;
     while(this.queue.length) {
       let entry = this.queue.splice(0,1)[0];

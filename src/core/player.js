@@ -4,6 +4,8 @@ var Constants = require('./constants');
 var Connector = require('./connector');
 var digest = require('./digest');
 
+var debug = false;
+
 /**
  * A player is the bridge between 'someone or something that plays' and the system
  */
@@ -17,9 +19,10 @@ class Player {
     // allowing them to 'be played' by either real
     // people or autonomous processes.
     var connector = new Connector((port) => {
-      console.log('port for player ${this.id}: ${port}');
+      if (debug)
+        console.log('port for player ${this.id}: ${port}');
       if (sendPortInformation) {
-        sendPortInformation(port);
+        sendPortInformation(this, port);
       }
     });
     this.connector = connector;
@@ -35,16 +38,20 @@ class Player {
   setConnnectorBindings() {
     var c = this.connector;
     c.subscribe('ready', data => this.readyFromClient(data));
-    c.subscribe('bonus-request', data => this.bonusRequestFromClient(data || {}));
+    c.subscribe('deal-bonus-request', data => this.dealBonusRequestFromClient(data || {}));
+    c.subscribe('draw-bonus-request', data => this.drawBonusRequestFromClient(data || {}));
     c.subscribe('kong-request', data => this.kongRequestFromClient(data || {}));
     c.subscribe('discard-tile', data => this.discardReceivedFromClient(data));
     c.subscribe('claim-discard', data => this.claimReceivedFromClient(data));
     c.subscribe('set-revealed', data => this.revealReceivedFromClient(data));
     c.subscribe('hand-acknowledged', data => this.handAcknowledgedByClient(data));
     c.subscribe('verify-result', data => this.verifyResultFromClient(data));
+
+    // enabled for development only
+    c.subscribe('disable-claim-timeout', data => this.disableClaimTimeout(data));
   }
 
-  getReady(game, hand, position, windOfTheRound) {
+  getReady(game, hand, position, windOfTheRound, playerNames) {
     this.game = game;
     this.hand = hand;
     this.position = position;
@@ -53,7 +60,13 @@ class Player {
     this.tiles = [];
     this.revealed = [];
     this.bonus = [];
-    this.connector.publish('getready', { ruleset: this.game.rulesetName, gameid: this.game.id, handid: this.hand.id, position, windOfTheRound });
+    this.connector.publish('getready', {
+      ruleset: this.game.rulesetName,
+      gameid: this.game.id,
+      handid: this.hand.id,
+      position, windOfTheRound,
+      playerNames
+    });
     // wait for 'ready' signal through connector
   }
 
@@ -67,21 +80,41 @@ class Player {
     // wait for 'bonus-request' through connector
   }
 
-  bonusRequestFromClient(data) {
+  // ---
+
+  dealBonusRequestFromClient(data) {
     // this _should_ lead to the same result as at the client
     var bonus = this.tiles.filter(t => t >= Constants.PLAYTILES);
     if (bonus.length > 0) {
       this.bonus = this.bonus.concat(bonus);
       this.tiles = this.tiles.filter(t => t < Constants.PLAYTILES);
     }
-    this.hand.bonusRequestFromPlayer(this, bonus);
+    this.hand.dealBonusRequestFromPlayer(this, bonus);
   }
 
-  sendBonusCompensationTiles(tiles) {
+  sendDealBonusCompensationTiles(tiles) {
     this.tiles = this.tiles.concat(tiles);
     this.tiles.sort(Constants.sort);
-    this.connector.publish('bonus-compensation', { tiles });
+    this.connector.publish('deal-bonus-compensation', { tiles });
   }
+
+  // ---
+
+  drawBonusRequestFromClient(data) {
+    // this _should_ lead to the same result as at the client
+    var tile = parseInt(data.tile);
+    this.bonus.push(tile);
+    this.tiles = this.tiles.filter(t => t < Constants.PLAYTILES);
+    this.hand.drawBonusRequestFromPlayer(this, tile);
+  }
+
+  sendDrawBonusCompensationTile(tile) {
+    this.tile = this.tiles.push(tile);
+    this.tiles.sort(Constants.sort);
+    this.connector.publish('draw-bonus-compensation', { tile });
+  }
+
+  // ---
 
   bonusCompensationTileSent(player, tiles) {
     var by = player.position;
@@ -164,6 +197,11 @@ class Player {
 
   recordScore(scoreObject) {
     this.connector.publish('hand-score', scoreObject);
+  }
+
+  // FIXME: development only
+  disableClaimTimeout(data) {
+    this.hand.disableClaimTimeout();
   }
 
   // General purpose

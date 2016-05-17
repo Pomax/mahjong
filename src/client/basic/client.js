@@ -5,6 +5,8 @@ var Tiles = require('../../core/tiles');
 var rulesets = require('../../core/rules')
 var digest = require('../../core/digest');
 
+var debug = false;
+
 /**
  * A client without an interface
  */
@@ -19,7 +21,7 @@ class Client {
   }
 
   log() {
-    //consose.log.apply(console, arguments);
+    if (debug) console.log.apply(console, arguments);
   }
 
   reset() {
@@ -43,27 +45,64 @@ class Client {
   }
 
   /**
-   * Add a tile to the client's hand
+   * Set the initial game hand. This may include
+   * bonus tiles, which need to be moved out
+   * and compensated for, handled in 'checkDealBonus'.
    */
-  addTile(tile) {
-    this.tiles.push(tile);
-
-    this.ai.tracker.gained(this.currentGame.position, tile);
-    this.ai.updateStrategy();
-    this.discardTile(true);
+  setInitialTiles(tiles) {
+    this.tiles = tiles.map(v => parseInt(v));
+    this.checkDealBonus();
   }
 
   /**
-   * used by all protocol steps that involve 'getting a tile'
+   * used for bonus requests during the initial deal, when we can
+   * get more than one bonus tile.
    */
-  checkBonus() {
+  checkDealBonus() {
     var bonus = this.tiles.map(v => parseInt(v)).filter(t => t >= Constants.PLAYTILES);
     if (bonus.length > 0) {
       this.bonus = this.bonus.concat(bonus);
       this.tiles = this.tiles.map(v => parseInt(v)).filter(t => t < Constants.PLAYTILES);
       this.log('requesting compensation for bonus tiles ${bonus}');
     }
-    this.socket.emit('bonus-request', { tiles: this.bonus });
+    this.socket.emit('deal-bonus-request', { tiles: this.bonus });
+  }
+
+  /**
+   * Process compensation tiles for any bonus tiles
+   * received during the initial deal. Not that this
+   * may also include _new_ bonus tiles, which need
+   * to be moved out and compensated for again,
+   * handled in 'checkDealBonus'.
+   */
+  processDealBonusTiles(tiles) {
+    this.tiles = this.tiles.concat(tiles);
+    this.checkDealBonus();
+  }
+
+  /**
+   * A prefilted for regular play tiles being dealt
+   * to a player. If this is a bonus tile, it is put
+   * in the bonus bank, and a new tile is requested.
+   */
+  checkDrawBonus(tile) {
+    if (tile >= Constants.BONUS) {
+      this.bonus.push(tile);
+      this.log('${this.name} drew bonus tile, requesting draw bonus compensation');
+      return this.socket.emit('draw-bonus-request', { tile });
+    }
+    this.addTile(tile);
+  }
+
+  /**
+   * Add a tile to the client's hand (prefiltered for
+   * bonus tiles, so we know this is a normal tile).
+   */
+  addTile(tile) {
+    this.tiles.push(tile);
+    this.ai.tracker.gained(this.currentGame.position, tile);
+    this.ai.updateStrategy();
+    this.discardTile(true);
   }
 
   /**
@@ -106,7 +145,7 @@ class Client {
       if(claim.claimType === Constants.CHOW2) tiles = [tile-1,tile,tile+1];
       if(claim.claimType === Constants.CHOW3) tiles = [tile-2,tile-1,tile];
     }
-    else if(data.claim.claimType === Constants.WIN)  {
+    else if(claim.claimType === Constants.WIN)  {
       tiles = [tile, tile];
     }
     else if(claim.claimType === Constants.PUNG) {
@@ -173,19 +212,22 @@ class Client {
 
       socket.on('initial-tiles', data => {
         this.log('initial tiles for ${this.name}: ', data.tiles);
-        this.tiles = data.tiles.map(v => parseInt(v));
-        this.checkBonus();
+        this.setInitialTiles(data.tiles);
       });
 
-      socket.on('bonus-compensation', data => {
-        this.log('bonus compensation tiles for ${this.name}: ', data.tiles);
-        this.tiles = this.tiles.concat(data.tiles.map(v => parseInt(v)));
-        this.checkBonus();
+      socket.on('deal-bonus-compensation', data => {
+        this.log('deal bonus compensation tiles for ${this.name}: ', data.tiles);
+        this.processDealBonusTiles(data.tiles.map(v => parseInt(v)));
       })
 
       socket.on('turn-tile', data => {
         this.log(this.name, 'received turn tile: ', data.tile);
-        this.addTile(parseInt(data.tile));
+        this.checkDrawBonus(parseInt(data.tile));
+      });
+
+      socket.on('draw-bonus-compensation', data => {
+        this.log('draw bonus compensation tile for ${this.name}: ', data.tile);
+        this.checkDrawBonus(parseInt(data.tile));
       });
 
       socket.on('tile-discarded', data => {
@@ -200,7 +242,7 @@ class Client {
 
       socket.on('kong-compensation', data => {
         this.log('kong compensation tile for ${this.name}: ', data.tile);
-        this.addTile(parseInt(data.tile));
+        this.checkDrawBonus(parseInt(data.tile));
       });
 
       socket.on('player-revealed', data => {
@@ -241,7 +283,7 @@ class Client {
       });
     });
 
-    afterBinding();
+    if (afterBinding) afterBinding();
   }
 };
 

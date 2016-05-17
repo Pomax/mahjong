@@ -4,6 +4,8 @@ var Constants = require('./constants');
 var Wall = require('./wall');
 var Tiles = require('./tiles');
 
+var debug = false;
+
 /**
  * A hand represents a single round of play
  */
@@ -18,8 +20,6 @@ var stages = {
   DRAW: 'finished:draw',
   WON: 'finished:won'
 };
-
-var debug = false;
 
 class Hand {
 
@@ -41,6 +41,11 @@ class Hand {
 
   setStage(stage) {
     this.stage = stage;
+  }
+
+  // FIXME: development only
+  disableClaimTimeout() {
+    this.claimTimeoutInterval = false;
   }
 
   /**
@@ -102,11 +107,18 @@ class Hand {
     this.started = true;
     this.activePlayer = this.players[0];
 
-    console.log('Starting hand ${this.id}');
+    var playerNames = this.players.map(player => player.name);
+    var playerNames = this.players.map(player => player.name);
+    var roll = this.windOffset;
+    while (roll--) {
+      playerNames = playerNames.push(playerNames.shift());
+    }
+
+    this.log('Starting hand ${this.id}');
     this.ready = {};
     this.players.forEach((player,position) => {
       var seat = (position + this.windOffset) % this.players.length;
-      player.getReady(this.game, this, seat, this.windOfTheRound);
+      player.getReady(this.game, this, seat, this.windOfTheRound, playerNames);
     });
   }
 
@@ -150,7 +162,7 @@ class Hand {
   /**
    * ...
    */
-  bonusRequestFromPlayer(player, bonusTilesToReplace) {
+  dealBonusRequestFromPlayer(player, bonusTilesToReplace) {
     if (this.stage !== stages.INITIALDEAL) {
       return console.error('player requesting bonus tile compensation outside of the INITIALDEAL stage: ignored.');
     }
@@ -158,7 +170,7 @@ class Hand {
     if (!bonusTilesToReplace || bonusTilesToReplace.length === 0) {
       this.pendingBonusRequests[player.name] = 'handled';
     } else {
-      this.sendBonusCompensationTiles(player, bonusTilesToReplace);
+      this.sendDealBonusCompensationTiles(player, bonusTilesToReplace);
       // leave state as pending, as the compensation could contain bonus tiles
     }
 
@@ -179,13 +191,28 @@ class Hand {
   /**
    * ...
    */
-  sendBonusCompensationTiles(receivingPlayer, bonusTilesToReplace) {
+  sendDealBonusCompensationTiles(receivingPlayer, bonusTilesToReplace) {
     var compensation = bonusTilesToReplace.map(tile => this.wall.drawSupplement());
-    receivingPlayer.sendBonusCompensationTiles(compensation);
+    receivingPlayer.sendDealBonusCompensationTiles(compensation);
     this.players.forEach(player => {
       player.bonusCompensationTileSent(receivingPlayer, bonusTilesToReplace);
     });
   }
+
+  /**
+   * ...
+   */
+  drawBonusRequestFromPlayer(receivingPlayer, bonusTileToReplace) {
+    if (this.stage !== stages.PLAYERTURN) {
+      return console.error('player requesting bonus tile compensation outside of the PLAYERTURN stage: ignored.');
+    }
+    var compensation = this.wall.drawSupplement();
+    receivingPlayer.sendDrawBonusCompensationTile(compensation);
+    this.players.forEach(player => {
+      player.bonusCompensationTileSent(receivingPlayer, [bonusTileToReplace]);
+    });
+  }
+
 
   /**
    * ...
@@ -198,7 +225,7 @@ class Hand {
 
     var tile = this.wall.draw();
     if (tile === Constants.NOTILE) {
-      console.log('wall exhausted (during deal)');
+      this.log('wall exhausted (during deal)');
       return this.handWasDrawn();
     }
     this.activePlayer.deal(tile);
@@ -222,7 +249,7 @@ class Hand {
     var compensation = this.wall.drawSupplement();
 
     if (compensation === Constants.NOTILE) {
-      console.log('wall exhausted (during compensation)');
+      this.log('wall exhausted (during compensation)');
       return this.handWasDrawn();
     }
 
@@ -236,7 +263,7 @@ class Hand {
     var compensation = this.wall.drawSupplement();
 
     if (compensation === Constants.NOTILE) {
-      console.log('wall exhausted (during compensation)');
+      this.log('wall exhausted (during compensation)');
       return this.handWasDrawn();
     }
 
@@ -265,7 +292,9 @@ class Hand {
     this.currentDiscard = tile;
     this.discardingPlayer = discardingPlayer;
     this.listenForClaims();
-    this.claimTimeout = setTimeout(() => this.processClaims(), this.claimTimeoutInterval);
+    if (this.claimTimeoutInterval) {
+      this.claimTimeout = setTimeout(() => this.processClaims(), this.claimTimeoutInterval);
+    }
     this.players.forEach(player => player.tileWasDiscarded(discardingPlayer, tile));
   }
 
@@ -351,6 +380,9 @@ class Hand {
       if (face === 7 && ct === Constants.CHOW1) return false;
       if (face === 8 && ct !== Constants.CHOW3) return false;
     }
+
+    // FIXME: TODO: verify that a player _can_ claim what they claim
+
     return true;
   }
 

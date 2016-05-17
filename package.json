@@ -21,6 +21,7 @@
     "eslint-plugin-react": "^3.16.1",
     "express": "^4.13.4",
     "habitat": "^3.1.2",
+    "inquirer": "^1.0.2",
     "less": "^2.6.1",
     "less-watch-compiler": "^1.2.3",
     "md5": "^2.1.0",
