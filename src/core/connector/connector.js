@@ -2,22 +2,28 @@
 
 var debug = false;
 
+/**
+ * A socket wrapper that lets us swap in different socket libraries,
+ */
 class Connector {
-  constructor(sendPortInformation) {
+  constructor(postBootstrapHandler, port) {
     this.queue = [];
     this.ready = false;
-
-    var server = require('http').createServer(this.callHandler);
-    var io = require('socket.io')(server);
-    server.listen(() => {
-      this.port = server.address().port;
-      if (sendPortInformation) {
-        sendPortInformation(this.port);
-      }
-    });
-    io.on('connection', socket => this.setSocket(socket));
+    this.port = port || false;
+    this.bootstrap(postBootstrapHandler, port);
   }
 
+  /**
+   * bootstrap the connector
+   */
+  bootstrap(postBootstrapHandler, port) {
+    // client/server extensions implement this differently.
+  }
+
+  /**
+   * Bind the socket, and resolve any outstanding operations
+   * that had been queued before the socket was properly ready.
+   */
   setSocket(socket) {
     this.socket = socket;
 
@@ -31,11 +37,13 @@ class Connector {
     this.ready = true;
     while(this.queue.length) {
       let entry = this.queue.splice(0,1)[0];
-      this[entry.op](entry.eventName, entry.handler || entry.payload);
+      this[entry.op](entry.eventName, entry.handler || entry.payload, entry.afterwards);
     }
   }
 
-  // subscribe to this connector
+  /**
+   * subscribe to this connector
+   */
   subscribe(eventName, handler) {
     if (!this.ready) {
       return this.queue.push({op: 'subscribe', eventName, handler });
@@ -43,21 +51,26 @@ class Connector {
     this.socket.on(eventName, handler);
   }
 
-  // publish to this connector
-  publish(eventName, payload) {
+  /**
+   * publish over this connector
+   */
+  publish(eventName, payload, afterwards) {
     if (!this.ready) {
-      return this.queue.push({op: 'publish', eventName, payload });
+      return this.queue.push({op: 'publish', eventName, payload, afterwards });
     }
     this.socket.emit(eventName, payload);
+    if (afterwards) afterwards();
   }
 
-  // unsubscript from this connector
+  /**
+   * unsubscripe from this connector
+   */
   unsubscribe(eventName, handler) {
     if (!this.ready) {
       return this.queue.push({op: 'unsubscribe', eventName, handler });
     }
     this.socket.removeListener(eventName, handler);
   }
-};
+}
 
 module.exports = Connector;

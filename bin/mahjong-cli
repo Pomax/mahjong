@@ -1,0 +1,7 @@
+#! /usr/bin/env node
+require('../src/client/cli/test.js');
+
+/**
+ * This does not work, due to pirates not working properly.
+ * See https://github.com/ariporad/pirates/issues/26
+ */

@@ -410,8 +410,8 @@ class Hand {
    *
    */
   revealReceivedFromPlayer(revealingPlayer, tiles) {
-    if (this.stage !== stages.REVEAL) {
-      return console.error('player revealed outside of the REVEAL stage: ignored.');
+    if (this.stage !== stages.REVEAL && this.stage !== stages.PLAYERTURN) {
+      return console.error('player revealed outside of the REVEAL/PLAYERTURN stages: ignored.');
     }
     this.players.forEach(player => player.setWasRevealed(revealingPlayer, tiles));
     this.setStage(stages.PLAYERTURN);

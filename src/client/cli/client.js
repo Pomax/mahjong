@@ -1,7 +1,7 @@
 'use strict'
 
 var inquirer = require('inquirer');
-var colors = require('colors');
+var colors = require('cli-color');
 
 var BaseClient = require('../basic/client');
 var Constants = require('../../core/constants');
@@ -20,13 +20,13 @@ class Client extends BaseClient {
     super(name, port, afterBinding);
 
     console.log('');
-    console.log(colors.green('  ███╗   ███╗ █████╗ ██╗  ██╗     ██╗ ██████╗ ███╗   ██╗ ██████╗ '));
-    console.log(colors.green('  ████╗ ████║██╔══██╗██║  ██║     ██║██╔═══██╗████╗  ██║██╔════╝ '));
-    console.log(colors.green('  ██╔████╔██║███████║███████║     ██║██║   ██║██╔██╗ ██║██║  ███╗'));
-    console.log(colors.green('  ██║╚██╔╝██║██╔══██║██╔══██║██   ██║██║   ██║██║╚██╗██║██║   ██║'));
-    console.log(colors.green('  ██║ ╚═╝ ██║██║  ██║██║  ██║╚█████╔╝╚██████╔╝██║ ╚████║╚██████╔╝'));
-    console.log(colors.green('  ╚═╝     ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝ ╚════╝  ╚═════╝ ╚═╝  ╚═══╝ ╚═════╝ '));
-    console.log(colors.yellow('                                                  Version ${version}\n'));
+    console.log(colors.yellowBright('  ███╗   ███╗ █████╗ ██╗  ██╗     ██╗ ██████╗ ███╗   ██╗ ██████╗ '));
+    console.log(colors.yellowBright('  ████╗ ████║██╔══██╗██║  ██║     ██║██╔═══██╗████╗  ██║██╔════╝ '));
+    console.log(colors.yellowBright('  ██╔████╔██║███████║███████║     ██║██║   ██║██╔██╗ ██║██║  ███╗'));
+    console.log(colors.yellowBright('  ██║╚██╔╝██║██╔══██║██╔══██║██   ██║██║   ██║██║╚██╗██║██║   ██║'));
+    console.log(colors.yellowBright('  ██║ ╚═╝ ██║██║  ██║██║  ██║╚█████╔╝╚██████╔╝██║ ╚████║╚██████╔╝'));
+    console.log(colors.yellowBright('  ╚═╝     ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝ ╚════╝  ╚═════╝ ╚═╝  ╚═══╝ ╚═════╝ '));
+    console.log(colors.whiteBright('                                                  Version ${version}\n'));
   }
 
   setGameData(data) {
@@ -42,27 +42,28 @@ class Client extends BaseClient {
 
   addTile(tile, wallSize) {
     var shortform = Tiles.getShortForm(tile)
-    console.log('You received a tile ${shortform}');
+    console.log('You received a tile ' + this.colorTile(shortform));
     super.addTile(tile, wallSize);
+  }
+
+  colorTile(t) {
+    if (t.length===1) {
+      if (t==='c') return colors.redBright.bgWhite('C');
+      if (t==='f') return colors.green.bgWhite('F');
+      return colors.blueBright.bgWhite(t.toUpperCase());
+    }
+    if (t.indexOf('b')===0) return colors.green.bgWhite(t.replace('b',''));
+    if (t.indexOf('c')===0) return colors.redBright.bgWhite(t.replace('c',''));
+    if (t.indexOf('d')===0) return colors.blueBright.bgWhite(t.replace('d',''));
+    if (t.indexOf('s')===0) return colors.redBright.bgWhite(t.replace('s',''));
+    if (t.indexOf('f')===0) return colors.blueBright.bgWhite(t.replace('f',''));
   }
 
   /**
    * ...
    */
   colorize(tiles) {
-    var replace = (t) => {
-      if (t.length===1) {
-        if (t==='c') return colors.red.bgWhite('C');
-        if (t==='f') return colors.green.bgWhite('F');
-        return colors.blue.bgWhite(t.toUpperCase());
-      }
-      if (t.indexOf('b')===0) return colors.green.bgWhite(t.replace('b',''));
-      if (t.indexOf('c')===0) return colors.red.bgWhite(t.replace('c',''));
-      if (t.indexOf('d')===0) return colors.blue.bgWhite(t.replace('d',''));
-      if (t.indexOf('s')===0) return colors.red.bgWhite(t.replace('s',''));
-      if (t.indexOf('f')===0) return colors.blue.bgWhite(t.replace('f',''));
-    };
-    tiles.forEach((t,i) => tiles[i] = replace(t));
+    tiles.forEach((t,i) => tiles[i] = this.colorTile(t));
   }
 
   /**
@@ -87,7 +88,7 @@ class Client extends BaseClient {
       this.colorize(bonus);
     }
 
-    return [playtiles.join('') + ',', 'open:', revealed.join(' ') + ',', 'bonus:', bonus.join('')];
+    return ['tiles in hand:', playtiles.join('') + ',', 'open:', revealed.join(' ') + ',', 'bonus:', bonus.join('')];
   }
 
   /**
@@ -118,12 +119,12 @@ class Client extends BaseClient {
     var tileSituation = [colors.green('[hand ${this.currentGame.handid}, turn ${this.currentGame.turn}, wall: ${this.currentGame.wallSize}]')];
     this.players.forEach(player => {
       let wind = Tiles.getPositionWind(player.position);
-      let information = [ colors.white('(${wind})') ];
+      let information = [ colors.whiteBright.bgBlue('${wind}') + colors.whiteBright(':')];
       if (player.position === this.currentGame.position) {
-        information.push( colors.yellow('${player.name}') + ':');
+        information.push( colors.yellowBright('${player.name}') + colors.whiteBright(':'));
         information = information.concat(this.getOurTileSituation());
       } else {
-        information.push( colors.green('${player.name}') + ':');
+        information.push( colors.green('${player.name}') + colors.whiteBright(':'));
         information = information.concat(this.getTheirTileSituation(player));
       }
       tileSituation = tileSituation.concat(information.join(' '));
@@ -145,7 +146,7 @@ class Client extends BaseClient {
       validate: value => {
         let msg = 'Please type a tile in your hand';
         if (!value) return msg;
-        if (value === 'q') process.exit(1);
+        if (value === 'q') process.exit(0);
         if (value === 'kong') return true;
         let tile = Tiles.fromShortForm(value);
         if (tile === Constants.NOTILE) return true;
@@ -157,12 +158,7 @@ class Client extends BaseClient {
       var value = answers.tile;
       if (value === 'kong') { return this.selectKong(); }
       var tile = Tiles.fromShortForm(value);
-      if (tile !== Constants.NOTILE) {
-        var pos = this.tiles.indexOf(tile);
-        this.tiles.splice(pos,1);
-        this.log(this.name, 'discarding: ', tile);
-      }
-      this.socket.emit('discard-tile', { tile });
+      this.processTileDiscardChoice(tile);
     });
   }
 
@@ -178,7 +174,6 @@ class Client extends BaseClient {
       validate: value => {
         let msg = 'Please type a tile in your hand';
         if (!value) return msg;
-        if (value === 'q') process.exit(1);
         let tile = Tiles.fromShortForm(value);
         if (tile === Constants.NOTILE) return true;
         if (this.tiles.indexOf(tile) === -1) return msg;
@@ -189,18 +184,29 @@ class Client extends BaseClient {
       var value= answers.tile;
       var tile = Tiles.fromShortForm(value);
       if (tile !== Constants.NOTILE) {
-        // ...
+        this.revealConcealedKong(tile);
       }
     });
   }
 
+  /**
+   * ...
+   */
+  revealConcealedKong(tile) {
+    var tiles = [tile, tile, tile, tile];
+    this.tiles = this.tiles.filter(_tile => _tile !== tile);
+    this.revealed.push(tiles);
+    this.connector.publish('set-revealed', { tiles }, () => {
+      this.connector.publish('kong-request', { kong: tile });
+    });
+  }
 
   /**
    * Determine whether we want to claim a discarded tile
    */
   determineClaim(from, tile, sendClaim) {
     var shortform = Tiles.getShortForm(tile);
-    console.log('${this.players[from].name} discarded a tile ${shortform}');
+    console.log('${this.players[from].name} discarded a tile ' + this.colorTile(shortform));
     inquirer
     .prompt([{
       type: 'input',
@@ -287,7 +293,7 @@ class Client extends BaseClient {
    */
   recordReveal(playerPosition, tiles) {
     var player = this.players[playerPosition];
-    console.log('${player.name} claimed the discard to form', tiles.map(tile => Tiles.getShortForm(tile)));
+    console.log('${player.name} claimed the discard to form', tiles.map(tile => this.colorTile(Tiles.getShortForm(tile))).join(''));
     super.recordReveal(playerPosition, tiles);
   }
 
@@ -303,10 +309,10 @@ class Client extends BaseClient {
   /**
    * ...
    */
-  socketPreBindings(socket) {
+  socketPreBindings() {
     super.socketPreBindings();
     // FIXME: TEMPORARY BUT NECESSARY DUE TO THE UNINTERRUPTIBILITY OF INQUIRER PROMISE
-    socket.emit('disable-claim-timeout');
+    this.connector.publish('disable-claim-timeout');
     // FIXME: TEMPORARY BUT NECESSARY DUE TO THE UNINTERRUPTIBILITY OF INQUIRER PROMISE
   }
 };

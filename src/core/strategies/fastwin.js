@@ -1,4 +1,4 @@
-'use strict'
+'use strict';
 
 /**
  * A strategy decides which tiles a player should "go for",

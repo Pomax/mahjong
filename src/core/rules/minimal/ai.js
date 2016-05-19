@@ -1,4 +1,4 @@
-'use strict'
+'use strict';
 
 var Constants = require('../../constants');
 var GameTracker = require('../../gametracker');
@@ -121,6 +121,6 @@ class AI {
     probabilities.forEach((p,i) => {if (p < minProb) { minProb = p; discard = i; }});
     return this.tiles[discard];
   }
-};
+}
 
 module.exports = AI;

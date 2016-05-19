@@ -1,7 +1,7 @@
 'use strict';
 
 var Constants = require('./constants');
-var Connector = require('./connector');
+var Connector = require('./connector').Server;
 var digest = require('./digest');
 
 var debug = false;
@@ -40,6 +40,7 @@ class Player {
     c.subscribe('ready', data => this.readyFromClient(data));
     c.subscribe('deal-bonus-request', data => this.dealBonusRequestFromClient(data || {}));
     c.subscribe('draw-bonus-request', data => this.drawBonusRequestFromClient(data || {}));
+    c.subscribe('declare-kong', data => this.kongDeclarationFromClient(data || {}));
     c.subscribe('kong-request', data => this.kongRequestFromClient(data || {}));
     c.subscribe('discard-tile', data => this.discardReceivedFromClient(data));
     c.subscribe('claim-discard', data => this.claimReceivedFromClient(data));

@@ -1,4 +1,4 @@
-'use strict'
+'use strict';
 
 var Constants = require('../../constants');
 var Tiles = require('../../tiles');
@@ -190,6 +190,6 @@ class Ruleset {
     return won? 1 : 1;
     // we also rotate on a draw =)
   }
-};
+}
 
 module.exports = Ruleset;

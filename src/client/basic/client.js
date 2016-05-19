@@ -1,9 +1,10 @@
-'use strict'
+'use strict';
 
 var Constants = require('../../core/constants');
 var Tiles = require('../../core/tiles');
-var rulesets = require('../../core/rules')
+var rulesets = require('../../core/rules');
 var digest = require('../../core/digest');
+var Connector = require('../../core/connector').Client;
 
 var debug = false;
 
@@ -11,14 +12,12 @@ var debug = false;
  * A client without an interface
  */
 class Client {
-  // redirecting constructor, as JS does not allow super.constructor calls...
   constructor(name, port, afterBinding) {
     this.name = name;
     this.reset();
-    var io = require('socket.io-client');
-    this.log('connecting to port ${port}...');
-    var socket = this.socket = io.connect('http://localhost:${port}');
-    this.setSocketBindings(port, socket, afterBinding);
+    this.connector = new Connector(connector => {
+      this.setSocketBindings(port, connector, afterBinding);
+    }, port);
   }
 
   log() {
@@ -75,7 +74,7 @@ class Client {
       this.tiles = this.tiles.map(v => parseInt(v)).filter(t => t < Constants.PLAYTILES);
       this.log('requesting compensation for bonus tiles ${bonus}');
     }
-    this.socket.emit('deal-bonus-request', { tiles: this.bonus });
+    this.connector.publish('deal-bonus-request', { tiles: this.bonus });
   }
 
   /**
@@ -99,7 +98,7 @@ class Client {
     if (tile >= Constants.BONUS) {
       this.bonus.push(tile);
       this.log('${this.name} drew bonus tile, requesting draw bonus compensation');
-      return this.socket.emit('draw-bonus-request', { tile });
+      return this.connector.publish('draw-bonus-request', { tile });
     }
     this.addTile(tile, wallSize);
   }
@@ -122,16 +121,22 @@ class Client {
    */
   discardTile(cleandeal) {
     if (this.rules.checkCoverage(this.tiles, this.bonus, this.revealed)) {
-      return this.socket.emit('discard-tile', { tile: Constants.NOTILE, selfdrawn: true });
+      return this.connector.publish('discard-tile', { tile: Constants.NOTILE, selfdrawn: true });
     }
-
     var tile = this.ai.determineDiscard();
+    this.processTileDiscardChoice(tile);
+  }
+
+  /**
+   * handle the discard process once a tile has been chosen
+   */
+  processTileDiscardChoice(tile) {
     if (tile !== Constants.NOTILE) {
       var pos = this.tiles.indexOf(tile);
       this.tiles.splice(pos,1);
       this.log(this.name, 'discarding: ', tile);
     }
-    this.socket.emit('discard-tile', { tile });
+    this.connector.publish('discard-tile', { tile });
   }
 
   /**
@@ -180,7 +185,7 @@ class Client {
     });
 
     if (claim.claimType === Constants.KONG) {
-      this.socket.emit('kong-request', { tiles });
+      this.connector.publish('kong-request', { tiles });
     }
 
     return tiles;
@@ -217,7 +222,7 @@ class Client {
    * ...
    */
   verify(data) {
-    this.socket.emit("verify-result", {
+    this.connector.publish("verify-result", {
       tiles: this.tiles,
       bonus: this.bonus,
       revealed: this.revealed,
@@ -228,67 +233,69 @@ class Client {
   /**
    * ...
    */
-  socketPreBindings(socket) {
-    // ...
+  socketPreBindings() {
+    // ...extensions can drop code here...
   }
 
   /**
    * Set up the listening side of the client protocol.
    */
-  setSocketBindings(port, socket, afterBinding) {
-    socket.on('connect', data => {
+  setSocketBindings(port, connector, afterBinding) {
+    var c = this.connector = connector;
+
+    c.subscribe('connect', data => {
       this.log('connected on port ${port}');
 
-      this.socketPreBindings(socket);
+      this.socketPreBindings();
 
-      socket.on('getready', data => {
+      c.subscribe('getready', data => {
         this.log('instructed to get ready by the server on ${port}');
         this.setGameData(data);
-        socket.emit('ready');
+        c.publish('ready');
       });
 
-      socket.on('initial-tiles', data => {
+      c.subscribe('initial-tiles', data => {
         this.log('initial tiles for ${this.name}: ', data.tiles);
         this.setInitialTiles(data.tiles);
       });
 
-      socket.on('deal-bonus-compensation', data => {
+      c.subscribe('deal-bonus-compensation', data => {
         this.log('deal bonus compensation tiles for ${this.name}: ', data.tiles);
         this.processDealBonusTiles(data.tiles.map(v => parseInt(v)));
-      })
+      });
 
-      socket.on('turn-tile', data => {
+      c.subscribe('turn-tile', data => {
         this.log(this.name, 'received turn tile: ', data.tile);
         this.checkDrawBonus(parseInt(data.tile), parseInt(data.wallSize));
       });
 
-      socket.on('draw-bonus-compensation', data => {
+      c.subscribe('draw-bonus-compensation', data => {
         this.log('draw bonus compensation tile for ${this.name}: ', data.tile);
         this.checkDrawBonus(parseInt(data.tile), parseInt(data.wallSize));
       });
 
-      socket.on('tile-discarded', data => {
+      c.subscribe('tile-discarded', data => {
         var from = parseInt(data.from);
         var tile = parseInt(data.tile);
         if (parseInt(from) === this.currentGame.position) {
-          return socket.emit('claim-discard', { claimType: Constants.NOTHING });
+          return c.publish('claim-discard', { claimType: Constants.NOTHING });
         }
         var claim = this.determineClaim(from, tile, claim => {
-          socket.emit('claim-discard', claim);
+          c.publish('claim-discard', claim);
         });
       });
 
-      socket.on('claim-awarded', data => {
+      c.subscribe('claim-awarded', data => {
         var tiles = this.processClaimAward(data);
-        socket.emit('set-revealed', { tiles });
+        c.publish('set-revealed', { tiles });
       });
 
-      socket.on('kong-compensation', data => {
+      c.subscribe('kong-compensation', data => {
         this.log('kong compensation tile for ${this.name}: ', data.tile);
         this.checkDrawBonus(parseInt(data.tile), parseInt(data.wallSize));
       });
 
-      socket.on('player-revealed', data => {
+      c.subscribe('player-revealed', data => {
         if (data.from == this.currentGame.position) {
           // if this is not a kong, we now need to discard something.
           if (data.tiles.length < 4) this.discardTile();
@@ -298,34 +305,34 @@ class Client {
         }
       });
 
-      socket.on('player-revealed-bonus', data => {
-        this.recordBonus(parseInt(data.by), data.tiles)
+      c.subscribe('player-revealed-bonus', data => {
+        this.recordBonus(parseInt(data.by), data.tiles);
       });
 
-      socket.on('hand-drawn', data => {
+      c.subscribe('hand-drawn', data => {
         this.log('${this.name} in seat ${this.currentGame.position} registered that the hand was a draw.');
         console.log(this.name, this.tiles, this.bonus, this.revealed);
-        socket.emit('hand-acknowledged');
+        c.publish('hand-acknowledged');
       });
 
-      socket.on('hand-won', data => {
+      c.subscribe('hand-won', data => {
         var selfdrawn = data.selfdrawn ? '(self-drawn) ' : '';
         this.log('${this.name} in seat ${this.currentGame.position} registered that the hand was won ${selfdrawn}by player in seat ${data.winner}.');
         console.log(this.name, this.tiles, this.bonus, this.revealed);
-        socket.emit('hand-acknowledged');
+        c.publish('hand-acknowledged');
       });
 
-      socket.on('hand-score', data => {
+      c.subscribe('hand-score', data => {
         this.processHandScore(data);
       });
 
-      socket.on('verify', data => {
+      c.subscribe('verify', data => {
         this.verify(data);
       });
     });
 
-    if (afterBinding) afterBinding();
+    if (afterBinding) afterBinding(this);
   }
-};
+}
 
 module.exports = Client;

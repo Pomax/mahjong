@@ -1,6 +1,6 @@
-'use strict'
+'use strict';
 
-var Tree = require('../../../lib/trees');
+var Tree = require('arctic-redpoll');
 var Constants = require('../../constants');
 var Tiles = require('../../tiles');
 
@@ -197,6 +197,6 @@ class FSA {
     }
     return this.check(tiles, pair, sets-1);
   }
-};
+}
 
 module.exports = new FSA();

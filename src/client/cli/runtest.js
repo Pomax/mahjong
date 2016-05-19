@@ -1,6 +1,8 @@
 // server setup
 'use strict'
 
+//process.stdout.write('\x1bc');
+
 var Bot = require('../basic/client');
 var Human = require('./client');
 var Manager = require('../../core/manager');
@@ -21,7 +23,8 @@ require('inquirer')
 }])
 .then(answers => {
   var username = answers.name;
-  console.log('\nAlright, ${username}. Get ready for some...\n');
+
+  console.log('Alright, ${username}. Get ready for some...\n');
 
   [0,1,2,3].map(id => {
     var Client = Bot;
