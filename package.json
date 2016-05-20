@@ -8,10 +8,11 @@
     "mahjong-cli": "./bin/mahjong-cli"
   },
   "scripts": {
-    "test": "node src/test/test.js",
+    "test": "node src/core/test/test.js",
     "cli": "node src/client/cli/test.js",
     "server": "node src/server/server.js",
-    "dev": "webpack --prod --progress --colors --watch --config ./src/client/web/webpack.config.js"
+    "dev": "webpack --prod --progress --colors --watch --config ./src/client/web/webpack.config.js",
+    "web": "npm-run-all --parallel server dev"
   },
   "author": "Pomax",
   "dependencies": {

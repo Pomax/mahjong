@@ -313,6 +313,10 @@ class Hand {
       return console.error('player claimed a discard tile outside of the DISCARD stage: ignored.');
     }
 
+    if (typeof this.claims[player.name] === 'object') {
+      return console.error('player ${player.name} already has an outstanding claim...');
+    }
+
     claim.player = player;
     this.claims[player.name] = claim;
 
@@ -343,16 +347,20 @@ class Hand {
     this.setStage(stages.CLAIM);
     var playerNames = Object.keys(this.claims);
     var valid = playerNames.filter(name => this.isValidClaim(name, this.claims[name]));
-
     // nothing to do
     if (valid.length === 0) {
       this.log('no valid claims were received.');
       return this.nextDeal();
     }
-
     // inform all players of this claim
-    var best = this.getBestClaim(valid.map(name => this.claims[name]));
-    this.players.forEach(player => player.tileWasClaimed(this.currentDiscard, best.player, best.claim));
+    var mapped = valid.map(name => this.claims[name]);
+    var best = this.getBestClaim(mapped);
+    this.players.forEach(player => player.tileWasClaimed(
+      this.currentDiscard,
+      player.position,
+      best.claimType,
+      best.winType
+    ));
     this.rewardClaim(best);
   }
 
@@ -360,11 +368,9 @@ class Hand {
    * ...
    */
   isValidClaim(name, claim) {
+    if (claim === 'pending') { return false; }
     var ct = claim.claimType;
-    if (ct === Constants.NOTHING) {
-      return false;
-    }
-
+    if (ct === Constants.NOTHING) { return false; }
     if (ct <= Constants.CHOW3) {
       // check if the claim is legal, based on seating
       if (claim.player.position !== (this.discardingPlayer.position + 1) % this.players.length) return false;
@@ -377,9 +383,7 @@ class Hand {
       if (face === 7 && ct === Constants.CHOW1) return false;
       if (face === 8 && ct !== Constants.CHOW3) return false;
     }
-
-    // FIXME: TODO: verify that a player _can_ claim what they claim
-
+    // FIXME: TODO: verify that a player _can_ claim what they claim based on tiles in hand.
     return true;
   }
 
@@ -399,8 +403,7 @@ class Hand {
       return console.error('rewardClaim called outside of the CLAIM stage: ignored.');
     }
     this.activePlayer = claim.player;
-    delete claim.player;
-    this.activePlayer.award(this.currentDiscard, claim);
+    this.activePlayer.award(this.currentDiscard, claim.claimType, claim.winType);
     this.currentDiscard = false;
     this.discardingPlayer = false;
     this.setStage(stages.REVEAL);

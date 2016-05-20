@@ -7,6 +7,5 @@ module.exports = function(source) {
   if (!source.match(/use strict/)) {
     source = "'use strict';\n\n" + source;
   }
-  console.log(source);
   return source;
 };

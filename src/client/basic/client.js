@@ -154,26 +154,27 @@ class Client {
     this.currentGame.turn++;
 
     var tile = parseInt(data.tile);
-    var claim = data.claim;
+    var claimType = parseInt(data.claimType);
+    var winType = parseInt(data.winType);
 
-    this.log('${this.name} was allowed to form a ${Constants.setNames[data.claim.claimType]} with tile ${tile}');
+    this.log('${this.name} was allowed to form a ${Constants.setNames[claimType]} with tile ${tile}');
 
     // figure out what we were actually awarded
     var tiles = false;
-    if(claim.claimType <= Constants.CHOW3) {
-      if(claim.claimType === Constants.CHOW1) { tiles = [tile,tile+1,tile+2]; }
-      if(claim.claimType === Constants.CHOW2) { tiles = [tile-1,tile,tile+1]; }
-      if(claim.claimType === Constants.CHOW3) { tiles = [tile-2,tile-1,tile]; }
+    if(claimType <= Constants.CHOW3) {
+      if(claimType === Constants.CHOW1) { tiles = [tile,tile+1,tile+2]; }
+      if(claimType === Constants.CHOW2) { tiles = [tile-1,tile,tile+1]; }
+      if(claimType === Constants.CHOW3) { tiles = [tile-2,tile-1,tile]; }
     }
-    else if(claim.claimType === Constants.PUNG) { tiles = [tile, tile, tile]; }
-    else if(claim.claimType === Constants.KONG) { tiles = [tile, tile, tile, tile]; }
-    else if(claim.claimType === Constants.WIN)  {
-      if(claim.winType === Constants.PAIR)  { tiles = [tile, tile]; }
-      if(claim.winType === Constants.CHOW1) { tiles = [tile,tile+1,tile+2]; }
-      if(claim.winType === Constants.CHOW2) { tiles = [tile-1,tile,tile+1]; }
-      if(claim.winType === Constants.CHOW3) { tiles = [tile-2,tile-1,tile]; }
-      if(claim.winType === Constants.PUNG)  { tiles = [tile, tile, tile]; }
-      if(claim.winType === Constants.KONG)  { tiles = [tile, tile, tile, tile]; }
+    else if(claimType === Constants.PUNG) { tiles = [tile, tile, tile]; }
+    else if(claimType === Constants.KONG) { tiles = [tile, tile, tile, tile]; }
+    else if(claimType === Constants.WIN)  {
+      if(winType === Constants.PAIR)  { tiles = [tile, tile]; }
+      if(winType === Constants.CHOW1) { tiles = [tile,tile+1,tile+2]; }
+      if(winType === Constants.CHOW2) { tiles = [tile-1,tile,tile+1]; }
+      if(winType === Constants.CHOW3) { tiles = [tile-2,tile-1,tile]; }
+      if(winType === Constants.PUNG)  { tiles = [tile, tile, tile]; }
+      if(winType === Constants.KONG)  { tiles = [tile, tile, tile, tile]; }
     }
 
     // process and reveal the tiles
@@ -184,11 +185,18 @@ class Client {
       this.tiles.splice(pos,1);
     });
 
-    if (claim.claimType === Constants.KONG) {
+    if (claimType === Constants.KONG) {
       this.connector.publish('kong-request', { tiles });
     }
 
     return tiles;
+  }
+
+  /**
+   * ...
+   */
+  tileClaimed(tile, by, claimType, winType) {
+    // ...
   }
 
   /**
@@ -210,6 +218,19 @@ class Client {
     player.bonus = player.bonus.concat(tiles);
   }
 
+  /**
+   * ...
+   */
+  handDrawn(acknowledged) {
+    acknowledged();
+  }
+
+  /**
+   * ...
+   */
+  handWon(winner, selfdrawn, acknowledged) {
+    acknowledged();
+  }
 
   /**
    * ...
@@ -290,6 +311,10 @@ class Client {
         c.publish('set-revealed', { tiles });
       });
 
+      c.subscribe('tile-claimed', data => {
+        this.tileClaimed(parseInt(data.tile), parseInt(data.by), parseInt(data.claimType), parseInt(data.winType));
+      });
+
       c.subscribe('kong-compensation', data => {
         this.log('kong compensation tile for ${this.name}: ', data.tile);
         this.checkDrawBonus(parseInt(data.tile), parseInt(data.wallSize));
@@ -311,15 +336,14 @@ class Client {
 
       c.subscribe('hand-drawn', data => {
         this.log('${this.name} in seat ${this.currentGame.position} registered that the hand was a draw.');
-        console.log(this.name, this.tiles, this.bonus, this.revealed);
-        c.publish('hand-acknowledged');
+        this.handDrawn(() => c.publish('hand-acknowledged'));
       });
 
       c.subscribe('hand-won', data => {
+        var winner = parseInt(data.winner);
         var selfdrawn = data.selfdrawn ? '(self-drawn) ' : '';
-        this.log('${this.name} in seat ${this.currentGame.position} registered that the hand was won ${selfdrawn}by player in seat ${data.winner}.');
-        console.log(this.name, this.tiles, this.bonus, this.revealed);
-        c.publish('hand-acknowledged');
+        this.log('${this.name} in seat ${this.currentGame.position} registered that the hand was won ${selfdrawn}by player in seat ${winner}.');
+        this.handWon(winner, selfdrawn, () => c.publish('hand-acknowledged'));
       });
 
       c.subscribe('hand-score', data => {

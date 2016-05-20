@@ -55,7 +55,13 @@
 	var ReactDOM = __webpack_require__(159);
 
 	var Settings = __webpack_require__(160);
-	var ClientPassThrough = __webpack_require__(161);
+	var Constants = __webpack_require__(161);
+	var Tiles = __webpack_require__(162);
+	var ClientPassThrough = __webpack_require__(163);
+
+	var Tile = __webpack_require__(233);
+	var Overlay = __webpack_require__(231);
+	var ClaimMenu = __webpack_require__(232);
 
 	/**
 	 * ES5, because ES6 and React are a bad trip.
@@ -72,7 +78,8 @@
 
 	    return {
 	      client: false,
-	      settings: new Settings(params.localStorageId)
+	      settings: new Settings(params.localStorageId),
+	      currentDiscard: false
 	    };
 	  },
 
@@ -80,14 +87,27 @@
 	    return React.createElement(
 	      'div',
 	      { className: 'client' },
-	      React.createElement('input', { type: 'text', value: this.state.settings.name, onChange: this.changePlayerName }),
 	      React.createElement(
+	        Overlay,
+	        null,
+	        this.state.modal ? this.state.modal : null
+	      ),
+	      React.createElement('input', { type: 'text', value: this.state.settings.name, onChange: this.changePlayerName }),
+	      this.state.client ? null : React.createElement(
 	        'button',
 	        { onClick: this.registerPlayer },
 	        'register player'
 	      ),
+	      this.state.currentGame ? React.createElement(
+	        'div',
+	        null,
+	        'Client connected using a websocket on port ',
+	        this.state.client.connector.port
+	      ) : null,
 	      this.renderLobby(),
-	      this.renderTiles()
+	      this.renderDiscard(),
+	      this.renderTiles(),
+	      this.renderOthers()
 	    );
 	  },
 
@@ -97,13 +117,7 @@
 	      'div',
 	      null,
 	      React.createElement('hr', null),
-	      React.createElement(
-	        'div',
-	        null,
-	        'Client connected on ',
-	        this.state.client.connector.port
-	      ),
-	      React.createElement(
+	      this.state.currentGame ? null : React.createElement(
 	        'button',
 	        { onClick: this.startGame },
 	        'Start a game'
@@ -113,19 +127,15 @@
 
 	  renderTiles() {
 	    if (!this.state.tiles) return null;
+
+	    var dpos = this.state.tiles.indexOf(this.state.drawtile);
 	    var tiles = this.state.tiles.map((tile, id) => {
-	      return React.createElement(
-	        'button',
-	        { disabled: !this.state.discarding, key: tile + '-' + id, onClick: this.discard },
-	        tile
-	      );
+	      var highlight = dpos && dpos === id;
+	      return React.createElement(Tile, { disabled: !this.state.discarding, key: tile + '-' + id, onClick: this.discard, value: tile, highlight: highlight });
 	    });
+
 	    var bonus = this.state.bonus.map((tile, id) => {
-	      return React.createElement(
-	        'button',
-	        { disabled: 'disabled', key: tile + '-' + id },
-	        tile
-	      );
+	      return React.createElement(Tile, { disabled: 'disabled', key: tile + '-' + id, value: tile });
 	    });
 	    var revealed = this.state.revealed.map((set, sid) => {
 	      return React.createElement(
@@ -133,33 +143,142 @@
 	        null,
 	        set.map((tile, id) => {
 	          let key = 'set-' + sid + '-' + tile + '-' + id;
-	          return React.createElement(
-	            'button',
-	            { disabled: 'disabled', key: key },
-	            tile
-	          );
+	          return React.createElement(Tile, { disabled: 'disabled', key: key, value: tile });
 	        })
 	      );
 	    });
 	    return React.createElement(
 	      'div',
-	      null,
+	      { className: 'player' },
 	      React.createElement(
 	        'div',
-	        null,
+	        { className: 'name' },
+	        this.state.settings.name,
+	        ' (',
+	        this.getWindFor(this.state.currentGame.position),
+	        ')'
+	      ),
+	      React.createElement(
+	        'div',
+	        { className: 'tiles' },
 	        tiles
 	      ),
 	      React.createElement(
 	        'div',
-	        null,
-	        bonus
+	        { className: 'revealed' },
+	        revealed
 	      ),
 	      React.createElement(
 	        'div',
-	        null,
-	        revealed
+	        { className: 'bonus' },
+	        bonus
 	      )
 	    );
+	  },
+
+	  renderConcealedTiles(n) {
+	    var tiles = [];
+	    while (n--) {
+	      tiles.push(React.createElement(Tile, { value: 'concealed' }));
+	    }
+	    return tiles;
+	  },
+
+	  renderOthers() {
+	    if (!this.state.players) return null;
+	    var players = this.state.players.filter(p => !!p).map(player => {
+	      return React.createElement(
+	        'div',
+	        { className: 'player' },
+	        React.createElement(
+	          'div',
+	          { className: 'name' },
+	          this.linkPlayerName(player.name),
+	          ' (',
+	          this.getWindFor(player.position),
+	          ')'
+	        ),
+	        React.createElement(
+	          'div',
+	          { className: 'handsize' },
+	          this.renderConcealedTiles(player.handSize)
+	        ),
+	        React.createElement(
+	          'div',
+	          { className: 'revealed' },
+	          player.revealed.map(set => {
+	            return set.map(tile => React.createElement(Tile, { value: tile }));
+	          })
+	        ),
+	        React.createElement(
+	          'div',
+	          { className: 'bonus' },
+	          player.bonus.map(tile => React.createElement(Tile, { value: tile }))
+	        )
+	      );
+	    });
+	    return React.createElement(
+	      'div',
+	      { className: 'others' },
+	      players
+	    );
+	  },
+
+	  linkPlayerName(name) {
+	    var bits = name.split(' ');
+	    var wiki = bits.slice(1).map((s, id) => id === 0 ? s : s.toLowerCase()).join(' ');
+	    return React.createElement(
+	      'span',
+	      null,
+	      bits[0],
+	      ' ',
+	      React.createElement(
+	        'a',
+	        { href: "https://wikipedia.org/wiki/" + wiki, target: '_blank' },
+	        wiki
+	      )
+	    );
+	  },
+
+	  getWindFor(position) {
+	    return Tiles.getPositionWind(position);
+	  },
+
+	  renderDiscard() {
+	    var content = null;
+	    if (this.state.currentDiscard) {
+	      var from = this.state.players[this.state.currentDiscard.from].name;
+	      content = this.state.claiming ? this.renderClaim() : React.createElement(
+	        'div',
+	        null,
+	        React.createElement(
+	          'button',
+	          { onClick: this.getClaim },
+	          'claim'
+	        ),
+	        ' or ',
+	        React.createElement(
+	          'button',
+	          { onClick: this.ignoreClaim },
+	          'dismiss'
+	        ),
+	        ' tile ',
+	        React.createElement(Tile, { value: this.state.currentDiscard.tile }),
+	        ' discarded by ',
+	        from
+	      );
+	    }
+	    return React.createElement(
+	      'div',
+	      { className: 'discard' },
+	      content
+	    );
+	  },
+
+	  renderClaim() {
+	    var from = this.state.currentDiscard.from;
+	    var mayChow = (from + 1) % 4 === this.state.currentGame.position;
+	    return React.createElement(ClaimMenu, { mayChow: mayChow, claim: this.sendClaim });
 	  },
 
 	  changePlayerName(evt) {
@@ -182,20 +301,107 @@
 
 	  startGame() {
 	    fetch('/game/new/' + this.state.id + '/' + this.state.settings.name).then(response => response.json()).then(data => {
-	      var gameid = data.id;
-	      // the actual game kicks off via websockets communication
+	      // the actual play negotiations happen via websockets
 	    });
 	  },
 
-	  setTiles(tiles, bonus, revealed) {
-	    this.setState({ tiles, bonus, revealed, discarding: true });
+	  setGameData(data) {
+	    var players = [0, 1, 2, 3].map(position => {
+	      if (position !== data.position) {
+	        return {
+	          name: data.playerNames[position],
+	          position,
+	          handSize: 0,
+	          bonus: [],
+	          revealed: []
+	        };
+	      }
+	      return false;
+	    });
+	    this.setState({ currentGame: data, players });
+	  },
+
+	  setInitialTiles(tiles) {
+	    var players = this.state.players;
+	    players.map(player => {
+	      if (player.position !== this.state.currentGame.position) {
+	        player.handSize = tiles.length;
+	      }
+	    });
+	    this.setState({ players });
+	  },
+
+	  addTile(tile, wallSize) {
+	    this.setState({ drawtile: tile });
+	  },
+
+	  setTilesPriorToDiscard(tiles, bonus, revealed) {
+	    this.setState({ currentDiscard: false, tiles, bonus, revealed, discarding: true });
 	  },
 
 	  discard(evt) {
-	    var tile = parseInt(evt.target.textContent);
-	    this.setState({ discarding: false }, () => {
-	      this.state.client.processTileDiscardChoice(tile);
+	    var tile = parseInt(evt.target.getAttribute('data-tile'));
+	    var tiles = this.state.tiles;
+	    var pos = tiles.indexOf(tile);
+	    tiles.splice(pos, 1);
+	    this.setState({
+	      drawtile: false,
+	      discarding: false
+	    }, () => {
+	      tiles, this.state.client.processTileDiscardChoice(tile);
 	    });
+	  },
+
+	  determineClaim(from, tile, sendClaim) {
+	    this.setState({
+	      currentDiscard: { from, tile, sendClaim }
+	    });
+	  },
+
+	  ignoreClaim() {
+	    var claim = { claimType: Constants.NOTHING };
+	    this.state.currentDiscard.sendClaim(claim);
+	    this.setState({ currentDiscard: false });
+	  },
+
+	  getClaim() {
+	    this.setState({ claiming: true });
+	  },
+
+	  sendClaim(claimType, winType) {
+	    this.state.currentDiscard.sendClaim({ claimType, winType });
+	    this.setState({ claiming: false });
+	  },
+
+	  tileClaimed(tile, by, claimType, winType) {
+	    this.setState({ currentDiscard: false });
+	  },
+
+	  recordReveal(playerPosition, tiles) {
+	    var players = this.state.players;
+	    var player = players[playerPosition];
+	    player.handSize = Math.max(player.handSize - 3, 0);
+	    player.revealed.push(tiles);
+	    this.setState({ players });
+	  },
+
+	  recordBonus(playerPosition, tiles) {
+	    if (playerPosition === this.state.currentGame.position) return;
+	    var players = this.state.players;
+	    var player = players[playerPosition];
+	    player.bonus = player.bonus.concat(tiles);
+	    this.setState({ players });
+	  },
+
+	  handDrawn(acknowledged) {
+	    alert("hand was a draw");
+	    acknowledged();
+	  },
+
+	  handWon(winner, selfdrawn, acknowledged) {
+	    var player = this.state.players[winner];
+	    alert("hand was won by " + player.name);
+	    acknowledged();
 	  }
 	});
 
@@ -19837,38 +20043,6 @@
 
 /***/ },
 /* 161 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	var Constants = __webpack_require__(162);
-	var BaseClient = __webpack_require__(163);
-
-	/**
-	 *
-	 */
-	class ClientPassThrough extends BaseClient {
-	  constructor(name, port, afterBinding) {
-	    super(name, port, afterBinding);
-	  }
-
-	  bindApp(app) {
-	    this.app = app;
-	  }
-
-	  discardTile(cleandeal) {
-	    this.app.setTiles(this.tiles.sort(Constants.sort).slice(), this.bonus.sort(Constants.sort).slice(), JSON.parse(JSON.stringify(this.revealed)));
-	  }
-
-	  discardFromApp(tile) {
-	    this.processTileDiscardChoide(tile);
-	  }
-	}
-
-	module.exports = ClientPassThrough;
-
-/***/ },
-/* 162 */
 /***/ function(module, exports) {
 
 	/**
@@ -20148,13 +20322,151 @@
 	module.exports = Constants;
 
 /***/ },
+/* 162 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	var Constants = __webpack_require__(161);
+
+	var Tiles = {
+	  // is... functions
+	  isNumeral: function (tn) {
+	    return Constants.NUMERALS <= tn && tn < Constants.HONOURS;
+	  },
+	  isTerminal: function (tn) {
+	    if (!Tiles.isNumeral(tn)) return false;
+	    return tn % Constants.NUMMOD === 0 || tn % Constants.NUMMOD === Constants.NUMMOD - 1;
+	  },
+	  isHonour: function (tn) {
+	    return Constants.HONOURS <= tn && tn < Constants.BONUS;
+	  },
+	  isWind: function (tn) {
+	    return Constants.WINDS <= tn && tn < Constants.DRAGONS;
+	  },
+	  isDragon: function (tn) {
+	    return Constants.DRAGONS <= tn && tn < Constants.BONUS;
+	  },
+	  isBonus: function (tn) {
+	    return Constants.BONUS <= tn;
+	  },
+	  getTileName: function (tn) {
+	    return Constants.tileNames[tn];
+	  },
+	  getTileNumber: function (tn) {
+	    if (!Tiles.isNumeral(tn)) return false;
+	    return tn % Constants.NUMMOD;
+	  },
+	  getTileSuit: function (tn) {
+	    if (Constants.BAMBOOS <= tn && tn < Constants.CHARACTERS) return Constants.BAMBOOS;
+	    if (Constants.CHARACTERS <= tn && tn < Constants.DOTS) return Constants.CHARACTERS;
+	    if (Constants.DOTS <= tn && tn < Constants.WINDS) return Constants.DOTS;
+	    if (Constants.WINDS <= tn && tn < Constants.DRAGONS) return Constants.WINDS;
+	    if (Constants.DRAGONS <= tn && tn < Constants.FLOWERS) return Constants.DRAGONS;
+	    if (Constants.FLOWERS <= tn && tn < Constants.SEASONS) return Constants.FLOWERS;
+	    return Constants.SEASONS;
+	  },
+	  getSuitTiles: function (suit) {
+	    var set = [];
+	    for (var i = suit; i < suit + Constants.NUMMOD; i++) {
+	      set.push(i);
+	    }
+	    return set;
+	  },
+	  getShortForm: function (tn) {
+	    return Constants.SHORTFORMS[tn];
+	  },
+	  fromShortForm: function (str) {
+	    return Constants.TILENUMBERS[str];
+	  },
+	  getPositionWind: function (num) {
+	    return ['E', 'S', 'W', 'N'][num];
+	  }
+	};
+
+	module.exports = Tiles;
+
+/***/ },
 /* 163 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var Constants = __webpack_require__(162);
-	var Tiles = __webpack_require__(164);
+	var Constants = __webpack_require__(161);
+	var BaseClient = __webpack_require__(164);
+
+	/**
+	 *
+	 */
+	class ClientPassThrough extends BaseClient {
+	  constructor(name, port, afterBinding) {
+	    super(name, port, afterBinding);
+	  }
+
+	  bindApp(app) {
+	    this.app = app;
+	  }
+
+	  setGameData(data) {
+	    super.setGameData(data);
+	    this.app.setGameData(JSON.parse(JSON.stringify(data)));
+	  }
+
+	  setInitialTiles(tiles) {
+	    super.setInitialTiles(tiles);
+	    this.app.setInitialTiles(JSON.parse(JSON.stringify(tiles)));
+	  }
+
+	  addTile(tile, wallSize) {
+	    super.addTile(tile, wallSize);
+	    this.app.addTile(tile, wallSize);
+	  }
+
+	  discardTile(cleandeal) {
+	    this.app.setTilesPriorToDiscard(this.tiles.sort(Constants.sort).slice(), this.bonus.sort(Constants.sort).slice(), JSON.parse(JSON.stringify(this.revealed)));
+	  }
+
+	  discardFromApp(tile) {
+	    this.processTileDiscardChoide(tile);
+	  }
+
+	  determineClaim(from, tile, sendClaim) {
+	    this.app.determineClaim(from, tile, sendClaim);
+	  }
+
+	  tileClaimed(tile, by, claimType, winType) {
+	    this.app.tileClaimed(tile, by, claimType, winType);
+	  }
+
+	  recordReveal(playerPosition, tiles) {
+	    super.recordReveal(playerPosition, tiles);
+	    this.app.recordReveal(playerPosition, tiles);
+	  }
+
+	  recordBonus(playerPosition, tiles) {
+	    super.recordBonus(playerPosition, tiles);
+	    this.app.recordBonus(playerPosition, tiles);
+	  }
+
+	  handDrawn(acknowledged) {
+	    this.app.handDrawn(acknowledged);
+	  }
+
+	  handWon(winner, selfdrawn, acknowledged) {
+	    this.app.handWon(winner, selfdrawn, acknowledged);
+	  }
+	}
+
+	module.exports = ClientPassThrough;
+
+/***/ },
+/* 164 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	var Constants = __webpack_require__(161);
+	var Tiles = __webpack_require__(162);
 	var rulesets = __webpack_require__(165);
 	var digest = __webpack_require__(173);
 	var Connector = __webpack_require__(178).Client;
@@ -20309,43 +20621,44 @@
 	    this.currentGame.turn++;
 
 	    var tile = parseInt(data.tile);
-	    var claim = data.claim;
+	    var claimType = parseInt(data.claimType);
+	    var winType = parseInt(data.winType);
 
-	    this.log('${this.name} was allowed to form a ${Constants.setNames[data.claim.claimType]} with tile ${tile}');
+	    this.log('${this.name} was allowed to form a ${Constants.setNames[claimType]} with tile ${tile}');
 
 	    // figure out what we were actually awarded
 	    var tiles = false;
-	    if (claim.claimType <= Constants.CHOW3) {
-	      if (claim.claimType === Constants.CHOW1) {
+	    if (claimType <= Constants.CHOW3) {
+	      if (claimType === Constants.CHOW1) {
 	        tiles = [tile, tile + 1, tile + 2];
 	      }
-	      if (claim.claimType === Constants.CHOW2) {
+	      if (claimType === Constants.CHOW2) {
 	        tiles = [tile - 1, tile, tile + 1];
 	      }
-	      if (claim.claimType === Constants.CHOW3) {
+	      if (claimType === Constants.CHOW3) {
 	        tiles = [tile - 2, tile - 1, tile];
 	      }
-	    } else if (claim.claimType === Constants.PUNG) {
+	    } else if (claimType === Constants.PUNG) {
 	      tiles = [tile, tile, tile];
-	    } else if (claim.claimType === Constants.KONG) {
+	    } else if (claimType === Constants.KONG) {
 	      tiles = [tile, tile, tile, tile];
-	    } else if (claim.claimType === Constants.WIN) {
-	      if (claim.winType === Constants.PAIR) {
+	    } else if (claimType === Constants.WIN) {
+	      if (winType === Constants.PAIR) {
 	        tiles = [tile, tile];
 	      }
-	      if (claim.winType === Constants.CHOW1) {
+	      if (winType === Constants.CHOW1) {
 	        tiles = [tile, tile + 1, tile + 2];
 	      }
-	      if (claim.winType === Constants.CHOW2) {
+	      if (winType === Constants.CHOW2) {
 	        tiles = [tile - 1, tile, tile + 1];
 	      }
-	      if (claim.winType === Constants.CHOW3) {
+	      if (winType === Constants.CHOW3) {
 	        tiles = [tile - 2, tile - 1, tile];
 	      }
-	      if (claim.winType === Constants.PUNG) {
+	      if (winType === Constants.PUNG) {
 	        tiles = [tile, tile, tile];
 	      }
-	      if (claim.winType === Constants.KONG) {
+	      if (winType === Constants.KONG) {
 	        tiles = [tile, tile, tile, tile];
 	      }
 	    }
@@ -20358,12 +20671,19 @@
 	      this.tiles.splice(pos, 1);
 	    });
 
-	    if (claim.claimType === Constants.KONG) {
+	    if (claimType === Constants.KONG) {
 	      this.connector.publish('kong-request', { tiles });
 	    }
 
 	    return tiles;
 	  }
+
+	  /**
+	   * ...
+	   */
+	  tileClaimed(tile, by, claimType, winType) {}
+	  // ...
+
 
 	  /**
 	   * ...
@@ -20382,6 +20702,20 @@
 	  recordBonus(playerPosition, tiles) {
 	    var player = this.players[playerPosition];
 	    player.bonus = player.bonus.concat(tiles);
+	  }
+
+	  /**
+	   * ...
+	   */
+	  handDrawn(acknowledged) {
+	    acknowledged();
+	  }
+
+	  /**
+	   * ...
+	   */
+	  handWon(winner, selfdrawn, acknowledged) {
+	    acknowledged();
 	  }
 
 	  /**
@@ -20463,6 +20797,10 @@
 	        c.publish('set-revealed', { tiles });
 	      });
 
+	      c.subscribe('tile-claimed', data => {
+	        this.tileClaimed(parseInt(data.tile), parseInt(data.by), parseInt(data.claimType), parseInt(data.winType));
+	      });
+
 	      c.subscribe('kong-compensation', data => {
 	        this.log('kong compensation tile for ${this.name}: ', data.tile);
 	        this.checkDrawBonus(parseInt(data.tile), parseInt(data.wallSize));
@@ -20484,15 +20822,14 @@
 
 	      c.subscribe('hand-drawn', data => {
 	        this.log('${this.name} in seat ${this.currentGame.position} registered that the hand was a draw.');
-	        console.log(this.name, this.tiles, this.bonus, this.revealed);
-	        c.publish('hand-acknowledged');
+	        this.handDrawn(() => c.publish('hand-acknowledged'));
 	      });
 
 	      c.subscribe('hand-won', data => {
+	        var winner = parseInt(data.winner);
 	        var selfdrawn = data.selfdrawn ? '(self-drawn) ' : '';
-	        this.log('${this.name} in seat ${this.currentGame.position} registered that the hand was won ${selfdrawn}by player in seat ${data.winner}.');
-	        console.log(this.name, this.tiles, this.bonus, this.revealed);
-	        c.publish('hand-acknowledged');
+	        this.log('${this.name} in seat ${this.currentGame.position} registered that the hand was won ${selfdrawn}by player in seat ${winner}.');
+	        this.handWon(winner, selfdrawn, () => c.publish('hand-acknowledged'));
 	      });
 
 	      c.subscribe('hand-score', data => {
@@ -20511,71 +20848,6 @@
 	module.exports = Client;
 
 /***/ },
-/* 164 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	var Constants = __webpack_require__(162);
-
-	var Tiles = {
-	  // is... functions
-	  isNumeral: function (tn) {
-	    return Constants.NUMERALS <= tn && tn < Constants.HONOURS;
-	  },
-	  isTerminal: function (tn) {
-	    if (!Tiles.isNumeral(tn)) return false;
-	    return tn % Constants.NUMMOD === 0 || tn % Constants.NUMMOD === Constants.NUMMOD - 1;
-	  },
-	  isHonour: function (tn) {
-	    return Constants.HONOURS <= tn && tn < Constants.BONUS;
-	  },
-	  isWind: function (tn) {
-	    return Constants.WINDS <= tn && tn < Constants.DRAGONS;
-	  },
-	  isDragon: function (tn) {
-	    return Constants.DRAGONS <= tn && tn < Constants.BONUS;
-	  },
-	  isBonus: function (tn) {
-	    return Constants.BONUS <= tn;
-	  },
-	  getTileName: function (tn) {
-	    return Constants.tileNames[tn];
-	  },
-	  getTileNumber: function (tn) {
-	    if (!Tiles.isNumeral(tn)) return false;
-	    return tn % Constants.NUMMOD;
-	  },
-	  getTileSuit: function (tn) {
-	    if (Constants.BAMBOOS <= tn && tn < Constants.CHARACTERS) return Constants.BAMBOOS;
-	    if (Constants.CHARACTERS <= tn && tn < Constants.DOTS) return Constants.CHARACTERS;
-	    if (Constants.DOTS <= tn && tn < Constants.WINDS) return Constants.DOTS;
-	    if (Constants.WINDS <= tn && tn < Constants.DRAGONS) return Constants.WINDS;
-	    if (Constants.DRAGONS <= tn && tn < Constants.FLOWERS) return Constants.DRAGONS;
-	    if (Constants.FLOWERS <= tn && tn < Constants.SEASONS) return Constants.FLOWERS;
-	    return Constants.SEASONS;
-	  },
-	  getSuitTiles: function (suit) {
-	    var set = [];
-	    for (var i = suit; i < suit + Constants.NUMMOD; i++) {
-	      set.push(i);
-	    }
-	    return set;
-	  },
-	  getShortForm: function (tn) {
-	    return Constants.SHORTFORMS[tn];
-	  },
-	  fromShortForm: function (str) {
-	    return Constants.TILENUMBERS[str];
-	  },
-	  getPositionWind: function (num) {
-	    return ['E', 'S', 'W', 'N'][num];
-	  }
-	};
-
-	module.exports = Tiles;
-
-/***/ },
 /* 165 */
 /***/ function(module, exports, __webpack_require__) {
 
@@ -20589,8 +20861,8 @@
 
 	'use strict';
 
-	var Constants = __webpack_require__(162);
-	var Tiles = __webpack_require__(164);
+	var Constants = __webpack_require__(161);
+	var Tiles = __webpack_require__(162);
 
 	var FSA = __webpack_require__(167);
 	var AI = __webpack_require__(169);
@@ -20828,8 +21100,8 @@
 	'use strict';
 
 	var Tree = __webpack_require__(168);
-	var Constants = __webpack_require__(162);
-	var Tiles = __webpack_require__(164);
+	var Constants = __webpack_require__(161);
+	var Tiles = __webpack_require__(162);
 
 	class FSA {
 	  constructor() {
@@ -21254,7 +21526,7 @@
 
 	'use strict';
 
-	var Constants = __webpack_require__(162);
+	var Constants = __webpack_require__(161);
 	var GameTracker = __webpack_require__(170);
 	var FSA = __webpack_require__(167);
 	var determineRequirements = __webpack_require__(171);
@@ -21388,7 +21660,7 @@
 
 	'use strict';
 
-	var Constants = __webpack_require__(162);
+	var Constants = __webpack_require__(161);
 
 	var Stats = {
 	  PLAYERS: [1, 2, 4, 8],
@@ -21465,7 +21737,7 @@
 	 * building a list of [tiles]=>[claim codes] mappings,
 	 */
 
-	var Constants = __webpack_require__(162);
+	var Constants = __webpack_require__(161);
 	var debug = false;
 
 	/**
@@ -21678,8 +21950,8 @@
 
 	'use strict';
 
-	var Constants = __webpack_require__(162);
-	var Tiles = __webpack_require__(164);
+	var Constants = __webpack_require__(161);
+	var Tiles = __webpack_require__(162);
 	var FSA = __webpack_require__(167);
 
 	// simple scoring:
@@ -21833,7 +22105,7 @@
 
 	'use strict';
 
-	var Constants = __webpack_require__(162);
+	var Constants = __webpack_require__(161);
 	var md5 = __webpack_require__(174);
 
 	module.exports = function digest(tiles, bonus, revealed) {
@@ -29778,6 +30050,230 @@
 	}
 
 	module.exports = Server;
+
+/***/ },
+/* 231 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	var React = __webpack_require__(2);
+
+	var Overlay = React.createClass({
+	  displayName: 'Overlay',
+
+	  getInitialState() {
+	    return { hidden: !this.props.children };
+	  },
+
+	  componentDidUpdate(prevProps, prevState) {
+	    if (prevProps.children !== this.props.children) {
+	      this.setState({ hidden: false });
+	    }
+	  },
+
+	  hide: function (evt) {
+	    this.setState({ hidden: true });
+	  },
+
+	  render: function () {
+	    if (this.state.hidden) return null;
+
+	    var overlayStyle = {
+	      position: 'absolute',
+	      top: 0,
+	      left: 0,
+	      width: '100%',
+	      height: '100%',
+	      background: 'rgba(0,0,0,0.3)',
+	      zIndex: 5
+	    };
+
+	    var contentStyle = {
+	      position: 'absolute',
+	      top: 'calc(50% - 100px)',
+	      height: 200,
+	      left: 'calc(50% - 200px)',
+	      width: 400,
+	      background: 'white',
+	      padding: '1em',
+	      borderRadius: '0.5em'
+	    };
+
+	    return React.createElement(
+	      'div',
+	      { className: 'overlay', style: overlayStyle, onClick: this.hide },
+	      React.createElement(
+	        'div',
+	        { className: 'content', style: contentStyle },
+	        this.props.children
+	      )
+	    );
+	  }
+	});
+
+	module.exports = Overlay;
+
+/***/ },
+/* 232 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var React = __webpack_require__(2);
+
+	var Constants = __webpack_require__(161);
+	var Tiles = __webpack_require__(162);
+
+	var ClaimMenu = React.createClass({
+	  displayName: 'ClaimMenu',
+
+
+	  getInitialState() {
+	    return { winclaim: false };
+	  },
+
+	  render: function () {
+	    if (this.state.winclaim) {
+	      return this.renderWinMenu();
+	    }
+	    var chowButtons = this.props.mayChow ? [React.createElement(
+	      'button',
+	      { className: 'chow', key: 'chow1', onClick: this.chow1 },
+	      'chow'
+	    ), React.createElement(
+	      'button',
+	      { className: 'chow', key: 'chow2', onClick: this.chow2 },
+	      'chow'
+	    ), React.createElement(
+	      'button',
+	      { className: 'chow', key: 'chow3', onClick: this.chow3 },
+	      'chow'
+	    )] : [];
+	    return React.createElement(
+	      'div',
+	      { className: 'claimmenu' },
+	      React.createElement(
+	        'button',
+	        { onClick: this.dismiss },
+	        'dismiss'
+	      ),
+	      chowButtons,
+	      React.createElement(
+	        'button',
+	        { onClick: this.pung },
+	        'pung'
+	      ),
+	      React.createElement(
+	        'button',
+	        { onClick: this.kong },
+	        'kong'
+	      ),
+	      React.createElement(
+	        'button',
+	        { onClick: this.win },
+	        'win'
+	      )
+	    );
+	  },
+
+	  dismiss: function () {
+	    this.props.claim(Constants.NOTILE);
+	  },
+	  chow1: function () {
+	    this.props.claim(Constants.CHOW1);
+	  },
+	  chow2: function () {
+	    this.props.claim(Constants.CHOW2);
+	  },
+	  chow3: function () {
+	    this.props.claim(Constants.CHOW3);
+	  },
+	  pung: function () {
+	    this.props.claim(Constants.PUNG);
+	  },
+	  kong: function () {
+	    this.props.claim(Constants.KONG);
+	  },
+	  win: function (evt) {
+	    evt.stopPropagation();this.setState({ winclaim: true });
+	  },
+
+	  renderWinMenu: function () {
+	    return React.createElement(
+	      'div',
+	      { className: 'winmenu' },
+	      React.createElement(
+	        'button',
+	        { onClick: this.dismiss },
+	        'dismiss'
+	      ),
+	      React.createElement(
+	        'button',
+	        { onClick: this.winPair },
+	        'pair'
+	      ),
+	      React.createElement(
+	        'button',
+	        { className: 'chow', onClick: this.winChow1 },
+	        'chow'
+	      ),
+	      React.createElement(
+	        'button',
+	        { className: 'chow', onClick: this.winChow2 },
+	        'chow'
+	      ),
+	      React.createElement(
+	        'button',
+	        { className: 'chow', onClick: this.winChow3 },
+	        'chow'
+	      ),
+	      React.createElement(
+	        'button',
+	        { onClick: this.winPung },
+	        'pung'
+	      )
+	    );
+	  },
+
+	  winPair: function () {
+	    this.props.claim(Constants.WIN, Constants.PAIR);
+	  },
+	  winChow1: function () {
+	    this.props.claim(Constants.WIN, Constants.CHOW1);
+	  },
+	  winChow2: function () {
+	    this.props.claim(Constants.WIN, Constants.CHOW2);
+	  },
+	  winChow3: function () {
+	    this.props.claim(Constants.WIN, Constants.CHOW3);
+	  },
+	  winPung: function () {
+	    this.props.claim(Constants.WIN, Constants.PUNG);
+	  }
+
+	});
+
+	module.exports = ClaimMenu;
+
+/***/ },
+/* 233 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var React = __webpack_require__(2);
+
+	var Tile = function render(props) {
+	  var opts = {
+	    className: 'tile' + (props.highlight ? ' highlight' : ''),
+	    'data-tile': props.value,
+	    src: '/images/tiles/classic/' + props.value + '.jpg',
+	    onClick: props.onClick,
+	    style: {
+	      width: '2em'
+	    }
+	  };
+	  return React.createElement('img', opts);
+	};
+
+	module.exports = Tile;
 
 /***/ }
 /******/ ]);

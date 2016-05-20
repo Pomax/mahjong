@@ -6,3 +6,22 @@ html, body {
   background: #333;
   color: white;
 }
+
+img.tile {
+  margin: 1px;
+  vertical-align: middle;
+}
+
+.name a, .name a:visited {
+  color: inherit;
+}
+
+.others .player .handsize,
+.others .player .revealed,
+.others .player .bonus {
+  display: inline-block;
+}
+
+.discard {
+  height: 3em;
+}

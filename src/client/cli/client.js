@@ -309,6 +309,32 @@ class Client extends BaseClient {
   /**
    * ...
    */
+  handDrawn(acknowledged) {
+    inquirer
+    .prompt([{
+      type: 'input',
+      name: 'acknowledge',
+      message: 'Hand was a draw...'
+    }])
+    .then(answers => acknowledged());
+  }
+
+  /**
+   * ...
+   */
+  handWon(winner, selfdrawn, acknowledged) {
+    inquirer
+    .prompt([{
+      type: 'input',
+      name: 'acknowledge',
+      message: 'Hand was a won by ${Tiles.getPositionWind(winner)} player'
+    }])
+    .then(answers => acknowledged());
+  }
+
+  /**
+   * ...
+   */
   socketPreBindings() {
     super.socketPreBindings();
     // FIXME: TEMPORARY BUT NECESSARY DUE TO THE UNINTERRUPTIBILITY OF INQUIRER PROMISE

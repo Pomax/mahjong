@@ -16,8 +16,5 @@ module.exports = require('pirates').addHook(fixloader, {
   // execute this for .js files only
   exts: ['.js'],
   // and execute this for our own code only
-  matcher: n => {
-    console.log(n);
-    (n.indexOf(path.join('mahjong','src')) > -1)
-  }
+  matcher: n => n.indexOf(path.join('mahjong','src')) > -1
 });

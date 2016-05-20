@@ -19,8 +19,9 @@ if (PORT !== 80 && HOST.indexOf(':') === -1) { HOST += ':' + PORT; }
 var app = express();
 var gm = new Manager();
 
-// expose options on the main page
+// static directories
 app.use(express.static(path.join(__dirname, 'public')));
+app.use('/images', express.static(path.join(__dirname, '../../images')));
 
 // redirect / to index.html
 app.get('/', (req,res) => res.redirect('/index.html'));

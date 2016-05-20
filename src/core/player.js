@@ -65,7 +65,8 @@ class Player {
       ruleset: this.game.rulesetName,
       gameid: this.game.id,
       handid: this.hand.id,
-      position, windOfTheRound,
+      position,
+      windOfTheRound,
       playerNames
     });
     // wait for 'ready' signal through connector
@@ -151,16 +152,16 @@ class Player {
     this.hand.claimReceivedFromPlayer(this, data);
   }
 
-  tileWasClaimed(tile, player, claim) {
-    // ...
+  tileWasClaimed(tile, by, claimType, winType) {
+    this.connector.publish('tile-claimed', { tile, by, claimType, winType });
   }
 
-  award(tile, claim) {
+  award(tile, claimType, winType) {
     // note: there will be an asymmetry between now and revealReceived,
     // as the server and client add the tile to tiles at different tiles.
     // As such, verify() calls can only happen after the reveal.
     this.tiles.push(parseInt(tile));
-    this.connector.publish('claim-awarded', { tile, claim });
+    this.connector.publish('claim-awarded', { tile, claimType, winType });
   }
 
   revealReceivedFromClient(data) {
