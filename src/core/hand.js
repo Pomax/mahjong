@@ -120,6 +120,15 @@ class Hand {
   }
 
   /**
+   * Clear the discard claim timeout, so that bids must come in
+   * before the discard passes.
+   */
+  timeoutInvalidationRequestFromPlayer() {
+    clearTimeout(this.claimTimeout);
+    this.claimTimeout = false;
+  }
+
+  /**
    * ...
    */
   readyFromPlayer(player) {
@@ -340,6 +349,8 @@ class Hand {
    * ...
    */
   processClaims() {
+    console.log("processing claims");
+
     if (this.stage !== stages.DISCARD) {
       return console.error('processClaims called outside of the DISCARD stage: ignored.');
     }

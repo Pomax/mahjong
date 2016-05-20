@@ -46,6 +46,7 @@ class Player {
     c.subscribe('claim-discard', data => this.claimReceivedFromClient(data));
     c.subscribe('set-revealed', data => this.revealReceivedFromClient(data));
     c.subscribe('hand-acknowledged', data => this.handAcknowledgedByClient(data));
+    c.subscribe('request-timeout-invalidation', data => this.timeoutInvalidationRequestFromClient(data));
     c.subscribe('verify-result', data => this.verifyResultFromClient(data));
 
     // enabled for development only
@@ -204,6 +205,10 @@ class Player {
   // FIXME: development only
   disableClaimTimeout(data) {
     this.hand.disableClaimTimeout();
+  }
+
+  timeoutInvalidationRequestFromClient(data) {
+    this.hand.timeoutInvalidationRequestFromPlayer(this);
   }
 
   // General purpose

@@ -65,6 +65,13 @@ class ClientPassThrough extends BaseClient {
   handWon(winner, selfdrawn, acknowledged) {
     this.app.handWon(winner, selfdrawn, acknowledged);
   }
+
+  // Asks the server to clear the timeout, to give
+  // the user the time they ened to pick the right
+  // claim type.
+  requestTimeoutInvalidation() {
+    this.connector.publish("request-timeout-invalidation",{});
+  }
 }
 
 module.exports = ClientPassThrough;

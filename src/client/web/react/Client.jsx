@@ -223,6 +223,7 @@ var ClientApp = React.createClass({
   },
 
   getClaim() {
+    this.state.client.requestTimeoutInvalidation();
     this.setState({ claiming: true });
   },
 

@@ -59,9 +59,9 @@
 	var Tiles = __webpack_require__(162);
 	var ClientPassThrough = __webpack_require__(163);
 
-	var Tile = __webpack_require__(233);
-	var Overlay = __webpack_require__(231);
-	var ClaimMenu = __webpack_require__(232);
+	var Tile = __webpack_require__(231);
+	var Overlay = __webpack_require__(232);
+	var ClaimMenu = __webpack_require__(233);
 
 	/**
 	 * ES5, because ES6 and React are a bad trip.
@@ -365,6 +365,7 @@
 	  },
 
 	  getClaim() {
+	    this.state.client.requestTimeoutInvalidation();
 	    this.setState({ claiming: true });
 	  },
 
@@ -20455,6 +20456,13 @@
 	  handWon(winner, selfdrawn, acknowledged) {
 	    this.app.handWon(winner, selfdrawn, acknowledged);
 	  }
+
+	  // Asks the server to clear the timeout, to give
+	  // the user the time they ened to pick the right
+	  // claim type.
+	  requestTimeoutInvalidation() {
+	    this.connector.publish("request-timeout-invalidation", {});
+	  }
 	}
 
 	module.exports = ClientPassThrough;
@@ -30055,6 +30063,27 @@
 /* 231 */
 /***/ function(module, exports, __webpack_require__) {
 
+	var React = __webpack_require__(2);
+
+	var Tile = function render(props) {
+	  var opts = {
+	    className: 'tile' + (props.highlight ? ' highlight' : ''),
+	    'data-tile': props.value,
+	    src: '/images/tiles/classic/' + props.value + '.jpg',
+	    onClick: props.onClick,
+	    style: {
+	      width: '2em'
+	    }
+	  };
+	  return React.createElement('img', opts);
+	};
+
+	module.exports = Tile;
+
+/***/ },
+/* 232 */
+/***/ function(module, exports, __webpack_require__) {
+
 	'use strict';
 
 	var React = __webpack_require__(2);
@@ -30115,7 +30144,7 @@
 	module.exports = Overlay;
 
 /***/ },
-/* 232 */
+/* 233 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var React = __webpack_require__(2);
@@ -30253,27 +30282,6 @@
 	});
 
 	module.exports = ClaimMenu;
-
-/***/ },
-/* 233 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var React = __webpack_require__(2);
-
-	var Tile = function render(props) {
-	  var opts = {
-	    className: 'tile' + (props.highlight ? ' highlight' : ''),
-	    'data-tile': props.value,
-	    src: '/images/tiles/classic/' + props.value + '.jpg',
-	    onClick: props.onClick,
-	    style: {
-	      width: '2em'
-	    }
-	  };
-	  return React.createElement('img', opts);
-	};
-
-	module.exports = Tile;
 
 /***/ }
 /******/ ]);
