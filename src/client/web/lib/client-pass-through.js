@@ -37,7 +37,7 @@ class ClientPassThrough extends BaseClient {
   }
 
   discardFromApp(tile) {
-    this.processTileDiscardChoide(tile);
+    this.processTileDiscardChoice(tile);
   }
 
   determineClaim(from, tile, sendClaim) {
@@ -58,12 +58,12 @@ class ClientPassThrough extends BaseClient {
     this.app.recordBonus(playerPosition, tiles);
   }
 
-  handDrawn(acknowledged) {
-    this.app.handDrawn(acknowledged);
+  handDrawn(alltiles, acknowledged) {
+    this.app.handDrawn(alltiles, acknowledged);
   }
 
-  handWon(winner, selfdrawn, acknowledged) {
-    this.app.handWon(winner, selfdrawn, acknowledged);
+  handWon(winner, selfdrawn, alltiles, acknowledged) {
+    this.app.handWon(winner, selfdrawn, alltiles, acknowledged);
   }
 
   // Asks the server to clear the timeout, to give

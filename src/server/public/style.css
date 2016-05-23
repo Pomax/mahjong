@@ -11,15 +11,37 @@ img.tile {
   margin: 1px;
   vertical-align: middle;
 }
+img.tile.highlight {
+  margin: 0;
+  border: 1px solid red;
+}
 
 .name a, .name a:visited {
   color: inherit;
 }
 
-.others .player .handsize,
-.others .player .revealed,
-.others .player .bonus {
+.player .tiles,
+.player .handsize,
+.player .revealed,
+.player .revealed .set,
+.player .bonus,
+.player .currentDiscard {
   display: inline-block;
+}
+
+.player .revealed,
+.player .bonus,
+.player .currentDiscard {
+  margin-left: 0.5em;
+}
+
+.player .revealed {
+  padding-bottom: 0.25em;
+  border-bottom: 1px solid white;
+}
+
+.player .revealed .set + .set {
+  margin-left: 0.25em;
 }
 
 .discard {

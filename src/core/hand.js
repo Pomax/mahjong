@@ -30,7 +30,8 @@ class Hand {
     this.windOfTheRound = windOfTheRound;
     this.windOffset = windOffset;
     this.wall = new Wall(this);
-    this.claimTimeoutInterval = 5000;
+    this.claimTimeoutInterval = 5000;         // should come from rules
+    this.minimalClaimTimeoutInterval = 1000;  // should come from rules?
     this.setStage(stages.PRESTART);
     // used at some point in the code.
     this.currentDiscard = false;
@@ -100,6 +101,8 @@ class Hand {
    *
    */
   start() {
+    console.log("new round start");
+
     if (this.started) { return console.error('cannot start: hand already in progress.'); }
     if (this.finished) { return console.error('cannot start: hand already finished.'); }
 
@@ -299,9 +302,22 @@ class Hand {
     this.discardingPlayer = discardingPlayer;
     this.listenForClaims();
     if (this.claimTimeoutInterval) {
+      this.lockClaimTimeout();
       this.claimTimeout = setTimeout(() => this.processClaims(), this.claimTimeoutInterval);
     }
     this.players.forEach(player => player.tileWasDiscarded(discardingPlayer, tile));
+  }
+
+  // Lock the claim system so that even if we get enough votes,
+  // the tile stays available for at least X milliseconds.
+  lockClaimTimeout() {
+    this.claimLock = true;
+    setTimeout(() => this.unlockClaimTimeout(), this.minimalClaimTimeoutInterval);
+  }
+
+  // Unlock the claim system.
+  unlockClaimTimeout() {
+    this.claimLock = false;
   }
 
   /**
@@ -349,7 +365,10 @@ class Hand {
    * ...
    */
   processClaims() {
-    console.log("processing claims");
+    // spin until unlocked, if accessed too soon.
+    if (this.claimLock) {
+      return setTimeout(() => this.processClaims(), 250);
+    }
 
     if (this.stage !== stages.DISCARD) {
       return console.error('processClaims called outside of the DISCARD stage: ignored.');
@@ -446,22 +465,38 @@ class Hand {
    * ...
    */
   handWasDrawn() {
+    console.log("hand was a draw");
     this.setStage(stages.DRAW);
     this.finished = true;
     this.draw = true;
+    var alltiles = this.getAllTileData();
     this.acknowledged = {};
-    this.players.forEach(player => player.handWasDrawn());
+    this.players.forEach(player => player.handWasDrawn(alltiles));
   }
 
   /**
    * ...
    */
   handWasWon(winner, selfdrawn) {
+    console.log("hand was a won by", winner);
     this.setStage(stages.WON);
     this.finished = true;
     this.winner = winner;
+    var alltiles = this.getAllTileData();
     this.acknowledged = {};
-    this.players.forEach(player => player.handWasWon(winner, selfdrawn));
+    this.players.forEach(player => player.handWasWon(winner, selfdrawn, alltiles));
+  }
+
+  /**
+   * Once a hand is over, all players get to see
+   * all player tile information. This can be made
+   * contingent on buy-in from the players, but by
+   * default we communicate the final tile situation.
+   */
+  getAllTileData() {
+    var tiledata = {};
+    this.players.forEach(player => tiledata[player.name] = player.getAllTileData());
+    return tiledata;
   }
 
   /**

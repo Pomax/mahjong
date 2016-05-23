@@ -120,6 +120,7 @@ class Client {
    * used by all protocol steps that involve 'discarding a tile'
    */
   discardTile(cleandeal) {
+    // wins are automatic for now.
     if (this.rules.checkCoverage(this.tiles, this.bonus, this.revealed)) {
       return this.connector.publish('discard-tile', { tile: Constants.NOTILE, selfdrawn: true });
     }
@@ -143,6 +144,9 @@ class Client {
    * Determine whether we want to claim a discarded tile
    */
   determineClaim(from, tile, sendClaim) {
+    if (from === this.currentGame.position) {
+      return sendClaim({ claimType: Constants.NOTHING });
+    }
     this.ai.updateStrategy(tile);
     sendClaim(this.ai.determineClaim(tile));
   }
@@ -221,14 +225,14 @@ class Client {
   /**
    * ...
    */
-  handDrawn(acknowledged) {
+  handDrawn(alltiles, acknowledged) {
     acknowledged();
   }
 
   /**
    * ...
    */
-  handWon(winner, selfdrawn, acknowledged) {
+  handWon(winner, selfdrawn, alltiles, acknowledged) {
     acknowledged();
   }
 
@@ -298,9 +302,6 @@ class Client {
       c.subscribe('tile-discarded', data => {
         var from = parseInt(data.from);
         var tile = parseInt(data.tile);
-        if (parseInt(from) === this.currentGame.position) {
-          return c.publish('claim-discard', { claimType: Constants.NOTHING });
-        }
         var claim = this.determineClaim(from, tile, claim => {
           c.publish('claim-discard', claim);
         });
@@ -336,14 +337,14 @@ class Client {
 
       c.subscribe('hand-drawn', data => {
         this.log('${this.name} in seat ${this.currentGame.position} registered that the hand was a draw.');
-        this.handDrawn(() => c.publish('hand-acknowledged'));
+        this.handDrawn(data.alltiles, () => c.publish('hand-acknowledged'));
       });
 
       c.subscribe('hand-won', data => {
         var winner = parseInt(data.winner);
         var selfdrawn = data.selfdrawn ? '(self-drawn) ' : '';
         this.log('${this.name} in seat ${this.currentGame.position} registered that the hand was won ${selfdrawn}by player in seat ${winner}.');
-        this.handWon(winner, selfdrawn, () => c.publish('hand-acknowledged'));
+        this.handWon(winner, selfdrawn, data.alltiles, () => c.publish('hand-acknowledged'));
       });
 
       c.subscribe('hand-score', data => {

@@ -86,7 +86,7 @@
 	  render() {
 	    return React.createElement(
 	      'div',
-	      { className: 'client' },
+	      { className: 'client', ref: 'background', onClick: this.backGroundClicked },
 	      React.createElement(
 	        Overlay,
 	        null,
@@ -106,9 +106,14 @@
 	      ) : null,
 	      this.renderLobby(),
 	      this.renderDiscard(),
-	      this.renderTiles(),
-	      this.renderOthers()
+	      this.renderPlayers()
 	    );
+	  },
+
+	  backGroundClicked(evt) {
+	    if (this.state.currentDiscard && this.canDismiss) {
+	      this.ignoreClaim();
+	    }
 	  },
 
 	  renderLobby() {
@@ -125,22 +130,62 @@
 	    );
 	  },
 
+	  renderPlayers() {
+	    if (!this.state.players) return null;
+	    var players = this.state.players.map((player, position) => {
+	      if (position === this.state.currentGame.position) {
+	        return this.renderTiles();
+	      }
+	      return React.createElement(
+	        'div',
+	        { className: 'other player', key: 'player' + position },
+	        React.createElement(
+	          'div',
+	          { className: 'name' },
+	          this.linkPlayerName(player.name),
+	          ' (',
+	          this.getWindFor(player.position),
+	          ')'
+	        ),
+	        React.createElement(
+	          'div',
+	          { className: 'handsize' },
+	          this.renderOtherPlayerTiles(player)
+	        ),
+	        React.createElement(
+	          'div',
+	          { className: 'revealed' },
+	          player.revealed.map((set, sid) => set.map((tile, id) => React.createElement(Tile, { value: tile, key: sid + '-' + 'tile' + '-' + id })))
+	        ),
+	        React.createElement(
+	          'div',
+	          { className: 'bonus' },
+	          player.bonus.map((tile, id) => React.createElement(Tile, { value: tile, key: tile + '-' + id }))
+	        ),
+	        this.renderCurrentDiscard(position)
+	      );
+	    });
+	    return React.createElement(
+	      'div',
+	      { className: 'players' },
+	      players
+	    );
+	  },
+
 	  renderTiles() {
 	    if (!this.state.tiles) return null;
-
 	    var dpos = this.state.tiles.indexOf(this.state.drawtile);
 	    var tiles = this.state.tiles.map((tile, id) => {
 	      var highlight = dpos && dpos === id;
 	      return React.createElement(Tile, { disabled: !this.state.discarding, key: tile + '-' + id, onClick: this.discard, value: tile, highlight: highlight });
 	    });
-
 	    var bonus = this.state.bonus.map((tile, id) => {
 	      return React.createElement(Tile, { disabled: 'disabled', key: tile + '-' + id, value: tile });
 	    });
 	    var revealed = this.state.revealed.map((set, sid) => {
 	      return React.createElement(
 	        'div',
-	        null,
+	        { className: 'set' },
 	        set.map((tile, id) => {
 	          let key = 'set-' + sid + '-' + tile + '-' + id;
 	          return React.createElement(Tile, { disabled: 'disabled', key: key, value: tile });
@@ -172,70 +217,53 @@
 	        'div',
 	        { className: 'bonus' },
 	        bonus
-	      )
+	      ),
+	      this.renderCurrentDiscard(this.state.currentGame.position)
 	    );
 	  },
 
-	  renderConcealedTiles(n) {
+	  renderOtherPlayerTiles(player) {
 	    var tiles = [];
-	    while (n--) {
-	      tiles.push(React.createElement(Tile, { value: 'concealed' }));
+	    if (player.tiles) {
+	      tiles = player.tiles.map((tile, id) => React.createElement(Tile, { value: tile, key: tile + '-' + id }));
+	    } else {
+	      var n = player.handSize;
+	      while (n--) {
+	        tiles.push(React.createElement(Tile, { value: 'concealed', key: n }));
+	      }
 	    }
 	    return tiles;
 	  },
 
-	  renderOthers() {
-	    if (!this.state.players) return null;
-	    var players = this.state.players.filter(p => !!p).map(player => {
-	      return React.createElement(
-	        'div',
-	        { className: 'player' },
-	        React.createElement(
-	          'div',
-	          { className: 'name' },
-	          this.linkPlayerName(player.name),
-	          ' (',
-	          this.getWindFor(player.position),
-	          ')'
-	        ),
-	        React.createElement(
-	          'div',
-	          { className: 'handsize' },
-	          this.renderConcealedTiles(player.handSize)
-	        ),
-	        React.createElement(
-	          'div',
-	          { className: 'revealed' },
-	          player.revealed.map(set => {
-	            return set.map(tile => React.createElement(Tile, { value: tile }));
-	          })
-	        ),
-	        React.createElement(
-	          'div',
-	          { className: 'bonus' },
-	          player.bonus.map(tile => React.createElement(Tile, { value: tile }))
-	        )
-	      );
-	    });
+	  renderCurrentDiscard(position) {
+	    if (!this.state.currentDiscard || this.state.currentDiscard.from !== position) {
+	      return null;
+	    }
 	    return React.createElement(
 	      'div',
-	      { className: 'others' },
-	      players
+	      { className: 'currentDiscard' },
+	      React.createElement(Tile, { onClick: this.getClaim, value: this.state.currentDiscard.tile })
 	    );
 	  },
 
-	  linkPlayerName(name) {
+	  splitPlayerName(name) {
 	    var bits = name.split(' ');
+	    var adjective = bits[0];
 	    var wiki = bits.slice(1).map((s, id) => id === 0 ? s : s.toLowerCase()).join(' ');
+	    return [adjective, wiki];
+	  },
+
+	  linkPlayerName(name) {
+	    var [adjective, wikilink] = this.splitPlayerName(name);
 	    return React.createElement(
 	      'span',
 	      null,
-	      bits[0],
+	      adjective,
 	      ' ',
 	      React.createElement(
 	        'a',
-	        { href: "https://wikipedia.org/wiki/" + wiki, target: '_blank' },
-	        wiki
+	        { href: "https://wikipedia.org/wiki/" + wikilink, target: '_blank' },
+	        wikilink
 	      )
 	    );
 	  },
@@ -246,26 +274,28 @@
 
 	  renderDiscard() {
 	    var content = null;
-	    if (this.state.currentDiscard) {
+	    if (this.state.currentDiscard && this.state.currentDiscard.from !== this.state.currentGame.position) {
 	      var from = this.state.players[this.state.currentDiscard.from].name;
 	      content = this.state.claiming ? this.renderClaim() : React.createElement(
 	        'div',
 	        null,
+	        'Click ',
+	        React.createElement(Tile, { onClick: this.getClaim, value: this.state.currentDiscard.tile }),
+	        ' to claim it (discarded by ',
+	        from,
+	        ')'
+	      );
+	    }
+	    if (this.state.confirmWin) {
+	      content = React.createElement(
+	        'span',
+	        null,
 	        React.createElement(
 	          'button',
-	          { onClick: this.getClaim },
-	          'claim'
+	          { onClick: this.confirmWin },
+	          'confirm win'
 	        ),
-	        ' or ',
-	        React.createElement(
-	          'button',
-	          { onClick: this.ignoreClaim },
-	          'dismiss'
-	        ),
-	        ' tile ',
-	        React.createElement(Tile, { value: this.state.currentDiscard.tile }),
-	        ' discarded by ',
-	        from
+	        ' or discard a tile to keep playing'
 	      );
 	    }
 	    return React.createElement(
@@ -288,8 +318,8 @@
 	  },
 
 	  registerPlayer() {
-	    var name = this.state.settings.name;
-	    fetch('/register/pomax').then(response => response.json()).then(data => {
+	    var name = this.state.settings.name || '';
+	    fetch('/register/' + name).then(response => response.json()).then(data => {
 	      var id = data.id;
 	      var port = data.port;
 	      new ClientPassThrough(name, port, client => {
@@ -316,7 +346,7 @@
 	          revealed: []
 	        };
 	      }
-	      return false;
+	      return { name: this.state.settings.name };
 	    });
 	    this.setState({ currentGame: data, players });
 	  },
@@ -346,15 +376,24 @@
 	    tiles.splice(pos, 1);
 	    this.setState({
 	      drawtile: false,
-	      discarding: false
+	      discarding: false,
+	      confirmWin: false
 	    }, () => {
 	      tiles, this.state.client.processTileDiscardChoice(tile);
 	    });
 	  },
 
 	  determineClaim(from, tile, sendClaim) {
+	    if (from === this.state.currentGame.position) {
+	      // if we discarded in error, we might be able
+	      // to yell "no wait give it back", but that logic
+	      // is not currently available.
+	      sendClaim({ claimType: Constants.NOTHING });
+	    }
 	    this.setState({
 	      currentDiscard: { from, tile, sendClaim }
+	    }, () => {
+	      this.canDismiss = true;
 	    });
 	  },
 
@@ -365,6 +404,7 @@
 	  },
 
 	  getClaim() {
+	    this.canDismiss = false;
 	    this.state.client.requestTimeoutInvalidation();
 	    this.setState({ claiming: true });
 	  },
@@ -375,7 +415,13 @@
 	  },
 
 	  tileClaimed(tile, by, claimType, winType) {
-	    this.setState({ currentDiscard: false });
+	    this.setState({ currentDiscard: false, confirmWin: claimType === Constants.WIN });
+	  },
+
+	  confirmWin() {
+	    this.setState({ confirmWin: false }, () => {
+	      this.state.client.discardFromApp(Constants.NOTILE);
+	    });
 	  },
 
 	  recordReveal(playerPosition, tiles) {
@@ -394,15 +440,41 @@
 	    this.setState({ players });
 	  },
 
-	  handDrawn(acknowledged) {
-	    alert("hand was a draw");
-	    acknowledged();
+	  revealAllTiles(alltiles, onReveal) {
+	    var players = this.state.players;
+	    players.forEach(player => {
+	      let side = alltiles[player.name];
+	      player.tiles = side.tiles;
+	      player.bonus = side.bonus;
+	      player.revealed = side.revealed;
+	    });
+	    this.setState({ players }, onReveal);
 	  },
 
-	  handWon(winner, selfdrawn, acknowledged) {
-	    var player = this.state.players[winner];
-	    alert("hand was won by " + player.name);
-	    acknowledged();
+	  handDrawn(alltiles, acknowledged) {
+	    this.revealAllTiles(alltiles, () => {
+	      this.setState({
+	        modal: React.createElement(
+	          'button',
+	          { onClick: acknowledged },
+	          'Hand was a draw'
+	        )
+	      });
+	    });
+	  },
+
+	  handWon(winner, selfdrawn, alltiles, acknowledged) {
+	    this.revealAllTiles(alltiles, () => {
+	      var player = this.state.players[winner];
+	      this.setState({
+	        modal: React.createElement(
+	          'button',
+	          { onClick: acknowledged },
+	          'hand was won by ',
+	          player.name
+	        )
+	      });
+	    });
 	  }
 	});
 
@@ -20428,7 +20500,7 @@
 	  }
 
 	  discardFromApp(tile) {
-	    this.processTileDiscardChoide(tile);
+	    this.processTileDiscardChoice(tile);
 	  }
 
 	  determineClaim(from, tile, sendClaim) {
@@ -20449,12 +20521,12 @@
 	    this.app.recordBonus(playerPosition, tiles);
 	  }
 
-	  handDrawn(acknowledged) {
-	    this.app.handDrawn(acknowledged);
+	  handDrawn(alltiles, acknowledged) {
+	    this.app.handDrawn(alltiles, acknowledged);
 	  }
 
-	  handWon(winner, selfdrawn, acknowledged) {
-	    this.app.handWon(winner, selfdrawn, acknowledged);
+	  handWon(winner, selfdrawn, alltiles, acknowledged) {
+	    this.app.handWon(winner, selfdrawn, alltiles, acknowledged);
 	  }
 
 	  // Asks the server to clear the timeout, to give
@@ -20595,6 +20667,7 @@
 	   * used by all protocol steps that involve 'discarding a tile'
 	   */
 	  discardTile(cleandeal) {
+	    // wins are automatic for now.
 	    if (this.rules.checkCoverage(this.tiles, this.bonus, this.revealed)) {
 	      return this.connector.publish('discard-tile', { tile: Constants.NOTILE, selfdrawn: true });
 	    }
@@ -20618,6 +20691,9 @@
 	   * Determine whether we want to claim a discarded tile
 	   */
 	  determineClaim(from, tile, sendClaim) {
+	    if (from === this.currentGame.position) {
+	      return sendClaim({ claimType: Constants.NOTHING });
+	    }
 	    this.ai.updateStrategy(tile);
 	    sendClaim(this.ai.determineClaim(tile));
 	  }
@@ -20715,14 +20791,14 @@
 	  /**
 	   * ...
 	   */
-	  handDrawn(acknowledged) {
+	  handDrawn(alltiles, acknowledged) {
 	    acknowledged();
 	  }
 
 	  /**
 	   * ...
 	   */
-	  handWon(winner, selfdrawn, acknowledged) {
+	  handWon(winner, selfdrawn, alltiles, acknowledged) {
 	    acknowledged();
 	  }
 
@@ -20792,9 +20868,6 @@
 	      c.subscribe('tile-discarded', data => {
 	        var from = parseInt(data.from);
 	        var tile = parseInt(data.tile);
-	        if (parseInt(from) === this.currentGame.position) {
-	          return c.publish('claim-discard', { claimType: Constants.NOTHING });
-	        }
 	        var claim = this.determineClaim(from, tile, claim => {
 	          c.publish('claim-discard', claim);
 	        });
@@ -20830,14 +20903,14 @@
 
 	      c.subscribe('hand-drawn', data => {
 	        this.log('${this.name} in seat ${this.currentGame.position} registered that the hand was a draw.');
-	        this.handDrawn(() => c.publish('hand-acknowledged'));
+	        this.handDrawn(data.alltiles, () => c.publish('hand-acknowledged'));
 	      });
 
 	      c.subscribe('hand-won', data => {
 	        var winner = parseInt(data.winner);
 	        var selfdrawn = data.selfdrawn ? '(self-drawn) ' : '';
 	        this.log('${this.name} in seat ${this.currentGame.position} registered that the hand was won ${selfdrawn}by player in seat ${winner}.');
-	        this.handWon(winner, selfdrawn, () => c.publish('hand-acknowledged'));
+	        this.handWon(winner, selfdrawn, data.alltiles, () => c.publish('hand-acknowledged'));
 	      });
 
 	      c.subscribe('hand-score', data => {
@@ -30070,7 +30143,7 @@
 	    className: 'tile' + (props.highlight ? ' highlight' : ''),
 	    'data-tile': props.value,
 	    src: '/images/tiles/classic/' + props.value + '.jpg',
-	    onClick: props.onClick,
+	    onClick: props.disabled ? null : props.onClick,
 	    style: {
 	      width: '2em'
 	    }
@@ -30167,15 +30240,15 @@
 	    var chowButtons = this.props.mayChow ? [React.createElement(
 	      'button',
 	      { className: 'chow', key: 'chow1', onClick: this.chow1 },
-	      'chow'
+	      'chow (x..)'
 	    ), React.createElement(
 	      'button',
 	      { className: 'chow', key: 'chow2', onClick: this.chow2 },
-	      'chow'
+	      'chow (.x.)'
 	    ), React.createElement(
 	      'button',
 	      { className: 'chow', key: 'chow3', onClick: this.chow3 },
-	      'chow'
+	      'chow (..x)'
 	    )] : [];
 	    return React.createElement(
 	      'div',
@@ -30243,17 +30316,17 @@
 	      React.createElement(
 	        'button',
 	        { className: 'chow', onClick: this.winChow1 },
-	        'chow'
+	        'chow (x..)'
 	      ),
 	      React.createElement(
 	        'button',
 	        { className: 'chow', onClick: this.winChow2 },
-	        'chow'
+	        'chow (.x.)'
 	      ),
 	      React.createElement(
 	        'button',
 	        { className: 'chow', onClick: this.winChow3 },
-	        'chow'
+	        'chow (..x)'
 	      ),
 	      React.createElement(
 	        'button',

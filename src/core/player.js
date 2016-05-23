@@ -185,13 +185,13 @@ class Player {
     this.connector.publish('tile-discarded', { from, tile });
   }
 
-  handWasDrawn() {
-    this.connector.publish('hand-drawn', { gameid: this.game.id, handid: this.hand.id });
+  handWasDrawn(alltiles) {
+    this.connector.publish('hand-drawn', { gameid: this.game.id, handid: this.hand.id, alltiles });
   }
 
-  handWasWon(player, selfdrawn) {
+  handWasWon(player, selfdrawn, alltiles) {
     var winner = player.position
-    this.connector.publish('hand-won', { gameid: this.game.id, handid: this.hand.id, winner, selfdrawn });
+    this.connector.publish('hand-won', { gameid: this.game.id, handid: this.hand.id, winner, selfdrawn, alltiles });
   }
 
   handAcknowledgedByClient() {
@@ -209,6 +209,14 @@ class Player {
 
   timeoutInvalidationRequestFromClient(data) {
     this.hand.timeoutInvalidationRequestFromPlayer(this);
+  }
+
+  getAllTileData() {
+    return {
+      tiles: this.tiles,
+      bonus: this.bonus,
+      revealed: this.revealed
+    };
   }
 
   // General purpose

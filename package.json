@@ -11,8 +11,9 @@
     "test": "node src/core/test/test.js",
     "cli": "node src/client/cli/test.js",
     "server": "node src/server/server.js",
+    "open": "node-open http://localhost:8081/client",
     "dev": "webpack --prod --progress --colors --watch --config ./src/client/web/webpack.config.js",
-    "web": "npm-run-all --parallel server dev"
+    "web": "npm-run-all --parallel server dev open"
   },
   "author": "Pomax",
   "dependencies": {
@@ -39,6 +40,7 @@
     "less": "^2.6.1",
     "less-watch-compiler": "^1.2.3",
     "npm-run-all": "^1.7.0",
+    "open": "0.0.5",
     "react": "^0.14.7",
     "react-dom": "^0.14.7",
     "react-router": "^2.0.0",

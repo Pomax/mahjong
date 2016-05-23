@@ -30,17 +30,22 @@ var ClientApp = React.createClass({
 
   render() {
     return (
-      <div className="client">
+      <div className="client" ref="background" onClick={this.backGroundClicked}>
         <Overlay>{this.state.modal ? this.state.modal : null}</Overlay>
         <input type="text" value={this.state.settings.name} onChange={this.changePlayerName} />
         { this.state.client ? null : <button onClick={this.registerPlayer}>register player</button> }
         { this.state.currentGame ? <div>Client connected using a websocket on port {this.state.client.connector.port}</div> : null }
         { this.renderLobby() }
         { this.renderDiscard() }
-        { this.renderTiles() }
-        { this.renderOthers() }
+        { this.renderPlayers() }
       </div>
     );
+  },
+
+  backGroundClicked(evt) {
+    if (this.state.currentDiscard && this.canDismiss) {
+      this.ignoreClaim();
+    }
   },
 
   renderLobby() {
@@ -53,20 +58,37 @@ var ClientApp = React.createClass({
     );
   },
 
+  renderPlayers() {
+    if (!this.state.players) return null;
+    var players = this.state.players.map((player,position) => {
+      if (position === this.state.currentGame.position) {
+        return this.renderTiles();
+      }
+      return (
+        <div className="other player" key={'player'+position}>
+          <div className="name">{this.linkPlayerName(player.name)} ({this.getWindFor(player.position)})</div>
+          <div className="handsize">{ this.renderOtherPlayerTiles(player) }</div>
+          <div className="revealed">{ player.revealed.map((set,sid) => set.map((tile,id) => <Tile value={tile} key={sid + '-' + 'tile' + '-' + id}/>)) }</div>
+          <div className="bonus">{ player.bonus.map((tile,id) => <Tile value={tile} key={tile + '-' + id}/>) }</div>
+          { this.renderCurrentDiscard(position) }
+        </div>
+      );
+    });
+    return <div className="players">{players}</div>;
+  },
+
   renderTiles() {
     if (!this.state.tiles) return null;
-
     var dpos = this.state.tiles.indexOf(this.state.drawtile);
     var tiles = this.state.tiles.map((tile,id) => {
       var highlight = (dpos && dpos===id);
       return <Tile disabled={!this.state.discarding} key={tile+'-'+id} onClick={this.discard} value={tile} highlight={highlight}/>;
     });
-
     var bonus = this.state.bonus.map((tile,id) => {
       return <Tile disabled="disabled" key={tile+'-'+id} value={tile} />;
     });
     var revealed = this.state.revealed.map((set,sid) => {
-      return <div>{
+      return <div className="set">{
         set.map((tile,id) => {
           let key ='set-'+sid+'-'+tile+'-'+id;
           return <Tile disabled="disabled" key={key} value={tile} />;
@@ -78,34 +100,38 @@ var ClientApp = React.createClass({
       <div className="tiles">{tiles}</div>
       <div className="revealed">{revealed}</div>
       <div className="bonus">{bonus}</div>
+      { this.renderCurrentDiscard(this.state.currentGame.position) }
     </div>;
   },
 
-  renderConcealedTiles(n) {
+  renderOtherPlayerTiles(player) {
     var tiles = [];
-    while(n--) { tiles.push(<Tile value='concealed'/>); }
+    if (player.tiles) {
+      tiles = player.tiles.map((tile,id) => <Tile value={tile} key={tile + '-' + id}/>);
+    } else {
+      var n = player.handSize;
+      while(n--) { tiles.push(<Tile value='concealed' key={n}/>); }
+    }
     return tiles;
   },
 
-  renderOthers() {
-    if (!this.state.players) return null;
-    var players = this.state.players.filter(p => !!p).map(player => {
-      return <div className="player">
-        <div className="name">{this.linkPlayerName(player.name)} ({this.getWindFor(player.position)})</div>
-        <div className="handsize">{ this.renderConcealedTiles(player.handSize) }</div>
-        <div className="revealed">{player.revealed.map(set => {
-          return set.map(tile => <Tile value={tile}/>);
-        })}</div>
-        <div className="bonus">{player.bonus.map(tile => <Tile value={tile}/>)}</div>
-      </div>;
-    });
-    return <div className="others">{players}</div>;
+  renderCurrentDiscard(position) {
+    if (!this.state.currentDiscard || this.state.currentDiscard.from !== position) {
+      return null;
+    }
+    return <div className="currentDiscard"><Tile onClick={this.getClaim} value={this.state.currentDiscard.tile}/></div>;
+  },
+
+  splitPlayerName(name) {
+    var bits = name.split(' ');
+    var adjective = bits[0];
+    var wiki = bits.slice(1).map((s,id) => id===0? s : s.toLowerCase()).join(' ');
+    return [adjective, wiki];
   },
 
   linkPlayerName(name) {
-    var bits = name.split(' ');
-    var wiki = bits.slice(1).map((s,id) => id===0? s : s.toLowerCase()).join(' ');
-    return <span>{bits[0]} <a href={"https://wikipedia.org/wiki/" + wiki} target="_blank">{wiki}</a></span>;
+    var [adjective, wikilink] = this.splitPlayerName(name);
+    return <span>{adjective} <a href={"https://wikipedia.org/wiki/" + wikilink} target="_blank">{wikilink}</a></span>;
   },
 
   getWindFor(position) {
@@ -114,16 +140,16 @@ var ClientApp = React.createClass({
 
   renderDiscard() {
     var content = null;
-    if (this.state.currentDiscard) {
+    if (this.state.currentDiscard && this.state.currentDiscard.from !== this.state.currentGame.position) {
       var from = this.state.players[this.state.currentDiscard.from].name;
       content = this.state.claiming ? this.renderClaim() : <div>
-        <button onClick={this.getClaim}>claim</button>
-        &nbsp;or&nbsp;
-        <button onClick={this.ignoreClaim}>dismiss</button>
-        &nbsp;tile&nbsp;
-        <Tile value={this.state.currentDiscard.tile} />
-        &nbsp;discarded by {from}
+        Click&nbsp;
+        <Tile onClick={this.getClaim} value={this.state.currentDiscard.tile} />
+        &nbsp;to claim it (discarded by {from})
       </div>;
+    }
+    if (this.state.confirmWin) {
+      content = <span><button onClick={this.confirmWin}>confirm win</button> or discard a tile to keep playing</span>;
     }
     return <div className="discard">{content}</div>;
   },
@@ -141,8 +167,8 @@ var ClientApp = React.createClass({
   },
 
   registerPlayer() {
-    var name = this.state.settings.name;
-    fetch('/register/pomax')
+    var name = this.state.settings.name || '';
+    fetch('/register/' + name)
     .then(response => response.json())
     .then(data => {
       var id = data.id;
@@ -173,7 +199,7 @@ var ClientApp = React.createClass({
           revealed: []
         };
       }
-      return false;
+      return { name : this.state.settings.name };
     });
     this.setState({ currentGame: data, players });
   },
@@ -203,7 +229,8 @@ var ClientApp = React.createClass({
     tiles.splice(pos,1);
     this.setState({
       drawtile: false,
-      discarding: false
+      discarding: false,
+      confirmWin: false
     }, () => {
       tiles,
       this.state.client.processTileDiscardChoice(tile);
@@ -211,9 +238,15 @@ var ClientApp = React.createClass({
   },
 
   determineClaim(from, tile, sendClaim) {
+    if (from === this.state.currentGame.position) {
+      // if we discarded in error, we might be able
+      // to yell "no wait give it back", but that logic
+      // is not currently available.
+      sendClaim({ claimType: Constants.NOTHING });
+    }
     this.setState({
       currentDiscard: { from, tile, sendClaim }
-    });
+    }, () => { this.canDismiss = true; });
   },
 
   ignoreClaim() {
@@ -223,6 +256,7 @@ var ClientApp = React.createClass({
   },
 
   getClaim() {
+    this.canDismiss = false;
     this.state.client.requestTimeoutInvalidation();
     this.setState({ claiming: true });
   },
@@ -233,7 +267,13 @@ var ClientApp = React.createClass({
   },
 
   tileClaimed(tile, by, claimType, winType) {
-    this.setState({ currentDiscard: false });
+    this.setState({ currentDiscard: false, confirmWin: (claimType===Constants.WIN) });
+  },
+
+  confirmWin() {
+    this.setState({ confirmWin: false}, () => {
+      this.state.client.discardFromApp(Constants.NOTILE);
+    });
   },
 
   recordReveal(playerPosition, tiles) {
@@ -252,15 +292,32 @@ var ClientApp = React.createClass({
     this.setState({ players });
   },
 
-  handDrawn(acknowledged) {
-    alert("hand was a draw");
-    acknowledged();
+  revealAllTiles(alltiles, onReveal) {
+    var players = this.state.players;
+    players.forEach(player => {
+      let side = alltiles[player.name];
+      player.tiles = side.tiles;
+      player.bonus = side.bonus;
+      player.revealed = side.revealed;
+    });
+    this.setState({ players }, onReveal);
   },
 
-  handWon(winner, selfdrawn, acknowledged) {
-    var player = this.state.players[winner];
-    alert("hand was won by "+player.name);
-    acknowledged();
+  handDrawn(alltiles, acknowledged) {
+    this.revealAllTiles(alltiles, () => {
+      this.setState({
+        modal: <button onClick={acknowledged}>Hand was a draw</button>
+      });
+    });
+  },
+
+  handWon(winner, selfdrawn, alltiles, acknowledged) {
+    this.revealAllTiles(alltiles, () => {
+      var player = this.state.players[winner];
+      this.setState({
+        modal: <button onClick={acknowledged}>hand was won by {player.name}</button>
+      });
+    });
   }
 });
 

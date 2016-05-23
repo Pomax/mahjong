@@ -28,8 +28,12 @@ class Game {
   // Player administration
 
   addPlayer(player) {
-    this.players[player.name] = player;
+    if (this.playerCount >= 4) {
+      return console.error("Can't add more players to this game...?");
+    }
     this.playerCount++;
+    console.log("[" + this.id + "] adding player, count is " +  this.playerCount);
+    this.players[player.name] = player;
     this.scores[player.name] = this.ruleset.STARTING_POINTS;
     if (this.playerCount === 4) {
       this.start();
@@ -66,6 +70,8 @@ class Game {
   // game administration
 
   start() {
+    console.log("starting a new hand");
+    console.trace();
     var hand = this.createHand();
     hand.start();
   }
