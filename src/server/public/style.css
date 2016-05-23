@@ -1,0 +1,49 @@
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+  background: #333;
+  color: white;
+}
+
+img.tile {
+  margin: 1px;
+  vertical-align: middle;
+}
+img.tile.highlight {
+  margin: 0;
+  border: 1px solid red;
+}
+
+.name a, .name a:visited {
+  color: inherit;
+}
+
+.player .tiles,
+.player .handsize,
+.player .revealed,
+.player .revealed .set,
+.player .bonus,
+.player .currentDiscard {
+  display: inline-block;
+}
+
+.player .revealed,
+.player .bonus,
+.player .currentDiscard {
+  margin-left: 0.5em;
+}
+
+.player .revealed {
+  padding-bottom: 0.25em;
+  border-bottom: 1px solid white;
+}
+
+.player .revealed .set + .set {
+  margin-left: 0.25em;
+}
+
+.discard {
+  height: 3em;
+}
