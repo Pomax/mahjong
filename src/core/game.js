@@ -71,7 +71,7 @@ class Game {
 
   start() {
     console.log("starting a new hand");
-    console.trace();
+    //console.trace();
     var hand = this.createHand();
     hand.start();
   }
