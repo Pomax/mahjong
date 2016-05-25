@@ -22,7 +22,8 @@
     "inquirer": "^1.0.2",
     "md5": "^2.1.0",
     "pirates": "^2.1.1",
-    "socket.io": "^1.4.5"
+    "socket.io": "^1.4.5",
+    "uuid": "^2.0.2"
   },
   "devDependencies": {
     "babel-core": "^6.5.2",

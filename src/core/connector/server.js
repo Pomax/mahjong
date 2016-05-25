@@ -6,8 +6,11 @@ var Connector = require('./connector');
  * Connector for server processes.
  */
 class Server extends Connector {
-  constructor(sendPortInformation) {
-    super(sendPortInformation);
+  /**
+   * create a connector that will figure out its port later.
+   */
+  constructor(owner, sendPortInformation) {
+    super(owner, sendPortInformation);
   }
 
   /**

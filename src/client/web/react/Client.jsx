@@ -167,13 +167,22 @@ var ClientApp = React.createClass({
   },
 
   registerPlayer() {
-    var name = this.state.settings.name || '';
-    fetch('/register/' + name)
+    var name = this.state.settings.name;
+    if (!name) {
+      return alert("you need to fill in a name");
+    }
+    var uuid = this.state.settings.uuid || '';
+    var url = '/register/' + name + '/' + uuid;
+    console.log(url);
+    fetch(url)
     .then(response => response.json())
     .then(data => {
       var id = data.id;
+      var uuid = data.uuid;
+      var settings = this.state.settings;
+      settings.setUUID(uuid);
       var port = data.port;
-      new ClientPassThrough(name, port, client => {
+      new ClientPassThrough(name, uuid, port, client => {
         this.setState({ id, port, client });
         client.bindApp(this);
       });
@@ -181,7 +190,9 @@ var ClientApp = React.createClass({
   },
 
   startGame() {
-    fetch('/game/new/' + this.state.id + '/' + this.state.settings.name)
+    var url = '/game/new/' + this.state.id + '/' + this.state.settings.uuid;
+    console.log(url);
+    fetch(url)
     .then(response => response.json())
     .then(data => {
       // the actual play negotiations happen via websockets
@@ -202,6 +213,30 @@ var ClientApp = React.createClass({
       return { name : this.state.settings.name };
     });
     this.setState({ currentGame: data, players });
+    if (data.tileSituation) {
+      this.updatePlayerInformation(data.tileSituation, data.currentDiscard);
+    }
+  },
+
+  // used for reconnections, to make sure we reflect
+  // other players correctly.
+  updatePlayerInformation(tileSituation, currentDiscard) {
+    var players = this.state.players;
+    players.forEach(player => {
+      var situation = tileSituation[player.name];
+      player.handSize = situation.handSize;
+      player.bonus = situation.bonus;
+      player.revealed = situation.revealed;
+    });
+    var us = tileSituation[this.state.settings.name];
+    this.setState({
+      players,
+      tiles: us.tiles,
+      bonus: us.bonus,
+      revealed: us.revealed,
+      discarding: !currentDiscard,
+      currentDiscard
+    });
   },
 
   setInitialTiles(tiles) {

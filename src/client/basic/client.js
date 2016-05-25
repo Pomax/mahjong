@@ -12,10 +12,11 @@ var debug = false;
  * A client without an interface
  */
 class Client {
-  constructor(name, port, afterBinding) {
+  constructor(name, uuid, port, afterBinding) {
     this.name = name;
+    this.uuid = uuid;
     this.reset();
-    this.connector = new Connector(connector => {
+    this.connector = new Connector(this, connector => {
       this.setSocketBindings(port, connector, afterBinding);
     }, port);
   }
@@ -42,10 +43,17 @@ class Client {
     this.ai = new AI(this);
   }
 
+  setReconnectionData(data) {
+    this.setGameData(data);
+    this.tiles = data.tiles;
+    this.bonus = data.bonus;
+    this.revealed = data.revealed;
+  }
+
   setGameData(data) {
     this.reset();
     this.currentGame = data;
-    this.currentGame.turn = 0;
+    this.currentGame.turn = data.turn || 0;
     this.setupAI(data.ruleset);
     data.playerNames.forEach((name,position) => {
       this.players[position].name = name;
@@ -268,9 +276,14 @@ class Client {
   setSocketBindings(port, connector, afterBinding) {
     var c = this.connector = connector;
 
+    // make _sure_ this event is bound before we bind connection listening.
+    c.subscribe('reconnection-data', data => {
+      console.log('reconnection-data event');
+      this.setReconnectionData(data);
+    });
+
     c.subscribe('connect', data => {
       this.log('connected on port ${port}');
-
       this.socketPreBindings();
 
       c.subscribe('getready', data => {

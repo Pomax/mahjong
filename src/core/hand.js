@@ -30,8 +30,8 @@ class Hand {
     this.windOfTheRound = windOfTheRound;
     this.windOffset = windOffset;
     this.wall = new Wall(this);
-    this.claimTimeoutInterval = 5000;         // should come from rules
-    this.minimalClaimTimeoutInterval = 1000;  // should come from rules?
+    this.claimTimeoutInterval = 5000;       // should come from rules
+    this.minimalClaimTimeoutInterval = 1;   // should come from rules?
     this.setStage(stages.PRESTART);
     // used at some point in the code.
     this.currentDiscard = false;
@@ -478,13 +478,26 @@ class Hand {
    * ...
    */
   handWasWon(winner, selfdrawn) {
-    console.log("hand was a won by", winner);
+    console.log("hand was a won by", winner.name);
     this.setStage(stages.WON);
     this.finished = true;
     this.winner = winner;
     var alltiles = this.getAllTileData();
     this.acknowledged = {};
     this.players.forEach(player => player.handWasWon(winner, selfdrawn, alltiles));
+  }
+
+  /**
+   * While a hand is being played, a reconnecting player
+   * will need to know what has been played so far, and
+   * who has which bonus tiles etc.
+   */
+  getCurrentTileSituation(requestingPlayer) {
+    var tiledata = {};
+    this.players.forEach(player => {
+      tiledata[player.name] = player.getCurrentTileSituation(requestingPlayer);
+    });
+    return tiledata;
   }
 
   /**

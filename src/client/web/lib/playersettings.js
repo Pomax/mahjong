@@ -18,6 +18,10 @@ Settings.prototype = {
   setName: function(name) {
     this.name = name;
     this.saveData();
+  },
+  setUUID: function(uuid) {
+    this.uuid = uuid;
+    this.saveData();
   }
 };
 

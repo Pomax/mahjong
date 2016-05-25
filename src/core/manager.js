@@ -23,16 +23,39 @@ class Manager {
 
   // Player administration
 
-  createPlayer(options, sendPortInformation) {
+  createPlayer(options, sendConnectionInformation) {
+    // reexisting player?
+    if (options.uuid) {
+      var player = this.getPlayerByUUID(options.uuid);
+      if (player) {
+        console.log("new player is actually existing player:", options);
+        player.setupConnectorAgain(() => {
+          sendConnectionInformation(player.id, player.uuid, player.connector.port, player);
+        });
+        return player;
+      }
+    }
+    // new player
+    options.name = options.name || 'player ${options.id}';
     var playerid = playerids.next();
     options.id = playerid;
-    options.name = options.name || 'player ${options.id}';
-    this.players[playerid] = new Player(this, options, sendPortInformation);
+    this.players[playerid] = new Player(this, options, sendConnectionInformation);
     return this.players[playerid];
   }
 
   getPlayer(id) {
     return this.players[id];
+  }
+
+  getPlayerByUUID(uuid) {
+    var ids = Object.keys(this.players);
+    for(var i=0; i<ids.length; i++) {
+      let id = ids[i];
+      if (this.players[id].uuid === uuid) {
+        return this.players[id];
+      }
+    }
+    return false;
   }
 
   removePlayer(id) {

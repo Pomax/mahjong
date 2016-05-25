@@ -6,7 +6,11 @@ var debug = false;
  * A socket wrapper that lets us swap in different socket libraries,
  */
 class Connector {
-  constructor(postBootstrapHandler, port) {
+  /**
+   * create a connector, either with [port] prespecified or not.
+   */
+  constructor(owner, postBootstrapHandler, port) {
+    this.owner = owner;
     this.queue = [];
     this.ready = false;
     this.port = port || false;
@@ -26,13 +30,6 @@ class Connector {
    */
   setSocket(socket) {
     this.socket = socket;
-
-    // socket.on('error', (e) => {
-    //   console.error("Something went horribly wrong...")
-    //   console.error(e);
-    //   console.trace();
-    // });
-
     if (debug) console.log('socket on port ${this.port} established.');
     this.ready = true;
     while(this.queue.length) {
@@ -56,10 +53,26 @@ class Connector {
    */
   publish(eventName, payload, afterwards) {
     if (!this.ready) {
+      console.log("queueing " + eventName);
       return this.queue.push({op: 'publish', eventName, payload, afterwards });
+    }
+    if (!this.socket.connected) {
+      return this.notifyConnectionLoss(afterwards);
     }
     this.socket.emit(eventName, payload);
     if (afterwards) afterwards();
+  }
+
+  /**
+   * notify our owner that a connection was lost
+   */
+  notifyConnectionLoss(afterwards) {
+    if (this.owner.lostConnection) {
+      this.owner.lostConnection();
+    }
+    if (afterwards) {
+      afterwards();
+    }
   }
 
   /**

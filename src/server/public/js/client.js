@@ -318,11 +318,20 @@
 	  },
 
 	  registerPlayer() {
-	    var name = this.state.settings.name || '';
-	    fetch('/register/' + name).then(response => response.json()).then(data => {
+	    var name = this.state.settings.name;
+	    if (!name) {
+	      return alert("you need to fill in a name");
+	    }
+	    var uuid = this.state.settings.uuid || '';
+	    var url = '/register/' + name + '/' + uuid;
+	    console.log(url);
+	    fetch(url).then(response => response.json()).then(data => {
 	      var id = data.id;
+	      var uuid = data.uuid;
+	      var settings = this.state.settings;
+	      settings.setUUID(uuid);
 	      var port = data.port;
-	      new ClientPassThrough(name, port, client => {
+	      new ClientPassThrough(name, uuid, port, client => {
 	        this.setState({ id, port, client });
 	        client.bindApp(this);
 	      });
@@ -330,7 +339,9 @@
 	  },
 
 	  startGame() {
-	    fetch('/game/new/' + this.state.id + '/' + this.state.settings.name).then(response => response.json()).then(data => {
+	    var url = '/game/new/' + this.state.id + '/' + this.state.settings.uuid;
+	    console.log(url);
+	    fetch(url).then(response => response.json()).then(data => {
 	      // the actual play negotiations happen via websockets
 	    });
 	  },
@@ -349,6 +360,30 @@
 	      return { name: this.state.settings.name };
 	    });
 	    this.setState({ currentGame: data, players });
+	    if (data.tileSituation) {
+	      this.updatePlayerInformation(data.tileSituation, data.currentDiscard);
+	    }
+	  },
+
+	  // used for reconnections, to make sure we reflect
+	  // other players correctly.
+	  updatePlayerInformation(tileSituation, currentDiscard) {
+	    var players = this.state.players;
+	    players.forEach(player => {
+	      var situation = tileSituation[player.name];
+	      player.handSize = situation.handSize;
+	      player.bonus = situation.bonus;
+	      player.revealed = situation.revealed;
+	    });
+	    var us = tileSituation[this.state.settings.name];
+	    this.setState({
+	      players,
+	      tiles: us.tiles,
+	      bonus: us.bonus,
+	      revealed: us.revealed,
+	      discarding: !currentDiscard,
+	      currentDiscard
+	    });
 	  },
 
 	  setInitialTiles(tiles) {
@@ -20109,6 +20144,10 @@
 	  setName: function (name) {
 	    this.name = name;
 	    this.saveData();
+	  },
+	  setUUID: function (uuid) {
+	    this.uuid = uuid;
+	    this.saveData();
 	  }
 	};
 
@@ -20472,8 +20511,8 @@
 	 *
 	 */
 	class ClientPassThrough extends BaseClient {
-	  constructor(name, port, afterBinding) {
-	    super(name, port, afterBinding);
+	  constructor(name, uuid, port, afterBinding) {
+	    super(name, uuid, port, afterBinding);
 	  }
 
 	  bindApp(app) {
@@ -20557,10 +20596,11 @@
 	 * A client without an interface
 	 */
 	class Client {
-	  constructor(name, port, afterBinding) {
+	  constructor(name, uuid, port, afterBinding) {
 	    this.name = name;
+	    this.uuid = uuid;
 	    this.reset();
-	    this.connector = new Connector(connector => {
+	    this.connector = new Connector(this, connector => {
 	      this.setSocketBindings(port, connector, afterBinding);
 	    }, port);
 	  }
@@ -20587,10 +20627,18 @@
 	    this.ai = new AI(this);
 	  }
 
+	  setReconnectionData(data) {
+	    console.log('reconnection data:', data);
+	    this.setGameData(data);
+	    this.tiles = data.tiles;
+	    this.bonus = data.bonus;
+	    this.revealed = data.revealed;
+	  }
+
 	  setGameData(data) {
 	    this.reset();
 	    this.currentGame = data;
-	    this.currentGame.turn = 0;
+	    this.currentGame.turn = data.turn || 0;
 	    this.setupAI(data.ruleset);
 	    data.playerNames.forEach((name, position) => {
 	      this.players[position].name = name;
@@ -20834,9 +20882,14 @@
 	  setSocketBindings(port, connector, afterBinding) {
 	    var c = this.connector = connector;
 
+	    // make _sure_ this event is bound before we bind connection listening.
+	    c.subscribe('reconnection-data', data => {
+	      console.log('reconnection-data event');
+	      this.setReconnectionData(data);
+	    });
+
 	    c.subscribe('connect', data => {
 	      this.log('connected on port ${port}');
-
 	      this.socketPreBindings();
 
 	      c.subscribe('getready', data => {
@@ -22557,8 +22610,11 @@
 	 * Connector for game clients.
 	 */
 	class Client extends Connector {
-	  constructor(postBootstrapHandler, port) {
-	    super(postBootstrapHandler, port);
+	  /**
+	   * create a connector on a specific port.
+	   */
+	  constructor(owner, postBootstrapHandler, port) {
+	    super(owner, postBootstrapHandler, port);
 	  }
 
 	  /**
@@ -30029,7 +30085,11 @@
 	 * A socket wrapper that lets us swap in different socket libraries,
 	 */
 	class Connector {
-	  constructor(postBootstrapHandler, port) {
+	  /**
+	   * create a connector, either with [port] prespecified or not.
+	   */
+	  constructor(owner, postBootstrapHandler, port) {
+	    this.owner = owner;
 	    this.queue = [];
 	    this.ready = false;
 	    this.port = port || false;
@@ -30049,13 +30109,6 @@
 	   */
 	  setSocket(socket) {
 	    this.socket = socket;
-
-	    // socket.on('error', (e) => {
-	    //   console.error("Something went horribly wrong...")
-	    //   console.error(e);
-	    //   console.trace();
-	    // });
-
 	    if (debug) console.log('socket on port ${this.port} established.');
 	    this.ready = true;
 	    while (this.queue.length) {
@@ -30079,10 +30132,26 @@
 	   */
 	  publish(eventName, payload, afterwards) {
 	    if (!this.ready) {
+	      console.log("queueing " + eventName);
 	      return this.queue.push({ op: 'publish', eventName, payload, afterwards });
+	    }
+	    if (!this.socket.connected) {
+	      return this.notifyConnectionLoss(afterwards);
 	    }
 	    this.socket.emit(eventName, payload);
 	    if (afterwards) afterwards();
+	  }
+
+	  /**
+	   * notify our owner that a connection was lost
+	   */
+	  notifyConnectionLoss(afterwards) {
+	    if (this.owner.lostConnection) {
+	      this.owner.lostConnection();
+	    }
+	    if (afterwards) {
+	      afterwards();
+	    }
 	  }
 
 	  /**
@@ -30110,8 +30179,11 @@
 	 * Connector for server processes.
 	 */
 	class Server extends Connector {
-	  constructor(sendPortInformation) {
-	    super(sendPortInformation);
+	  /**
+	   * create a connector that will figure out its port later.
+	   */
+	  constructor(owner, sendPortInformation) {
+	    super(owner, sendPortInformation);
 	  }
 
 	  /**

@@ -7,8 +7,8 @@ var BaseClient = require('../../basic/client');
  *
  */
 class ClientPassThrough extends BaseClient {
-  constructor(name, port, afterBinding) {
-    super(name, port, afterBinding);
+  constructor(name, uuid, port, afterBinding) {
+    super(name, uuid, port, afterBinding);
   }
 
   bindApp(app) { this.app = app; }

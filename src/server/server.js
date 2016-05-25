@@ -4,6 +4,8 @@
  */
 'use strict'
 
+require('../lib/fix');
+
 var fs = require('fs');
 var path = require('path');
 var express = require('express');
@@ -37,18 +39,21 @@ app.get('/socket.io', (req,res) => {
 });
 
 // register as a player
-app.get('/register/:name', (req, res) => {
-  let options = { name: req.params.name };
-  gm.createPlayer(options, (player, port) => {
-    let id = player.id;
-    res.json({ id, port });
+app.get('/register/:name/:uuid', (req, res) => {
+  let options = {
+    name: req.params.name,
+    uuid: req.params.uuid
+  };
+  gm.createPlayer(options, (id, uuid, port, player) => {
+    console.log("createplayer response for "+player.name);
+    res.json({ id, uuid, port });
   });
 });
 
 // start a new single-player game
-app.get('/game/new/:id/:name', (req, res) => {
+app.get('/game/new/:id/:uuid', (req, res) => {
   var id = req.params.id;
-  var name = req.params.name;
+  var uuid = req.params.uuid;
   var game = gm.createGame('minimal');
   var Bot = require('../client/basic/client');
 
@@ -58,10 +63,12 @@ app.get('/game/new/:id/:name', (req, res) => {
   // The rest are bots.
   [1,2,3].map(id => {
     var name = getRandomAnimal();
-    gm.createPlayer({ name }, (player, port) => {
-      new Bot(name, port, () => game.addPlayer(player));
+    gm.createPlayer({ name }, (id, uuid, port, player) => {
+      new Bot(name, uuid, port, () => game.addPlayer(player));
     });
   });
+
+  res.json({ status: "created" });
 });
 
 // make it happen.

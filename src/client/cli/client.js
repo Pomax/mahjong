@@ -16,8 +16,8 @@ var debug = false;
  * A client without an interface
  */
 class Client extends BaseClient {
-  constructor(name, port, afterBinding) {
-    super(name, port, afterBinding);
+  constructor(name, uuid, port, afterBinding) {
+    super(name, uuid, port, afterBinding);
 
     console.log('');
     console.log(colors.yellowBright('  ███╗   ███╗ █████╗ ██╗  ██╗     ██╗ ██████╗ ███╗   ██╗ ██████╗ '));

@@ -30,7 +30,7 @@ require('inquirer')
     var Client = Bot;
     var name = getRandomAnimal();
     if (id===0) { Client = Human; name = username; }
-    gm.createPlayer({ name }, (player, port) => {
+    gm.createPlayer({ name }, (id, uuid, port, player) => {
       new Client(name, port, () => game.addPlayer(player));
     });
   });

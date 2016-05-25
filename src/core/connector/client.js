@@ -7,8 +7,11 @@ var Connector = require('./connector');
  * Connector for game clients.
  */
 class Client extends Connector {
-  constructor(postBootstrapHandler, port) {
-    super(postBootstrapHandler, port);
+  /**
+   * create a connector on a specific port.
+   */
+  constructor(owner, postBootstrapHandler, port) {
+    super(owner, postBootstrapHandler, port);
   }
 
   /**

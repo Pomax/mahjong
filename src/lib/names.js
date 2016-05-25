@@ -1595,7 +1595,6 @@ var animals = [
   'Mole',
   'Molly',
   'Mongoose',
-  'Mongrel',
   'Monitor Lizard',
   'Monkey',
   'Moorhen',

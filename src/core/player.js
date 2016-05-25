@@ -3,6 +3,7 @@
 var Constants = require('./constants');
 var Connector = require('./connector').Server;
 var digest = require('./digest');
+var uuid = require('uuid');
 
 var debug = false;
 
@@ -10,32 +11,47 @@ var debug = false;
  * A player is the bridge between 'someone or something that plays' and the system
  */
 class Player {
-  constructor(manager, options, sendPortInformation) {
+  constructor(manager, options, sendConnectionInformation) {
     this.manager = manager;
     this.name = options.name;
     this.id = options.id;
-
-    // Players are backed by a network connector,
-    // allowing them to 'be played' by either real
-    // people or autonomous processes.
-    var connector = new Connector((port) => {
-      if (debug)
-        console.log('port for player ${this.id}: ${port}');
-      if (sendPortInformation) {
-        sendPortInformation(this, port);
-      }
-    });
-    this.connector = connector;
-    this.setConnnectorBindings();
-
+    this.uuid = uuid.v4();
+    this.setupConnector(sendConnectionInformation);
     this.tiles = [];
     this.revealed = [];
     this.bonus = [];
-
     this.pendingVerififcation = false;
   }
 
-  setConnnectorBindings() {
+  setupConnector(sendConnectionInformation, reconnection) {
+    // Players are backed by a network connector,
+    // allowing them to 'be played' by either real
+    // people or autonomous processes.
+    var connector = new Connector(this, (port) => {
+      if (debug)
+        console.log('port for player ${this.id}: ${port}');
+      if (sendConnectionInformation) {
+        sendConnectionInformation(this.id, this.uuid, port, this);
+      } else {
+        this.connected = true;
+      }
+    });
+    this.connector = connector;
+    this.setConnnectorBindings(reconnection);
+  }
+
+  setupConnectorAgain(sendConnectionInformation) {
+    this.setupConnector(sendConnectionInformation, true);
+  }
+
+  lostConnection() {
+    if (this.connected) {
+      this.connected = false;
+      console.log('connection was lost, clearing connector for ${this.name}');
+    }
+  }
+
+  setConnnectorBindings(reconnection) {
     var c = this.connector;
     c.subscribe('ready', data => this.readyFromClient(data));
     c.subscribe('deal-bonus-request', data => this.dealBonusRequestFromClient(data || {}));
@@ -48,9 +64,35 @@ class Player {
     c.subscribe('hand-acknowledged', data => this.handAcknowledgedByClient(data));
     c.subscribe('request-timeout-invalidation', data => this.timeoutInvalidationRequestFromClient(data));
     c.subscribe('verify-result', data => this.verifyResultFromClient(data));
-
     // enabled for development only
     c.subscribe('disable-claim-timeout', data => this.disableClaimTimeout(data));
+    // if this is a reconnection, we need to communicate in-game information
+    if (reconnection) { this.sendReconnectionData(c); }
+    this.connected = true;
+  }
+
+  sendReconnectionData(c) {
+    if (!this.game) return;
+    c.publish('reconnection-data', {
+      ruleset: this.game.rulesetName,
+      gameid: this.game.id,
+      handid: this.hand.id,
+      position: this.position,
+      windOfTheRound: this.windOfTheRound,
+      playerNames: this.competitors,
+      tiles: this.tiles,
+      bonus: this.bonus,
+      revealed: this.revealed,
+      currentDiscard: this.hand.currentDiscard,
+      tileSituation: this.hand.getCurrentTileSituation(this)
+    });
+  }
+
+  getCurrentTileSituation(requestingPlayer) {
+    if (this === requestingPlayer) {
+      return { tiles: this.tiles, bonus: this.bonus, revealed: this.revealed };
+    }
+    return { tiles: [], handSize: this.tiles.length, bonus: this.bonus, revealed: this.revealed };
   }
 
   getReady(game, hand, position, windOfTheRound, playerNames) {
@@ -58,6 +100,7 @@ class Player {
     this.hand = hand;
     this.position = position;
     this.windOfTheRound = windOfTheRound;
+    this.competitors = playerNames;
     this.winner = false;
     this.tiles = [];
     this.revealed = [];
@@ -222,6 +265,9 @@ class Player {
   // General purpose
 
   verify(next) {
+    if (!this.connected) {
+      return next();
+    }
     this.pendingVerififcation = next;
     this.connector.publish('verify');
   }
