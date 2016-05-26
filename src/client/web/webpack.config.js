@@ -40,5 +40,8 @@ module.exports = {
   },
   eslint: {
     configFile: path.join(__dirname, clientBase, '.eslintrc')
+  },
+  externals: {
+    "isomorphic-fetch": "fetch"
   }
 };

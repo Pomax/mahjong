@@ -9,6 +9,7 @@ require('../lib/fix');
 var fs = require('fs');
 var path = require('path');
 var express = require('express');
+var request = require('superagent');
 var Manager = require('../core/manager');
 var getRandomAnimal = require('../lib/names');
 
@@ -69,6 +70,46 @@ app.get('/game/new/:id/:uuid', (req, res) => {
   });
 
   res.json({ status: "created" });
+});
+
+/**
+ * I really wish we could go back in time and murder
+ * everyone who suggested we add CORS to browsers.
+ * It took away freedom on the web and my hatred
+ * over that decision-without-veto knows no bounds.
+ */
+app.get('/thumb/:animal', (req, res) => {
+  var search = [
+    "action=query",
+    "titles=" + req.params.animal,
+    "prop=pageimages",
+    "format=json",
+    "pithumbsize=100",
+    "redirects",
+    "callback=?"
+  ].join('&');
+  var url = "https://en.wikipedia.org/w/api.php?" + search;
+  request.get(url).end(function(err, data) {
+    var src = '/images/unknown-thumb.png';
+    var text = data.text;
+    if (!text) return res.json(src);
+    var json = text.replace('/**/(','').replace(/\)$/,'');
+    if (!json) return res.json(src);
+    var obj;
+    try { obj = JSON.parse(json); } catch(e) { }
+    if (!obj) return res.json(src);
+    var query = obj.query.pages;
+    if (!query) return res.json(src);
+    var key = Object.keys(query)[0];
+    if (!key) return res.json(src);
+    var article = query[key];
+    if (!article) return res.json(src);
+    var thumbnail = article.thumbnail;
+    if (!thumbnail) return res.json(src);
+    // Jesus H. Christ on a bike, can we make it any harder to just get a goddamn wikipedia thumbnail?
+    src = thumbnail.source;
+    res.json(src);
+  });
 });
 
 // make it happen.

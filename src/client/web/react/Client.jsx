@@ -10,6 +10,16 @@ var Tile = require('./Tile.jsx');
 var Overlay = require('./Overlay.jsx');
 var ClaimMenu = require('./ClaimMenu.jsx');
 
+var wikiImageCache = {};
+function getWikiImages(article, callback) {
+  if (wikiImageCache[article]) return callback(wikiImageCache[article]);
+  require("superagent").get("/thumb/"+article).end(function(err, res){
+    wikiImageCache[article] = res.text.replace(/"/g,'');
+    getWikiImages(article, callback);
+  });
+}
+
+
 /**
  * ES5, because ES6 and React are a bad trip.
  */
@@ -96,7 +106,7 @@ var ClientApp = React.createClass({
       }</div>;
     });
     return <div className="player">
-      <div className="name">{this.state.settings.name} ({this.getWindFor(this.state.currentGame.position)})</div>
+      <div className="name"><img src='/images/unknown-thumb.png' className='player-thumb' />{this.state.settings.name} ({this.getWindFor(this.state.currentGame.position)})</div>
       <div className="tiles">{tiles}</div>
       <div className="revealed">{revealed}</div>
       <div className="bonus">{bonus}</div>
@@ -131,7 +141,11 @@ var ClientApp = React.createClass({
 
   linkPlayerName(name) {
     var [adjective, wikilink] = this.splitPlayerName(name);
-    return <span>{adjective} <a href={"https://wikipedia.org/wiki/" + wikilink} target="_blank">{wikilink}</a></span>;
+    var ref = 'img-'+name;
+    var img = <img className="player-thumb" src="" ref={ref} />;
+    getWikiImages(wikilink, src => (this.refs[ref].src = src));
+    var href = "https://wikipedia.org/wiki/" + wikilink;
+    return <span><a href={href} target="_blank">{img}</a>{adjective} <a href={href} target="_blank">{wikilink}</a></span>;
   },
 
   getWindFor(position) {
@@ -171,9 +185,8 @@ var ClientApp = React.createClass({
     if (!name) {
       return alert("you need to fill in a name");
     }
-    var uuid = this.state.settings.uuid || '';
+    var uuid = this.state.settings.uuid || 'no-uuid';
     var url = '/register/' + name + '/' + uuid;
-    console.log(url);
     fetch(url)
     .then(response => response.json())
     .then(data => {
@@ -191,7 +204,6 @@ var ClientApp = React.createClass({
 
   startGame() {
     var url = '/game/new/' + this.state.id + '/' + this.state.settings.uuid;
-    console.log(url);
     fetch(url)
     .then(response => response.json())
     .then(data => {

@@ -47,3 +47,15 @@ img.tile.highlight {
 .discard {
   height: 3em;
 }
+
+img.player-thumb {
+  clear: both;
+  float: left;
+  width: 3em;
+  height: 3em;
+  border: none;
+  border-radius: 100%;
+  background: #444;
+  margin: 0.5em;
+  margin-top: 0.75em;
+}
