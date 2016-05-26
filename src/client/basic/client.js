@@ -50,6 +50,10 @@ class Client {
     this.revealed = data.revealed;
   }
 
+  updateGameList(data) {
+    // extending clients can do something sensible with this
+  }
+
   setGameData(data) {
     this.reset();
     this.currentGame = data;
@@ -125,6 +129,14 @@ class Client {
   }
 
   /**
+   * another player drew (was given) a turn tile
+   */
+  playerReceivedDeal(position) {
+    var player = this.players[position];
+    if (player) { player.handSize++; }
+  }
+
+  /**
    * used by all protocol steps that involve 'discarding a tile'
    */
   discardTile(cleandeal) {
@@ -155,6 +167,8 @@ class Client {
     if (from === this.currentGame.position) {
       return sendClaim({ claimType: Constants.NOTHING });
     }
+    var player = this.players[from];
+    if (player) { player.handSize++; }
     this.ai.updateStrategy(tile);
     sendClaim(this.ai.determineClaim(tile));
   }
@@ -228,6 +242,7 @@ class Client {
   recordBonus(playerPosition, tiles) {
     var player = this.players[playerPosition];
     player.bonus = player.bonus.concat(tiles);
+    player.handSize--;
   }
 
   /**
@@ -286,6 +301,10 @@ class Client {
       this.log('connected on port ${port}');
       this.socketPreBindings();
 
+      c.subscribe('game-list', data => {
+        this.updateGameList(data);
+      });
+
       c.subscribe('getready', data => {
         this.log('instructed to get ready by the server on ${port}');
         this.setGameData(data);
@@ -305,6 +324,10 @@ class Client {
       c.subscribe('turn-tile', data => {
         this.log(this.name, 'received turn tile: ', data.tile);
         this.checkDrawBonus(parseInt(data.tile), parseInt(data.wallSize));
+      });
+
+      c.subscribe('player-received-deal', data => {
+        this.playerReceivedDeal(parseInt(data.playerPosition));
       });
 
       c.subscribe('draw-bonus-compensation', data => {

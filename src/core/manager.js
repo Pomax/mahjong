@@ -24,14 +24,16 @@ class Manager {
   // Player administration
 
   createPlayer(options, sendConnectionInformation) {
+    var player;
     // reexisting player?
     if (options.uuid) {
-      var player = this.getPlayerByUUID(options.uuid);
+      player = this.getPlayerByUUID(options.uuid);
       if (player) {
         console.log("new player is actually existing player:", options);
         player.setupConnectorAgain(() => {
           sendConnectionInformation(player.id, player.uuid, player.connector.port, player);
         });
+        player.sendGamelistUpdate(this.getGameList());
         return player;
       }
     }
@@ -39,7 +41,9 @@ class Manager {
     options.name = options.name || 'player ${options.id}';
     var playerid = playerids.next();
     options.id = playerid;
-    this.players[playerid] = new Player(this, options, sendConnectionInformation);
+    player = new Player(this, options, sendConnectionInformation);
+    this.players[playerid] = player;
+    player.sendGamelistUpdate(this.getGameList());
     return this.players[playerid];
   }
 
@@ -88,8 +92,33 @@ class Manager {
     return this.games;
   }
 
-  joinPlayerToGame(playerid, gameid) {
+  // Player _and_ game functions
 
+  joinPlayerToGame(gameid, playerid, uuid) {
+    var game = this.getGame(gameid);
+    var player = this.getPlayer(playerid);
+    try {
+      game.addPlayer(player);
+      this.sendGamelistUpdate();
+      return true;
+    } catch (e) {}
+    return false;
+  }
+
+  getGameList() {
+    var gamelist = {};
+    Object.keys(this.games).map(gameid => {
+      gamelist[gameid] = this.games[gameid].getPlayerNames();
+    });
+    return gamelist;
+  }
+
+  sendGamelistUpdate() {
+    var gamelist = this.getGameList();
+    Object.keys(this.players).forEach(id => {
+      let player = this.players[id];
+      player.sendGamelistUpdate(gamelist);
+    });
   }
 
   // General purpose

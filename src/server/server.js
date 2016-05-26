@@ -21,6 +21,15 @@ if (PORT !== 80 && HOST.indexOf(':') === -1) { HOST += ':' + PORT; }
 
 var app = express();
 var gm = new Manager();
+var Bot = require('../client/basic/client');
+
+// add a bot to a game.
+function addBot(game) {
+  var name = getRandomAnimal();
+  gm.createPlayer({ name }, (id, uuid, port, player) => {
+    new Bot(name, uuid, port, () => gm.joinPlayerToGame(game.id, id, uuid));
+  });
+}
 
 // static directories
 app.use(express.static(path.join(__dirname, 'public')));
@@ -52,24 +61,49 @@ app.get('/register/:name/:uuid', (req, res) => {
 });
 
 // start a new single-player game
-app.get('/game/new/:id/:uuid', (req, res) => {
-  var id = req.params.id;
+app.get('/game/single/:id/:uuid', (req, res) => {
+  var playerid = req.params.id;
   var uuid = req.params.uuid;
   var game = gm.createGame('minimal');
-  var Bot = require('../client/basic/client');
-
-  // Player 0 is human.
-  game.addPlayer(gm.getPlayer(id));
-
-  // The rest are bots.
-  [1,2,3].map(id => {
-    var name = getRandomAnimal();
-    gm.createPlayer({ name }, (id, uuid, port, player) => {
-      new Bot(name, uuid, port, () => game.addPlayer(player));
-    });
-  });
-
+  game.addPlayer(gm.getPlayer(playerid));
+  [1,2,3].forEach(id => addBot(game));
   res.json({ status: "created" });
+});
+
+// start a new regular game and join the requesting player to it
+app.get('/game/new/:id/:uuid', (req, res) => {
+  var playerid = req.params.id;
+  var uuid = req.params.uuid;
+  var game = gm.createGame('minimal');
+  gm.joinPlayerToGame(game.id, playerid);
+  res.json({ status: "created", gameid: game.id });
+});
+
+// join a player to the game
+app.get('/game/join/:gameid/:playerid/:uuid', (req, res) => {
+  var success = gm.joinPlayerToGame(req.params.gameid, req.params.playerid, req.params.uuid);
+  if (success) {
+    res.json({ status: "joined" });
+    // Note that if the game joined worked and this was
+    // the fourth player, a game will start, an negotiation
+    // happens via the websockets for each player.
+  } else {
+    res.status(403).json({ status: "error", error: "could not add player to this game." });
+  }
+});
+
+// join a bot to a game this player 'owns'
+app.get('/game/addbot/:gameid/:playerid/:uuid', (req, res) => {
+  var gameid = req.params.gameid;
+  var playerid = req.params.playerid;
+  var uuid = req.params.uuid;
+  var game = gm.getGame(gameid);
+  var player = gm.getPlayer(playerid);
+  if (game.owningPlayer !== player) {
+    return res.status(403).json({ status: "error", error: "Request issued by player other than game owner" })
+  }
+  addBot(game);
+  res.json({ status: "bot added" });
 });
 
 /**

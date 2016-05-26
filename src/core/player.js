@@ -71,8 +71,19 @@ class Player {
     this.connected = true;
   }
 
+  sendGamelistUpdate(gamelist) {
+    this.connector.publish('game-list', gamelist);
+  }
+
   sendReconnectionData(c) {
     if (!this.game) return;
+    var currentDiscard = false;
+    if (this.hand.currentDiscard) {
+      currentDiscard = {
+        tile: this.hand.currentDiscard,
+        from: this.hand.discardingPlayer
+      }
+    }
     c.publish('reconnection-data', {
       ruleset: this.game.rulesetName,
       gameid: this.game.id,
@@ -83,7 +94,7 @@ class Player {
       tiles: this.tiles,
       bonus: this.bonus,
       revealed: this.revealed,
-      currentDiscard: this.hand.currentDiscard,
+      currentDiscard,
       tileSituation: this.hand.getCurrentTileSituation(this)
     });
   }
@@ -183,6 +194,10 @@ class Player {
       this.tiles.sort(Constants.sort);
       this.connector.publish('turn-tile', { tile, wallSize });
     });
+  }
+
+  tileDealtToPlayer(playerPosition) {
+    this.connector.publish('player-received-deal', { playerPosition });
   }
 
   discardReceivedFromClient(data) {

@@ -11,9 +11,15 @@ img.tile {
   margin: 1px;
   vertical-align: middle;
 }
+
 img.tile.highlight {
   margin: 0;
   border: 1px solid red;
+}
+
+.name {
+  line-height: 1.25;
+  font-size: 1rem;
 }
 
 .name a, .name a:visited {
@@ -32,30 +38,29 @@ img.tile.highlight {
 .player .revealed,
 .player .bonus,
 .player .currentDiscard {
-  margin-left: 0.5em;
+  margin-left: 0.5rem;
 }
 
 .player .revealed {
-  padding-bottom: 0.25em;
+  padding-bottom: 0.25rem;
   border-bottom: 1px solid white;
 }
 
 .player .revealed .set + .set {
-  margin-left: 0.25em;
+  margin-left: 0.25rem;
 }
 
 .discard {
-  height: 3em;
+  height: 3rem;
 }
 
 img.player-thumb {
   clear: both;
   float: left;
-  width: 3em;
-  height: 3em;
+  width: 3rem;
+  height: 3rem;
   border: none;
   border-radius: 100%;
   background: #444;
-  margin: 0.5em;
-  margin-top: 0.75em;
+  margin: 1.25rem 0.5rem 0 0.5rem;
 }

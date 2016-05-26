@@ -13,9 +13,14 @@ class ClientPassThrough extends BaseClient {
 
   bindApp(app) { this.app = app; }
 
+  updateGameList(data) {
+    this.app.updateGameList(data);
+  }
+
   setGameData(data) {
     super.setGameData(data);
     this.app.setGameData(JSON.parse(JSON.stringify(data)));
+    console.log(data);
   }
 
   setInitialTiles(tiles) {
@@ -26,6 +31,11 @@ class ClientPassThrough extends BaseClient {
   addTile(tile, wallSize) {
     super.addTile(tile, wallSize);
     this.app.addTile(tile, wallSize);
+  }
+
+  playerReceivedDeal(position) {
+    super.playerReceivedDeal(position);
+    this.app.playerReceivedDeal(position);
   }
 
   discardTile(cleandeal) {

@@ -23,21 +23,21 @@ class Game {
     this.hands = [];
     this.draws = 0;
     this.wins = 0;
+    this.owningPlayer = false;
   }
 
   // Player administration
 
   addPlayer(player) {
-    if (this.playerCount >= 4) {
-      return console.error("Can't add more players to this game...?");
-    }
+    // mark the first player as "owner" for things like adding bots and changing settings
+    if (this.playerCount === 0) { this.owningPlayer = player; }
+    if (this.playerCount >= 4) { throw new Error("Game full"); }
     this.playerCount++;
     console.log("[" + this.id + "] adding player, count is " +  this.playerCount);
     this.players[player.name] = player;
     this.scores[player.name] = this.ruleset.STARTING_POINTS;
-    if (this.playerCount === 4) {
-      this.start();
-    }
+    if (this.playerCount === 4) { this.start(); }
+    return true;
   }
 
   removePlayer(name) {
@@ -47,6 +47,10 @@ class Game {
 
   getPlayerList() {
     return this.players;
+  }
+
+  getPlayerNames() {
+    return Object.keys(this.players).map(id => this.players[id].name);
   }
 
   // Hand administration

@@ -126,21 +126,66 @@
 	  },
 
 	  renderLobby() {
-	    if (!this.state.client) return null;
+	    if (!this.state.client || this.state.currentGame) return null;
 	    return React.createElement(
 	      'div',
 	      null,
 	      React.createElement('hr', null),
 	      this.state.currentGame ? null : React.createElement(
 	        'button',
-	        { onClick: this.startGame },
-	        'Start a game'
-	      )
+	        { onClick: this.startSingleGame },
+	        'Start a single player game'
+	      ),
+	      this.state.currentGame ? null : React.createElement(
+	        'button',
+	        { onClick: this.startRegularGame },
+	        'Start a regular game'
+	      ),
+	      this.state.pendingGameId ? React.createElement(
+	        'button',
+	        { onClick: this.addBotToGame },
+	        'Add a bot to my game'
+	      ) : null,
+	      this.renderAvailableGames()
+	    );
+	  },
+
+	  renderAvailableGames() {
+	    var list = this.state.gamelist;
+	    if (!list) return null;
+	    return Object.keys(list).map(gameid => {
+	      let game = list[gameid];
+	      return React.createElement(
+	        'div',
+	        { className: 'available-game', key: "game-" + gameid },
+	        React.createElement(
+	          'span',
+	          null,
+	          gameid,
+	          ': ',
+	          game.join(', '),
+	          ' ',
+	          this.state.pendingGameId == gameid ? null : game.length >= 4 ? React.createElement(
+	            'span',
+	            null,
+	            '[in progress]'
+	          ) : this.renderJoinButton(gameid)
+	        )
+	      );
+	    });
+	  },
+
+	  renderJoinButton(gameid) {
+	    return React.createElement(
+	      'button',
+	      { onClick: evt => this.joinRegularGame(gameid) },
+	      'join'
 	    );
 	  },
 
 	  renderPlayers() {
 	    if (!this.state.players) return null;
+
 	    var players = this.state.players.map((player, position) => {
 	      if (position === this.state.currentGame.position) {
 	        return this.renderTiles();
@@ -207,8 +252,7 @@
 	      React.createElement(
 	        'div',
 	        { className: 'name' },
-	        React.createElement('img', { src: '/images/unknown-thumb.png', className: 'player-thumb' }),
-	        this.state.settings.name,
+	        this.linkPlayerName(this.state.settings.name),
 	        ' (',
 	        this.getWindFor(this.state.currentGame.position),
 	        ')'
@@ -266,9 +310,13 @@
 	  linkPlayerName(name) {
 	    var [adjective, wikilink] = this.splitPlayerName(name);
 	    var ref = 'img-' + name;
-	    var img = React.createElement('img', { className: 'player-thumb', src: '', ref: ref });
-	    getWikiImages(wikilink, src => this.refs[ref].src = src);
-	    var href = "https://wikipedia.org/wiki/" + wikilink;
+	    var src = '/images/unknown-thumb.png';
+	    var href = null;
+	    var img = React.createElement('img', { className: 'player-thumb', src: src, ref: ref });
+	    if (adjective && wikilink) {
+	      getWikiImages(wikilink, src => this.refs[ref].src = src);
+	      href = "https://wikipedia.org/wiki/" + wikilink;
+	    }
 	    return React.createElement(
 	      'span',
 	      null,
@@ -293,8 +341,11 @@
 
 	  renderDiscard() {
 	    var content = null;
-	    if (this.state.currentDiscard && this.state.currentDiscard.from !== this.state.currentGame.position) {
-	      var from = this.state.players[this.state.currentDiscard.from].name;
+	    var currentDiscard = this.state.currentDiscard;
+	    if (!currentDiscard) return React.createElement('div', { className: 'discard' });
+
+	    if (currentDiscard.from !== this.state.currentGame.position) {
+	      let from = this.state.players[this.state.currentDiscard.from].name;
 	      content = this.state.claiming ? this.renderClaim() : React.createElement(
 	        'div',
 	        null,
@@ -356,11 +407,32 @@
 	    });
 	  },
 
-	  startGame() {
-	    var url = '/game/new/' + this.state.id + '/' + this.state.settings.uuid;
+	  startSingleGame() {
+	    var url = '/game/single/' + this.state.id + '/' + this.state.settings.uuid;
 	    fetch(url).then(response => response.json()).then(data => {
 	      // the actual play negotiations happen via websockets
 	    });
+	  },
+
+	  startRegularGame() {
+	    var url = '/game/new/' + this.state.id + '/' + this.state.settings.uuid;
+	    fetch(url).then(response => response.json()).then(data => this.setState({ pendingGameId: data.gameid }));
+	  },
+
+	  addBotToGame() {
+	    var url = '/game/addbot/' + this.state.pendingGameId + '/' + this.state.id + '/' + this.state.settings.uuid;
+	    fetch(url).then(response => response.json()).then(data => {
+	      // the actual play negotiations happen via websockets
+	    });
+	  },
+
+	  joinRegularGame(gameid) {
+	    var url = '/game/join/' + gameid + '/' + this.state.id + '/' + this.state.settings.uuid;
+	    fetch(url).then(response => response.json()).then(data => this.setState({ pendingGameId: gameid }));
+	  },
+
+	  updateGameList(gamelist) {
+	    this.setState({ gamelist });
 	  },
 
 	  setGameData(data) {
@@ -376,7 +448,14 @@
 	      }
 	      return { name: this.state.settings.name };
 	    });
-	    this.setState({ currentGame: data, players });
+	    this.setState({
+	      currentGame: data,
+	      players,
+	      pendingGameId: false,
+	      tiles: [],
+	      bonus: [],
+	      revealed: []
+	    });
 	    if (data.tileSituation) {
 	      this.updatePlayerInformation(data.tileSituation, data.currentDiscard);
 	    }
@@ -410,11 +489,20 @@
 	        player.handSize = tiles.length;
 	      }
 	    });
-	    this.setState({ players });
+	    this.setState({ players, tiles });
 	  },
 
 	  addTile(tile, wallSize) {
 	    this.setState({ drawtile: tile });
+	  },
+
+	  playerReceivedDeal(playerPosition) {
+	    var players = this.state.players;
+	    players[playerPosition].handSize++;
+	    this.setState({
+	      players,
+	      currentDiscard: false
+	    });
 	  },
 
 	  setTilesPriorToDiscard(tiles, bonus, revealed) {
@@ -442,7 +530,10 @@
 	      // is not currently available.
 	      sendClaim({ claimType: Constants.NOTHING });
 	    }
+	    var players = this.state.players;
+	    players[from].handSize--;
 	    this.setState({
+	      players,
 	      currentDiscard: { from, tile, sendClaim }
 	    }, () => {
 	      this.canDismiss = true;
@@ -20536,9 +20627,14 @@
 	    this.app = app;
 	  }
 
+	  updateGameList(data) {
+	    this.app.updateGameList(data);
+	  }
+
 	  setGameData(data) {
 	    super.setGameData(data);
 	    this.app.setGameData(JSON.parse(JSON.stringify(data)));
+	    console.log(data);
 	  }
 
 	  setInitialTiles(tiles) {
@@ -20549,6 +20645,11 @@
 	  addTile(tile, wallSize) {
 	    super.addTile(tile, wallSize);
 	    this.app.addTile(tile, wallSize);
+	  }
+
+	  playerReceivedDeal(position) {
+	    super.playerReceivedDeal(position);
+	    this.app.playerReceivedDeal(position);
 	  }
 
 	  discardTile(cleandeal) {
@@ -20651,6 +20752,10 @@
 	    this.revealed = data.revealed;
 	  }
 
+	  updateGameList(data) {
+	    // extending clients can do something sensible with this
+	  }
+
 	  setGameData(data) {
 	    this.reset();
 	    this.currentGame = data;
@@ -20728,6 +20833,16 @@
 	  }
 
 	  /**
+	   * another player drew (was given) a turn tile
+	   */
+	  playerReceivedDeal(position) {
+	    var player = this.players[position];
+	    if (player) {
+	      player.handSize++;
+	    }
+	  }
+
+	  /**
 	   * used by all protocol steps that involve 'discarding a tile'
 	   */
 	  discardTile(cleandeal) {
@@ -20757,6 +20872,10 @@
 	  determineClaim(from, tile, sendClaim) {
 	    if (from === this.currentGame.position) {
 	      return sendClaim({ claimType: Constants.NOTHING });
+	    }
+	    var player = this.players[from];
+	    if (player) {
+	      player.handSize++;
 	    }
 	    this.ai.updateStrategy(tile);
 	    sendClaim(this.ai.determineClaim(tile));
@@ -20850,6 +20969,7 @@
 	  recordBonus(playerPosition, tiles) {
 	    var player = this.players[playerPosition];
 	    player.bonus = player.bonus.concat(tiles);
+	    player.handSize--;
 	  }
 
 	  /**
@@ -20908,6 +21028,10 @@
 	      this.log('connected on port ${port}');
 	      this.socketPreBindings();
 
+	      c.subscribe('game-list', data => {
+	        this.updateGameList(data);
+	      });
+
 	      c.subscribe('getready', data => {
 	        this.log('instructed to get ready by the server on ${port}');
 	        this.setGameData(data);
@@ -20927,6 +21051,10 @@
 	      c.subscribe('turn-tile', data => {
 	        this.log(this.name, 'received turn tile: ', data.tile);
 	        this.checkDrawBonus(parseInt(data.tile), parseInt(data.wallSize));
+	      });
+
+	      c.subscribe('player-received-deal', data => {
+	        this.playerReceivedDeal(parseInt(data.playerPosition));
 	      });
 
 	      c.subscribe('draw-bonus-compensation', data => {

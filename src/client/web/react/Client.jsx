@@ -19,7 +19,6 @@ function getWikiImages(article, callback) {
   });
 }
 
-
 /**
  * ES5, because ES6 and React are a bad trip.
  */
@@ -59,17 +58,40 @@ var ClientApp = React.createClass({
   },
 
   renderLobby() {
-    if (!this.state.client) return null;
+    if (!this.state.client || this.state.currentGame) return null;
     return (
       <div>
         <hr/>
-        {this.state.currentGame ? null : <button onClick={this.startGame}>Start a game</button> }
+        {this.state.currentGame ? null : <button onClick={this.startSingleGame}>Start a single player game</button> }
+        {this.state.currentGame ? null : <button onClick={this.startRegularGame}>Start a regular game</button> }
+        {this.state.pendingGameId ? <button onClick={this.addBotToGame}>Add a bot to my game</button> : null }
+        { this.renderAvailableGames() }
       </div>
     );
   },
 
+  renderAvailableGames() {
+    var list = this.state.gamelist;
+    if (!list) return null;
+    return Object.keys(list).map(gameid => {
+      let game = list[gameid];
+      return <div className="available-game" key={"game-"+gameid}>
+        <span>
+          {gameid}: {game.join(', ')} {
+            (this.state.pendingGameId == gameid) ? null : (game.length >= 4) ? <span>[in progress]</span> : this.renderJoinButton(gameid)
+          }
+        </span>
+      </div>;
+    });
+  },
+
+  renderJoinButton(gameid) {
+    return <button onClick={evt => this.joinRegularGame(gameid)}>join</button>;
+  },
+
   renderPlayers() {
     if (!this.state.players) return null;
+
     var players = this.state.players.map((player,position) => {
       if (position === this.state.currentGame.position) {
         return this.renderTiles();
@@ -106,7 +128,7 @@ var ClientApp = React.createClass({
       }</div>;
     });
     return <div className="player">
-      <div className="name"><img src='/images/unknown-thumb.png' className='player-thumb' />{this.state.settings.name} ({this.getWindFor(this.state.currentGame.position)})</div>
+      <div className="name">{this.linkPlayerName(this.state.settings.name)} ({this.getWindFor(this.state.currentGame.position)})</div>
       <div className="tiles">{tiles}</div>
       <div className="revealed">{revealed}</div>
       <div className="bonus">{bonus}</div>
@@ -142,9 +164,13 @@ var ClientApp = React.createClass({
   linkPlayerName(name) {
     var [adjective, wikilink] = this.splitPlayerName(name);
     var ref = 'img-'+name;
-    var img = <img className="player-thumb" src="" ref={ref} />;
-    getWikiImages(wikilink, src => (this.refs[ref].src = src));
-    var href = "https://wikipedia.org/wiki/" + wikilink;
+    var src = '/images/unknown-thumb.png';
+    var href= null;
+    var img = <img className="player-thumb" src={src} ref={ref} />;
+    if (adjective && wikilink) {
+      getWikiImages(wikilink, src => (this.refs[ref].src = src));
+      href = "https://wikipedia.org/wiki/" + wikilink;
+    }
     return <span><a href={href} target="_blank">{img}</a>{adjective} <a href={href} target="_blank">{wikilink}</a></span>;
   },
 
@@ -154,8 +180,11 @@ var ClientApp = React.createClass({
 
   renderDiscard() {
     var content = null;
-    if (this.state.currentDiscard && this.state.currentDiscard.from !== this.state.currentGame.position) {
-      var from = this.state.players[this.state.currentDiscard.from].name;
+    var currentDiscard = this.state.currentDiscard;
+    if (!currentDiscard) return <div className="discard"/>;
+
+    if (currentDiscard.from !== this.state.currentGame.position) {
+      let from = this.state.players[this.state.currentDiscard.from].name;
       content = this.state.claiming ? this.renderClaim() : <div>
         Click&nbsp;
         <Tile onClick={this.getClaim} value={this.state.currentDiscard.tile} />
@@ -202,13 +231,40 @@ var ClientApp = React.createClass({
     });
   },
 
-  startGame() {
-    var url = '/game/new/' + this.state.id + '/' + this.state.settings.uuid;
+  startSingleGame() {
+    var url = '/game/single/' + this.state.id + '/' + this.state.settings.uuid;
     fetch(url)
     .then(response => response.json())
     .then(data => {
       // the actual play negotiations happen via websockets
     });
+  },
+
+  startRegularGame() {
+    var url = '/game/new/' + this.state.id + '/' + this.state.settings.uuid;
+    fetch(url)
+    .then(response => response.json())
+    .then(data => this.setState({ pendingGameId: data.gameid }));
+  },
+
+  addBotToGame() {
+    var url = '/game/addbot/' + this.state.pendingGameId + '/' + this.state.id + '/' + this.state.settings.uuid;
+    fetch(url)
+    .then(response => response.json())
+    .then(data => {
+      // the actual play negotiations happen via websockets
+    });
+  },
+
+  joinRegularGame(gameid) {
+    var url = '/game/join/' + gameid + '/' + this.state.id + '/' + this.state.settings.uuid;
+    fetch(url)
+    .then(response => response.json())
+    .then(data => this.setState({ pendingGameId: gameid }));
+  },
+
+  updateGameList(gamelist) {
+    this.setState({ gamelist });
   },
 
   setGameData(data) {
@@ -224,7 +280,14 @@ var ClientApp = React.createClass({
       }
       return { name : this.state.settings.name };
     });
-    this.setState({ currentGame: data, players });
+    this.setState({
+      currentGame: data,
+      players,
+      pendingGameId: false,
+      tiles: [],
+      bonus: [],
+      revealed: []
+    });
     if (data.tileSituation) {
       this.updatePlayerInformation(data.tileSituation, data.currentDiscard);
     }
@@ -258,11 +321,20 @@ var ClientApp = React.createClass({
         player.handSize = tiles.length;
       }
     });
-    this.setState({ players });
+    this.setState({ players, tiles });
   },
 
   addTile(tile, wallSize) {
     this.setState({ drawtile: tile });
+  },
+
+  playerReceivedDeal(playerPosition) {
+    var players = this.state.players;
+    players[playerPosition].handSize++;
+    this.setState({
+      players,
+      currentDiscard: false
+    });
   },
 
   setTilesPriorToDiscard(tiles, bonus, revealed) {
@@ -291,7 +363,10 @@ var ClientApp = React.createClass({
       // is not currently available.
       sendClaim({ claimType: Constants.NOTHING });
     }
+    var players = this.state.players;
+    players[from].handSize--;
     this.setState({
+      players,
       currentDiscard: { from, tile, sendClaim }
     }, () => { this.canDismiss = true; });
   },

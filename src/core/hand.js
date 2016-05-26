@@ -238,6 +238,10 @@ class Hand {
       return this.handWasDrawn();
     }
     this.activePlayer.deal(tile, this.wall.playlength());
+    this.players.forEach(player => {
+      if (player === this.activePlayer) return;
+      player.tileDealtToPlayer(this.activePlayer.position);
+    });
   }
 
   /**
@@ -263,6 +267,10 @@ class Hand {
     }
 
     player.sendBonusCompensationTiles([compensation]);
+    this.players.forEach(other => {
+      if (other === player) return;
+      other.tileDealtToPlayer(player.position);
+    });
   }
 
   /**
