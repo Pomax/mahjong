@@ -76,6 +76,16 @@ class ClientPassThrough extends BaseClient {
     this.app.handWon(winner, selfdrawn, alltiles, acknowledged);
   }
 
+  processScores(scores, playerScores) {
+    super.processScores(scores, playerScores);
+    this.app.processScores(scores, playerScores);
+  }
+
+  gameOver(gameid) {
+    super.gameOver(gameid);
+    this.app.gameOver(gameid);
+  }
+
   // Asks the server to clear the timeout, to give
   // the user the time they ened to pick the right
   // claim type.

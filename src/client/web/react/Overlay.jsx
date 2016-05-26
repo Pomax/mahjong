@@ -9,11 +9,12 @@ var Overlay = React.createClass({
 
   componentDidUpdate(prevProps, prevState) {
     if (prevProps.children !== this.props.children) {
-      this.setState({ hidden: false });
+      this.setState({ hidden: !this.props.children });
     }
   },
 
   hide: function(evt) {
+    if (this.props.noOutsideClick) return;
     this.setState({ hidden: true });
   },
 

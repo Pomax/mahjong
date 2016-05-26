@@ -1,7 +1,9 @@
 #! /usr/bin/env node
+require('../src/lib/fix');
 require('../src/client/cli/test.js');
 
 /**
- * This does not work, due to pirates not working properly.
- * See https://github.com/ariporad/pirates/issues/26
+ * This has issues due to pirates not actually affecting
+ * the node that gets used for global execution. Not
+ * quite sure why O_o
  */

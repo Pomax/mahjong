@@ -14,7 +14,9 @@ img.tile {
 
 img.tile.highlight {
   margin: 0;
-  border: 1px solid red;
+  border-bottom: 1px solid red;
+  padding-bottom: 3px;
+  margin-bottom: -3px;
 }
 
 .name {
@@ -24,6 +26,13 @@ img.tile.highlight {
 
 .name a, .name a:visited {
   color: inherit;
+}
+
+.player {
+  clear: both;
+}
+.player + .player {
+  margin-top: 4px;
 }
 
 .player .tiles,

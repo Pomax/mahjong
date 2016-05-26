@@ -98,7 +98,7 @@
 	      { className: 'client', ref: 'background', onClick: this.backGroundClicked },
 	      React.createElement(
 	        Overlay,
-	        null,
+	        { noOutsideClick: true },
 	        this.state.modal ? this.state.modal : null
 	      ),
 	      React.createElement('input', { type: 'text', value: this.state.settings.name, onChange: this.changePlayerName }),
@@ -230,7 +230,7 @@
 	    if (!this.state.tiles) return null;
 	    var dpos = this.state.tiles.indexOf(this.state.drawtile);
 	    var tiles = this.state.tiles.map((tile, id) => {
-	      var highlight = dpos && dpos === id;
+	      var highlight = dpos > -1 && dpos === id;
 	      return React.createElement(Tile, { disabled: !this.state.discarding, key: tile + '-' + id, onClick: this.discard, value: tile, highlight: highlight });
 	    });
 	    var bonus = this.state.bonus.map((tile, id) => {
@@ -301,7 +301,7 @@
 	  },
 
 	  splitPlayerName(name) {
-	    var bits = name.split(' ');
+	    var bits = name.replace(/[()]/g, '').split(' ');
 	    var adjective = bits[0];
 	    var wiki = bits.slice(1).map((s, id) => id === 0 ? s : s.toLowerCase()).join(' ');
 	    return [adjective, wiki];
@@ -341,8 +341,22 @@
 
 	  renderDiscard() {
 	    var content = null;
+	    if (!this.state.currentGame) return React.createElement('div', { className: 'discard' });
+
+	    if (this.state.drawtile !== false) {
+	      content = React.createElement(
+	        'button',
+	        { onClick: this.discard, 'data-tile': Constants.NOTILE },
+	        'Declare win'
+	      );
+	    }
+
 	    var currentDiscard = this.state.currentDiscard;
-	    if (!currentDiscard) return React.createElement('div', { className: 'discard' });
+	    if (!currentDiscard) return React.createElement(
+	      'div',
+	      { className: 'discard' },
+	      content
+	    );
 
 	    if (currentDiscard.from !== this.state.currentGame.position) {
 	      let from = this.state.players[this.state.currentDiscard.from].name;
@@ -493,7 +507,10 @@
 	  },
 
 	  addTile(tile, wallSize) {
-	    this.setState({ drawtile: tile });
+	    this.setState({
+	      drawtile: tile,
+	      wallSize
+	    });
 	  },
 
 	  playerReceivedDeal(playerPosition) {
@@ -570,7 +587,7 @@
 	  recordReveal(playerPosition, tiles) {
 	    var players = this.state.players;
 	    var player = players[playerPosition];
-	    player.handSize = Math.max(player.handSize - 3, 0);
+	    player.handSize = Math.max(player.handSize - 2, 0);
 	    player.revealed.push(tiles);
 	    this.setState({ players });
 	  },
@@ -599,7 +616,7 @@
 	      this.setState({
 	        modal: React.createElement(
 	          'button',
-	          { onClick: acknowledged },
+	          { onClick: () => this.removeModal(acknowledged) },
 	          'Hand was a draw'
 	        )
 	      });
@@ -612,11 +629,31 @@
 	      this.setState({
 	        modal: React.createElement(
 	          'button',
-	          { onClick: acknowledged },
+	          { onClick: () => this.removeModal(acknowledged) },
 	          'hand was won by ',
 	          player.name
 	        )
 	      });
+	    });
+	  },
+
+	  removeModal(fn) {
+	    this.setState({ modal: false }, () => {
+	      if (fn) fn();
+	    });
+	  },
+
+	  processScores(scores, playerScores) {
+	    console.log(scores, playerScores);
+	  },
+
+	  gameOver(gameid) {
+	    this.setState({
+	      modal: React.createElement(
+	        'button',
+	        { onClick: this.removeModal },
+	        'Game over'
+	      )
 	    });
 	  }
 	});
@@ -20686,6 +20723,16 @@
 	    this.app.handWon(winner, selfdrawn, alltiles, acknowledged);
 	  }
 
+	  processScores(scores, playerScores) {
+	    super.processScores(scores, playerScores);
+	    this.app.processScores(scores, playerScores);
+	  }
+
+	  gameOver(gameid) {
+	    super.gameOver(gameid);
+	    this.app.gameOver(gameid);
+	  }
+
 	  // Asks the server to clear the timeout, to give
 	  // the user the time they ened to pick the right
 	  // claim type.
@@ -20989,8 +21036,15 @@
 	  /**
 	   * ...
 	   */
-	  processHandScore(scoreObject) {}
+	  processScores(scores, playerScores) {}
 	  //this.log('${this.name} received score object',scoreObject);
+
+
+	  /**
+	   * ...
+	   */
+	  gameOver(gameid) {}
+	  // this game has been finished.
 
 
 	  /**
@@ -21111,7 +21165,11 @@
 	      });
 
 	      c.subscribe('hand-score', data => {
-	        this.processHandScore(data);
+	        this.processScores(data.scores, data.playerScores);
+	      });
+
+	      c.subscribe('game-over', data => {
+	        this.gameOver(parseInt(data.gameid));
 	      });
 
 	      c.subscribe('verify', data => {
@@ -30386,11 +30444,12 @@
 
 	  componentDidUpdate(prevProps, prevState) {
 	    if (prevProps.children !== this.props.children) {
-	      this.setState({ hidden: false });
+	      this.setState({ hidden: !this.props.children });
 	    }
 	  },
 
 	  hide: function (evt) {
+	    if (this.props.noOutsideClick) return;
 	    this.setState({ hidden: true });
 	  },
 

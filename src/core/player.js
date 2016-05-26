@@ -256,8 +256,12 @@ class Player {
     this.hand.handAcknowledgedByPlayer(this);
   }
 
-  recordScore(scoreObject) {
-    this.connector.publish('hand-score', scoreObject);
+  recordScores(scores, playerScores) {
+    this.connector.publish('hand-score', { scores, playerScores });
+  }
+
+  gameOver(gameid) {
+    this.connector.publish('game-over', { gameid });
   }
 
   // FIXME: development only

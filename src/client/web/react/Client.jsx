@@ -40,7 +40,7 @@ var ClientApp = React.createClass({
   render() {
     return (
       <div className="client" ref="background" onClick={this.backGroundClicked}>
-        <Overlay>{this.state.modal ? this.state.modal : null}</Overlay>
+        <Overlay noOutsideClick={true}>{this.state.modal ? this.state.modal : null}</Overlay>
         <input type="text" value={this.state.settings.name} onChange={this.changePlayerName} />
         { this.state.client ? null : <button onClick={this.registerPlayer}>register player</button> }
         { this.state.currentGame ? <div>Client connected using a websocket on port {this.state.client.connector.port}</div> : null }
@@ -113,7 +113,7 @@ var ClientApp = React.createClass({
     if (!this.state.tiles) return null;
     var dpos = this.state.tiles.indexOf(this.state.drawtile);
     var tiles = this.state.tiles.map((tile,id) => {
-      var highlight = (dpos && dpos===id);
+      var highlight = (dpos > -1 && dpos===id);
       return <Tile disabled={!this.state.discarding} key={tile+'-'+id} onClick={this.discard} value={tile} highlight={highlight}/>;
     });
     var bonus = this.state.bonus.map((tile,id) => {
@@ -155,7 +155,7 @@ var ClientApp = React.createClass({
   },
 
   splitPlayerName(name) {
-    var bits = name.split(' ');
+    var bits = name.replace(/[()]/g,'').split(' ');
     var adjective = bits[0];
     var wiki = bits.slice(1).map((s,id) => id===0? s : s.toLowerCase()).join(' ');
     return [adjective, wiki];
@@ -180,8 +180,14 @@ var ClientApp = React.createClass({
 
   renderDiscard() {
     var content = null;
+    if (!this.state.currentGame) return <div className="discard"/>;
+
+    if (this.state.drawtile !== false) {
+      content = <button onClick={this.discard} data-tile={Constants.NOTILE}>Declare win</button>;
+    }
+
     var currentDiscard = this.state.currentDiscard;
-    if (!currentDiscard) return <div className="discard"/>;
+    if (!currentDiscard) return <div className="discard">{content}</div>;
 
     if (currentDiscard.from !== this.state.currentGame.position) {
       let from = this.state.players[this.state.currentDiscard.from].name;
@@ -325,7 +331,10 @@ var ClientApp = React.createClass({
   },
 
   addTile(tile, wallSize) {
-    this.setState({ drawtile: tile });
+    this.setState({
+      drawtile: tile,
+      wallSize
+    });
   },
 
   playerReceivedDeal(playerPosition) {
@@ -401,7 +410,7 @@ var ClientApp = React.createClass({
   recordReveal(playerPosition, tiles) {
     var players = this.state.players;
     var player = players[playerPosition];
-    player.handSize = Math.max(player.handSize - 3, 0);
+    player.handSize = Math.max(player.handSize - 2, 0);
     player.revealed.push(tiles);
     this.setState({ players });
   },
@@ -428,7 +437,7 @@ var ClientApp = React.createClass({
   handDrawn(alltiles, acknowledged) {
     this.revealAllTiles(alltiles, () => {
       this.setState({
-        modal: <button onClick={acknowledged}>Hand was a draw</button>
+        modal: <button onClick={() => this.removeModal(acknowledged)}>Hand was a draw</button>
       });
     });
   },
@@ -437,8 +446,24 @@ var ClientApp = React.createClass({
     this.revealAllTiles(alltiles, () => {
       var player = this.state.players[winner];
       this.setState({
-        modal: <button onClick={acknowledged}>hand was won by {player.name}</button>
+        modal: <button onClick={() => this.removeModal(acknowledged)}>hand was won by {player.name}</button>
       });
+    });
+  },
+
+  removeModal(fn) {
+    this.setState({ modal: false }, () => {
+      if (fn) fn();
+    });
+  },
+
+  processScores(scores, playerScores) {
+    console.log(scores, playerScores);
+  },
+
+  gameOver(gameid) {
+    this.setState({
+      modal: <button onClick={this.removeModal}>Game over</button>
     });
   }
 });

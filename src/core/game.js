@@ -113,7 +113,10 @@ class Game {
   end() {
     console.log('GAME OVER (${this.hands.length} hands played, ${this.draws} draws, ${this.wins} wins)');
     console.log('Final scores:\n', JSON.stringify(this.scores,false,2));
-    setTimeout(process.exit,250);
+    var players = this.hand.players;
+    players.forEach((player,pid) => {
+      player.gameOver(this.id);
+    });
   }
 
   resolveScores(hand) {
@@ -122,7 +125,7 @@ class Game {
     players.forEach((player,pid) => {
       let scoreObject = scores[pid];
       this.scores[player.name] += scoreObject.score;
-      player.recordScore(scoreObject);
+      player.recordScores(scores, scores[pid])
     });
   }
 

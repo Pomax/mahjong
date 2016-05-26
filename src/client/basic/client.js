@@ -262,8 +262,15 @@ class Client {
   /**
    * ...
    */
-  processHandScore(scoreObject) {
+  processScores(scores, playerScores) {
     //this.log('${this.name} received score object',scoreObject);
+  }
+
+  /**
+   * ...
+   */
+  gameOver(gameid) {
+    // this game has been finished.
   }
 
   /**
@@ -384,7 +391,11 @@ class Client {
       });
 
       c.subscribe('hand-score', data => {
-        this.processHandScore(data);
+        this.processScores(data.scores, data.playerScores);
+      });
+
+      c.subscribe('game-over', data => {
+        this.gameOver(parseInt(data.gameid));
       });
 
       c.subscribe('verify', data => {

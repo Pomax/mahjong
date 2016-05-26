@@ -1,0 +1,5 @@
+#! /usr/bin/env node
+require('../src/lib/fix');
+require('../src/server/server.js');
+var open = require('open');
+open('http://localhost:8081/client.html');
