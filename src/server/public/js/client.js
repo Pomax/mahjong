@@ -88,7 +88,8 @@
 	    return {
 	      client: false,
 	      settings: new Settings(params.localStorageId),
-	      currentDiscard: false
+	      currentDiscard: false,
+	      ourturn: false
 	    };
 	  },
 
@@ -343,7 +344,7 @@
 	    var content = null;
 	    if (!this.state.currentGame) return React.createElement('div', { className: 'discard' });
 
-	    if (this.state.drawtile !== false) {
+	    if (this.state.ourturn) {
 	      content = React.createElement(
 	        'button',
 	        { onClick: this.discard, 'data-tile': Constants.NOTILE },
@@ -450,6 +451,7 @@
 	  },
 
 	  setGameData(data) {
+	    console.log(data);
 	    var players = [0, 1, 2, 3].map(position => {
 	      if (position !== data.position) {
 	        return {
@@ -462,6 +464,7 @@
 	      }
 	      return { name: this.state.settings.name };
 	    });
+	    console.log(players);
 	    this.setState({
 	      currentGame: data,
 	      players,
@@ -508,6 +511,7 @@
 
 	  addTile(tile, wallSize) {
 	    this.setState({
+	      ourturn: true,
 	      drawtile: tile,
 	      wallSize
 	    });
@@ -517,6 +521,7 @@
 	    var players = this.state.players;
 	    players[playerPosition].handSize++;
 	    this.setState({
+	      ourturn: false,
 	      players,
 	      currentDiscard: false
 	    });
@@ -555,6 +560,11 @@
 	    }, () => {
 	      this.canDismiss = true;
 	    });
+	  },
+
+	  processClaimAward(data) {
+	    console.log("claim awarded");
+	    this.setState({ ourturn: true });
 	  },
 
 	  ignoreClaim() {
@@ -20699,6 +20709,12 @@
 
 	  determineClaim(from, tile, sendClaim) {
 	    this.app.determineClaim(from, tile, sendClaim);
+	  }
+
+	  processClaimAward(data) {
+	    var set = super.processClaimAward(data);
+	    this.app.processClaimAward(data);
+	    return set;
 	  }
 
 	  tileClaimed(tile, by, claimType, winType) {

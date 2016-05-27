@@ -224,7 +224,8 @@ class Player {
   }
 
   revealReceivedFromClient(data) {
-    var tiles = data.tiles.map(v => parseInt(v));
+    var tiles = data.tiles;
+    tiles = tiles.map(v => parseInt(v));
     tiles.forEach(tile => {
       let pos = this.tiles.indexOf(tile);
       this.tiles.splice(pos,1);

@@ -54,6 +54,12 @@ class ClientPassThrough extends BaseClient {
     this.app.determineClaim(from, tile, sendClaim);
   }
 
+  processClaimAward(data) {
+    var set = super.processClaimAward(data);
+    this.app.processClaimAward(data);
+    return set;
+  }
+
   tileClaimed(tile, by, claimType, winType) {
     this.app.tileClaimed(tile, by, claimType, winType);
   }

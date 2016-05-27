@@ -26,7 +26,12 @@ class Hand {
   constructor(game, id, players, windOfTheRound, windOffset) {
     this.game = game;
     this.id = id;
+
+    var roll = players.length - (windOffset % players.length);
+    players = players.slice(roll).concat(players.slice(0,roll));
+    console.log(windOffset, players.map(p => p.name));
     this.players = players;
+
     this.windOfTheRound = windOfTheRound;
     this.windOffset = windOffset;
     this.wall = new Wall(this);
@@ -111,14 +116,12 @@ class Hand {
     this.activePlayer = this.players[0];
 
     var playerNames = this.players.map(player => player.name);
-    var roll = this.windOffset % 4;
-    while (roll--) { playerNames = [playerNames.pop()].concat(playerNames); }
 
     this.log('Starting hand ${this.id}');
     this.ready = {};
     this.players.forEach((player,position) => {
       var seat = (position + this.windOffset) % this.players.length;
-      player.getReady(this.game, this, seat, this.windOfTheRound, playerNames);
+      player.getReady(this.game, this, position, this.windOfTheRound, playerNames);
     });
   }
 
