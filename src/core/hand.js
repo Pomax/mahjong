@@ -120,7 +120,6 @@ class Hand {
     this.log('Starting hand ${this.id}');
     this.ready = {};
     this.players.forEach((player,position) => {
-      var seat = (position + this.windOffset) % this.players.length;
       player.getReady(this.game, this, position, this.windOfTheRound, playerNames);
     });
   }
