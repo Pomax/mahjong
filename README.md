@@ -1,5 +1,7 @@
 # A Mahjong client/server project.
 
+![screenshot 311](https://cloud.githubusercontent.com/assets/177243/15599542/c5f1087e-2398-11e6-89e8-11ca62b2a17f.png)
+
 This repository contains a client/server implementation for playing networked [Mahjong](https://en.wikipedia.org/wiki/Mahjong), using web sockets to connect each player to the server, specifically relying on [socket.io](http://socket.io).
 
 And for those who think mahjong is a single-player tile matching game: it's not. It's a four player competitive game around forming high-scoring tile combinations with limited [common knowledge](https://en.wikipedia.org/wiki/Common_knowledge_%28logic%29) as well as [imperfect information](https://en.wikipedia.org/wiki/Perfect_information) local for each player.
