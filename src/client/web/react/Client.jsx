@@ -4,7 +4,7 @@ var ReactDOM = require('react-dom');
 var Settings = require('../lib/playersettings');
 var Constants = require('../../../core/constants');
 var Tiles = require('../../../core/tiles');
-var ClientPassThrough  = require('../lib/client-pass-through');
+var ClientPassThrough  = require('../../pass-through/client');
 
 var Tile = require('./Tile.jsx');
 var Overlay = require('./Overlay.jsx');
@@ -41,11 +41,13 @@ var ClientApp = React.createClass({
   render() {
     return (
       <div className="client" ref="background" onClick={this.backGroundClicked}>
-        <Overlay noOutsideClick={true}>{this.state.modal ? this.state.modal : null}</Overlay>
-        <input type="text" value={this.state.settings.name} onChange={this.changePlayerName} />
-        { this.state.client ? null : <button onClick={this.registerPlayer}>register player</button> }
-        { this.state.currentGame ? <div>Client connected using a websocket on port {this.state.client.connector.port}</div> : null }
-        { this.renderLobby() }
+        <div className="metadata" hidden={this.state.currentGame}>
+          <input type="text" value={this.state.settings.name} onChange={this.changePlayerName} />
+          { this.state.client ? null : <button onClick={this.registerPlayer}>register player</button> }
+          { this.state.currentGame ? <div>Client connected using a websocket on port {this.state.client.connector.port}</div> : null }
+          { this.renderLobby() }
+        </div>
+        {this.state.modal ? <div>{this.state.modal}</div> : null}
         { this.renderDiscard() }
         { this.renderPlayers() }
       </div>
@@ -354,10 +356,13 @@ var ClientApp = React.createClass({
   },
 
   discard(evt) {
-    var tile = parseInt(evt.target.getAttribute('data-tile'));
     var tiles = this.state.tiles;
-    var pos = tiles.indexOf(tile);
-    tiles.splice(pos,1);
+    var tile = parseInt(evt.target.getAttribute('data-tile'));
+    console.log("client-side discard:",tile);
+    if (tile !== Constants.NOTILE) {
+      var pos = tiles.indexOf(tile);
+      tiles.splice(pos,1);
+    }
     this.setState({
       drawtile: false,
       discarding: false,
@@ -384,7 +389,6 @@ var ClientApp = React.createClass({
   },
 
   processClaimAward(data) {
-    console.log("claim awarded");
     this.setState({ ourturn: true });
   },
 
@@ -439,7 +443,7 @@ var ClientApp = React.createClass({
       player.bonus = side.bonus;
       player.revealed = side.revealed;
     });
-    this.setState({ players }, onReveal);
+    this.setState({ players, ourturn: false }, onReveal);
   },
 
   handDrawn(alltiles, acknowledged) {
@@ -466,7 +470,8 @@ var ClientApp = React.createClass({
   },
 
   processScores(scores, playerScores) {
-    console.log(scores, playerScores);
+    console.log("all players", scores);
+    console.log("this player", playerScores);
   },
 
   gameOver(gameid) {
@@ -475,5 +480,10 @@ var ClientApp = React.createClass({
     });
   }
 });
+
+if (typeof document !== "undefined") {
+  var h1 = document.querySelector("h1");
+  h1.parentNode.removeChild(h1);
+}
 
 ReactDOM.render(<ClientApp/>, document.getElementById('client'));

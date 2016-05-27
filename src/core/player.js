@@ -201,9 +201,14 @@ class Player {
   }
 
   discardReceivedFromClient(data) {
-    var tile = data.tile;
-    var pos = this.tiles.indexOf(tile);
-    this.tiles.splice(pos,1);
+    var tile = parseInt(data.tile);
+    console.log(this.name,"discards",tile);
+    if (tile !== Constants.NOTILE) {
+      console.log(this.name,"pruning tile");
+      var pos = this.tiles.indexOf(tile);
+      this.tiles.splice(pos,1);
+    }
+    console.log(this.name,"tiles:",this.tiles);
     this.hand.discardReceivedFromPlayer(this, tile, data.selfdrawn);
   }
 
@@ -216,6 +221,7 @@ class Player {
   }
 
   award(tile, claimType, winType) {
+    console.log(this.name,"award",tile,'/',claimType,'/',winType);
     // note: there will be an asymmetry between now and revealReceived,
     // as the server and client add the tile to tiles at different tiles.
     // As such, verify() calls can only happen after the reveal.
@@ -275,6 +281,7 @@ class Player {
   }
 
   getAllTileData() {
+    console.log(this.name,"tiles:",this.tiles);
     return {
       tiles: this.tiles,
       bonus: this.bonus,

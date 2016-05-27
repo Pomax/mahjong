@@ -98,23 +98,27 @@
 	      'div',
 	      { className: 'client', ref: 'background', onClick: this.backGroundClicked },
 	      React.createElement(
-	        Overlay,
-	        { noOutsideClick: true },
-	        this.state.modal ? this.state.modal : null
+	        'div',
+	        { className: 'metadata', hidden: this.state.currentGame },
+	        React.createElement('input', { type: 'text', value: this.state.settings.name, onChange: this.changePlayerName }),
+	        this.state.client ? null : React.createElement(
+	          'button',
+	          { onClick: this.registerPlayer },
+	          'register player'
+	        ),
+	        this.state.currentGame ? React.createElement(
+	          'div',
+	          null,
+	          'Client connected using a websocket on port ',
+	          this.state.client.connector.port
+	        ) : null,
+	        this.renderLobby()
 	      ),
-	      React.createElement('input', { type: 'text', value: this.state.settings.name, onChange: this.changePlayerName }),
-	      this.state.client ? null : React.createElement(
-	        'button',
-	        { onClick: this.registerPlayer },
-	        'register player'
-	      ),
-	      this.state.currentGame ? React.createElement(
+	      this.state.modal ? React.createElement(
 	        'div',
 	        null,
-	        'Client connected using a websocket on port ',
-	        this.state.client.connector.port
+	        this.state.modal
 	      ) : null,
-	      this.renderLobby(),
 	      this.renderDiscard(),
 	      this.renderPlayers()
 	    );
@@ -451,7 +455,6 @@
 	  },
 
 	  setGameData(data) {
-	    console.log(data);
 	    var players = [0, 1, 2, 3].map(position => {
 	      if (position !== data.position) {
 	        return {
@@ -464,7 +467,6 @@
 	      }
 	      return { name: this.state.settings.name };
 	    });
-	    console.log(players);
 	    this.setState({
 	      currentGame: data,
 	      players,
@@ -532,10 +534,13 @@
 	  },
 
 	  discard(evt) {
-	    var tile = parseInt(evt.target.getAttribute('data-tile'));
 	    var tiles = this.state.tiles;
-	    var pos = tiles.indexOf(tile);
-	    tiles.splice(pos, 1);
+	    var tile = parseInt(evt.target.getAttribute('data-tile'));
+	    console.log("client-side discard:", tile);
+	    if (tile !== Constants.NOTILE) {
+	      var pos = tiles.indexOf(tile);
+	      tiles.splice(pos, 1);
+	    }
 	    this.setState({
 	      drawtile: false,
 	      discarding: false,
@@ -563,7 +568,6 @@
 	  },
 
 	  processClaimAward(data) {
-	    console.log("claim awarded");
 	    this.setState({ ourturn: true });
 	  },
 
@@ -618,7 +622,7 @@
 	      player.bonus = side.bonus;
 	      player.revealed = side.revealed;
 	    });
-	    this.setState({ players }, onReveal);
+	    this.setState({ players, ourturn: false }, onReveal);
 	  },
 
 	  handDrawn(alltiles, acknowledged) {
@@ -654,7 +658,8 @@
 	  },
 
 	  processScores(scores, playerScores) {
-	    console.log(scores, playerScores);
+	    console.log("all players", scores);
+	    console.log("this player", playerScores);
 	  },
 
 	  gameOver(gameid) {
@@ -667,6 +672,11 @@
 	    });
 	  }
 	});
+
+	if (typeof document !== "undefined") {
+	  var h1 = document.querySelector("h1");
+	  h1.parentNode.removeChild(h1);
+	}
 
 	ReactDOM.render(React.createElement(ClientApp, null), document.getElementById('client'));
 
@@ -20681,7 +20691,6 @@
 	  setGameData(data) {
 	    super.setGameData(data);
 	    this.app.setGameData(JSON.parse(JSON.stringify(data)));
-	    console.log(data);
 	  }
 
 	  setInitialTiles(tiles) {
@@ -20958,51 +20967,53 @@
 
 	    // figure out what we were actually awarded
 	    var tiles = false;
-	    if (claimType <= Constants.CHOW3) {
-	      if (claimType === Constants.CHOW1) {
-	        tiles = [tile, tile + 1, tile + 2];
-	      }
-	      if (claimType === Constants.CHOW2) {
-	        tiles = [tile - 1, tile, tile + 1];
-	      }
-	      if (claimType === Constants.CHOW3) {
-	        tiles = [tile - 2, tile - 1, tile];
-	      }
-	    } else if (claimType === Constants.PUNG) {
-	      tiles = [tile, tile, tile];
-	    } else if (claimType === Constants.KONG) {
-	      tiles = [tile, tile, tile, tile];
-	    } else if (claimType === Constants.WIN) {
-	      if (winType === Constants.PAIR) {
-	        tiles = [tile, tile];
-	      }
-	      if (winType === Constants.CHOW1) {
-	        tiles = [tile, tile + 1, tile + 2];
-	      }
-	      if (winType === Constants.CHOW2) {
-	        tiles = [tile - 1, tile, tile + 1];
-	      }
-	      if (winType === Constants.CHOW3) {
-	        tiles = [tile - 2, tile - 1, tile];
-	      }
-	      if (winType === Constants.PUNG) {
+	    if (tile !== Constants.NOTILE) {
+	      if (claimType <= Constants.CHOW3) {
+	        if (claimType === Constants.CHOW1) {
+	          tiles = [tile, tile + 1, tile + 2];
+	        }
+	        if (claimType === Constants.CHOW2) {
+	          tiles = [tile - 1, tile, tile + 1];
+	        }
+	        if (claimType === Constants.CHOW3) {
+	          tiles = [tile - 2, tile - 1, tile];
+	        }
+	      } else if (claimType === Constants.PUNG) {
 	        tiles = [tile, tile, tile];
-	      }
-	      if (winType === Constants.KONG) {
+	      } else if (claimType === Constants.KONG) {
 	        tiles = [tile, tile, tile, tile];
+	      } else if (claimType === Constants.WIN) {
+	        if (winType === Constants.PAIR) {
+	          tiles = [tile, tile];
+	        }
+	        if (winType === Constants.CHOW1) {
+	          tiles = [tile, tile + 1, tile + 2];
+	        }
+	        if (winType === Constants.CHOW2) {
+	          tiles = [tile - 1, tile, tile + 1];
+	        }
+	        if (winType === Constants.CHOW3) {
+	          tiles = [tile - 2, tile - 1, tile];
+	        }
+	        if (winType === Constants.PUNG) {
+	          tiles = [tile, tile, tile];
+	        }
+	        if (winType === Constants.KONG) {
+	          tiles = [tile, tile, tile, tile];
+	        }
 	      }
-	    }
 
-	    // process and reveal the tiles
-	    this.revealed.push(tiles);
-	    this.tiles.push(tile);
-	    tiles.forEach(t => {
-	      let pos = this.tiles.indexOf(t);
-	      this.tiles.splice(pos, 1);
-	    });
+	      // process and reveal the tiles
+	      this.tiles.push(tile);
+	      this.revealed.push(tiles);
+	      tiles.forEach(t => {
+	        let pos = this.tiles.indexOf(t);
+	        this.tiles.splice(pos, 1);
+	      });
 
-	    if (claimType === Constants.KONG) {
-	      this.connector.publish('kong-request', { tiles });
+	      if (claimType === Constants.KONG) {
+	        this.connector.publish('kong-request', { tiles });
+	      }
 	    }
 
 	    return tiles;
@@ -21090,7 +21101,6 @@
 
 	    // make _sure_ this event is bound before we bind connection listening.
 	    c.subscribe('reconnection-data', data => {
-	      console.log('reconnection-data event');
 	      this.setReconnectionData(data);
 	    });
 
@@ -30350,7 +30360,6 @@
 	   */
 	  publish(eventName, payload, afterwards) {
 	    if (!this.ready) {
-	      console.log("queueing " + eventName);
 	      return this.queue.push({ op: 'publish', eventName, payload, afterwards });
 	    }
 	    if (!this.socket.connected) {

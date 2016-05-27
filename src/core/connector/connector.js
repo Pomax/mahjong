@@ -53,7 +53,6 @@ class Connector {
    */
   publish(eventName, payload, afterwards) {
     if (!this.ready) {
-      console.log("queueing " + eventName);
       return this.queue.push({op: 'publish', eventName, payload, afterwards });
     }
     if (!this.socket.connected) {

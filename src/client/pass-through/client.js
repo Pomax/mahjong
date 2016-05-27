@@ -1,7 +1,7 @@
 'use strict';
 
-var Constants = require('../../../core/constants');
-var BaseClient = require('../../basic/client');
+var Constants = require('../../core/constants');
+var BaseClient = require('../basic/client');
 
 /**
  *

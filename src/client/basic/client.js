@@ -187,32 +187,34 @@ class Client {
 
     // figure out what we were actually awarded
     var tiles = false;
-    if(claimType <= Constants.CHOW3) {
-      if(claimType === Constants.CHOW1) { tiles = [tile,tile+1,tile+2]; }
-      if(claimType === Constants.CHOW2) { tiles = [tile-1,tile,tile+1]; }
-      if(claimType === Constants.CHOW3) { tiles = [tile-2,tile-1,tile]; }
-    }
-    else if(claimType === Constants.PUNG) { tiles = [tile, tile, tile]; }
-    else if(claimType === Constants.KONG) { tiles = [tile, tile, tile, tile]; }
-    else if(claimType === Constants.WIN)  {
-      if(winType === Constants.PAIR)  { tiles = [tile, tile]; }
-      if(winType === Constants.CHOW1) { tiles = [tile,tile+1,tile+2]; }
-      if(winType === Constants.CHOW2) { tiles = [tile-1,tile,tile+1]; }
-      if(winType === Constants.CHOW3) { tiles = [tile-2,tile-1,tile]; }
-      if(winType === Constants.PUNG)  { tiles = [tile, tile, tile]; }
-      if(winType === Constants.KONG)  { tiles = [tile, tile, tile, tile]; }
-    }
+    if (tile !== Constants.NOTILE) {
+      if(claimType <= Constants.CHOW3) {
+        if(claimType === Constants.CHOW1) { tiles = [tile,tile+1,tile+2]; }
+        if(claimType === Constants.CHOW2) { tiles = [tile-1,tile,tile+1]; }
+        if(claimType === Constants.CHOW3) { tiles = [tile-2,tile-1,tile]; }
+      }
+      else if(claimType === Constants.PUNG) { tiles = [tile, tile, tile]; }
+      else if(claimType === Constants.KONG) { tiles = [tile, tile, tile, tile]; }
+      else if(claimType === Constants.WIN)  {
+        if(winType === Constants.PAIR)  { tiles = [tile, tile]; }
+        if(winType === Constants.CHOW1) { tiles = [tile,tile+1,tile+2]; }
+        if(winType === Constants.CHOW2) { tiles = [tile-1,tile,tile+1]; }
+        if(winType === Constants.CHOW3) { tiles = [tile-2,tile-1,tile]; }
+        if(winType === Constants.PUNG)  { tiles = [tile, tile, tile]; }
+        if(winType === Constants.KONG)  { tiles = [tile, tile, tile, tile]; }
+      }
 
-    // process and reveal the tiles
-    this.revealed.push(tiles);
-    this.tiles.push(tile);
-    tiles.forEach(t => {
-      let pos = this.tiles.indexOf(t);
-      this.tiles.splice(pos,1);
-    });
+      // process and reveal the tiles
+      this.tiles.push(tile);
+      this.revealed.push(tiles);
+      tiles.forEach(t => {
+        let pos = this.tiles.indexOf(t);
+        this.tiles.splice(pos,1);
+      });
 
-    if (claimType === Constants.KONG) {
-      this.connector.publish('kong-request', { tiles });
+      if (claimType === Constants.KONG) {
+        this.connector.publish('kong-request', { tiles });
+      }
     }
 
     return tiles;
@@ -300,7 +302,6 @@ class Client {
 
     // make _sure_ this event is bound before we bind connection listening.
     c.subscribe('reconnection-data', data => {
-      console.log('reconnection-data event');
       this.setReconnectionData(data);
     });
 
