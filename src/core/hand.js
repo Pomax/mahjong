@@ -29,7 +29,6 @@ class Hand {
 
     var roll = players.length - (windOffset % players.length);
     players = players.slice(roll).concat(players.slice(0,roll));
-    console.log(windOffset, players.map(p => p.name));
     this.players = players;
 
     this.windOfTheRound = windOfTheRound;
@@ -114,9 +113,7 @@ class Hand {
     this.setStage(stages.STARTING);
     this.started = true;
     this.activePlayer = this.players[0];
-
     var playerNames = this.players.map(player => player.name);
-
     this.log('Starting hand ${this.id}');
     this.ready = {};
     this.players.forEach((player,position) => {

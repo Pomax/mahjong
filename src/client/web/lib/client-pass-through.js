@@ -20,7 +20,6 @@ class ClientPassThrough extends BaseClient {
   setGameData(data) {
     super.setGameData(data);
     this.app.setGameData(JSON.parse(JSON.stringify(data)));
-    console.log(data);
   }
 
   setInitialTiles(tiles) {

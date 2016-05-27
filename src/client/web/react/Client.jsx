@@ -275,7 +275,6 @@ var ClientApp = React.createClass({
   },
 
   setGameData(data) {
-    console.log(data);
     var players = [0,1,2,3].map(position => {
       if(position !== data.position) {
         return {
@@ -288,7 +287,6 @@ var ClientApp = React.createClass({
       }
       return { name : this.state.settings.name };
     });
-    console.log(players);
     this.setState({
       currentGame: data,
       players,
