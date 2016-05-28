@@ -4,33 +4,41 @@ var Constants = require('./constants');
 
 var Tiles = {
   // is... functions
-  isNumeral: function(tn) {
+  isNumeral(tn) {
     return Constants.NUMERALS <= tn && tn < Constants.HONOURS;
   },
-  isTerminal: function(tn) {
+
+  isTerminal(tn) {
     if (!Tiles.isNumeral(tn)) return false;
     return (tn % Constants.NUMMOD === 0 || tn % Constants.NUMMOD === Constants.NUMMOD - 1);
   },
-  isHonour: function(tn) {
+
+  isHonour(tn) {
     return Constants.HONOURS <= tn && tn < Constants.BONUS;
   },
-  isWind: function(tn) {
+
+  isWind(tn) {
     return Constants.WINDS <= tn && tn < Constants.DRAGONS;
   },
-  isDragon: function(tn) {
+
+  isDragon(tn) {
     return Constants.DRAGONS <= tn && tn < Constants.BONUS;
   },
-  isBonus: function(tn) {
+
+  isBonus(tn) {
     return Constants.BONUS <= tn;
   },
-  getTileName: function(tn) {
+
+  getTileName(tn) {
     return Constants.tileNames[tn];
   },
-  getTileNumber: function(tn) {
+
+  getTileNumber(tn) {
     if (!Tiles.isNumeral(tn)) return false;
     return (tn % Constants.NUMMOD);
   },
-  getTileSuit: function(tn) {
+
+  getTileSuit(tn) {
     if (Constants.BAMBOOS    <= tn  && tn < Constants.CHARACTERS) return Constants.BAMBOOS;
     if (Constants.CHARACTERS <= tn  && tn < Constants.DOTS)       return Constants.CHARACTERS;
     if (Constants.DOTS       <= tn  && tn < Constants.WINDS)      return Constants.DOTS;
@@ -39,18 +47,27 @@ var Tiles = {
     if (Constants.FLOWERS    <= tn  && tn < Constants.SEASONS)    return Constants.FLOWERS;
     return Constants.SEASONS;
   },
-  getSuitTiles: function(suit) {
+
+  sameSuit(base, ...tiles) {
+    base = Tiles.getTileSuit(base);
+    return !tiles.some(tn => Tiles.getTileSuit(tn)!==base);
+  },
+
+  getSuitTiles(suit) {
     var set = [];
     for(var i=suit; i<suit+Constants.NUMMOD; i++) { set.push(i); }
     return set;
   },
-  getShortForm: function(tn) {
+
+  getShortForm(tn) {
     return Constants.SHORTFORMS[tn];
   },
-  fromShortForm: function(str) {
+
+  fromShortForm(str) {
     return Constants.TILENUMBERS[str];
   },
-  getPositionWind: function(num) {
+
+  getPositionWind(num) {
     return ['E','S','W','N'][num];
   }
 };

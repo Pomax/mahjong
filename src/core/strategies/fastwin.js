@@ -6,6 +6,7 @@
  */
 
 var Constants = require('../constants');
+var Tiles = require('../tiles');
 var debug = false;
 
 /**
@@ -72,20 +73,24 @@ function checkPair(tile, tiles, required, tracker) {
 function checkConnected(tile, tiles, required, tracker) {
   if(debug)
     console.log('(connected) checking '+tile+' in ', tiles);
-  var p = tiles.indexOf(tile-1);
-  if(p>-1) {
+  var prev = tile - 1;
+  var next = tile + 1;
+
+  var p = tiles.indexOf(prev);
+  if (p>-1 && Tiles.sameSuit(tile, prev)) {
     let ptiles = tiles.slice();
     ptiles.splice(p,1);
-    if (!checkChow3(p, tile, ptiles)) {
-      append(required, tile+1, Constants.CHOW3, tracker);
+    if (!checkChow3(prev, tile, ptiles) && Tiles.sameSuit(tile, next)) {
+      append(required, next, Constants.CHOW3, tracker);
     }
   }
-  var n = tiles.indexOf(tile+1);
-  if(n>-1) {
+
+  var n = tiles.indexOf(next);
+  if (n>-1  && Tiles.sameSuit(tile, next)) {
     let ntiles = tiles.slice();
     ntiles.splice(p,1);
-    if (!checkChow1(tile, n, ntiles)) {
-      append(required, tile-1, Constants.CHOW1, tracker);
+    if (!checkChow1(tile, next, ntiles) && Tiles.sameSuit(tile,prev)) {
+      append(required, prev, Constants.CHOW1, tracker);
     }
   }
 }
@@ -101,19 +106,22 @@ function checkGapped(tile, tiles, required, tracker) {
     console.log('(gapped) checking '+tile+' in ', tiles);
   // This situation, if we don't already have a
   // chow, means we require the center tile
-  var p = tiles.indexOf(tile-2);
-  if(p>-1) {
+  var prev = tile - 2;
+  var next = tile + 2;
+
+  var p = tiles.indexOf(prev);
+  if (p>-1 && Tiles.sameSuit(tile, prev)) {
     let ptiles = tiles.slice();
     ptiles.splice(p,1);
-    if (!checkChow2(p, tile, ptiles)) {
+    if (!checkChow2(prev, tile, ptiles)) {
       append(required, tile-1, Constants.CHOW2, tracker);
     }
   }
-  var n = tiles.indexOf(tile+2);
-  if(n>-1) {
+  var n = tiles.indexOf(next);
+  if (n>-1 && Tiles.sameSuit(tile, next)) {
     let ntiles = tiles.slice();
     ntiles.splice(p,1);
-    if (!checkChow2(tile, n, ntiles)) {
+    if (!checkChow2(tile, next, ntiles)) {
       append(required, tile+1, Constants.CHOW2, tracker);
     }
   }

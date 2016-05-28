@@ -1535,7 +1535,6 @@ var animals = [
   'Komodo Dragon',
   'Kudu',
   'Ladybird',
-  'Leaf-Tailed Gecko',
   'Lemming',
   'Lemur',
   'Leopard',
