@@ -34,7 +34,8 @@ var ClientApp = React.createClass({
       client: false,
       settings: new Settings(params.localStorageId),
       currentDiscard: false,
-      ourturn: false
+      ourturn: false,
+      discardsSeen: []
     };
   },
 
@@ -50,6 +51,8 @@ var ClientApp = React.createClass({
         {this.state.modal ? <div>{this.state.modal}</div> : null}
         { this.renderDiscard() }
         { this.renderPlayers() }
+        { this.renderWall() }
+        { this.renderDiscardsSeen() }
       </div>
     );
   },
@@ -212,6 +215,25 @@ var ClientApp = React.createClass({
     return <ClaimMenu mayChow={mayChow} claim={this.sendClaim} />;
   },
 
+
+  renderWall() {
+    if (!this.state.currentGame) return null;
+    var tiles = [];
+    var n = this.state.wallSize;
+    while(n--) { tiles.push(<Tile value='concealed' key={n}/>); }
+    return <div className="wall"><p>Tiles left in the wall:</p>{tiles}</div>;
+  },
+
+  renderDiscardsSeen() {
+    if (!this.state.currentGame) return null;
+    var tiles = this.state.discardsSeen.map((tile,pos) => <Tile value={tile} key={pos}/>);
+    return <div className="discards-seen"><p>Discards so far:</p>{tiles}</div>;
+  },
+
+
+  // ========================================================================
+
+
   changePlayerName(evt) {
     var settings = this.state.settings;
     settings.setName(evt.target.value);
@@ -323,18 +345,23 @@ var ClientApp = React.createClass({
     });
   },
 
-  setInitialTiles(tiles) {
+
+  // ========================================================================
+
+
+  setInitialTiles(tiles, wallSize) {
     var players = this.state.players;
     players.map(player => {
       if(player.position !== this.state.currentGame.position) {
         player.handSize = tiles.length;
       }
     });
-    this.setState({ players, tiles });
+    this.setState({ players, tiles, wallSize });
   },
 
   addTile(tile, wallSize) {
     this.setState({
+      currentDiscard: false,
       ourturn: true,
       drawtile: tile,
       wallSize
@@ -342,17 +369,24 @@ var ClientApp = React.createClass({
   },
 
   playerReceivedDeal(playerPosition) {
+    if (playerPosition === this.state.currentGame.position) return;
     var players = this.state.players;
     players[playerPosition].handSize++;
+    var discardsSeen = this.state.discardsSeen;
+    var currentDiscard = this.state.currentDiscard;
+    console.log(currentDiscard);
+    discardsSeen.push(currentDiscard.tile);
     this.setState({
       ourturn: false,
       players,
-      currentDiscard: false
+      currentDiscard: false,
+      discardsSeen: discardsSeen,
+      wallSize: this.state.wallSize - 1
     });
   },
 
   setTilesPriorToDiscard(tiles, bonus, revealed) {
-    this.setState({ currentDiscard: false, tiles, bonus, revealed, discarding:true });
+    this.setState({ tiles, bonus, revealed, discarding:true });
   },
 
   discard(evt) {
@@ -395,7 +429,6 @@ var ClientApp = React.createClass({
   ignoreClaim() {
     var claim = { claimType: Constants.NOTHING };
     this.state.currentDiscard.sendClaim(claim);
-    this.setState({ currentDiscard: false });
   },
 
   getClaim() {
@@ -432,7 +465,10 @@ var ClientApp = React.createClass({
     var players = this.state.players;
     var player = players[playerPosition];
     player.bonus = player.bonus.concat(tiles);
-    this.setState({ players });
+    this.setState({
+      players,
+      wallSize: this.state.wallSize - 1
+    });
   },
 
   revealAllTiles(alltiles, onReveal) {

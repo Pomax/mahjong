@@ -8,8 +8,17 @@ html, body {
 }
 
 img.tile {
+  width: 2em;
   margin: 1px;
   vertical-align: middle;
+}
+
+.wall img.tile {
+  width: 1em;
+}
+
+.discards-seen img.tile {
+  width: 1.5em;
 }
 
 img.tile.highlight {

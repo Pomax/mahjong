@@ -131,9 +131,9 @@ class Player {
     this.hand.readyFromPlayer(this);
   }
 
-  setInitialTiles(tiles) {
+  setInitialTiles(tiles, wallSize) {
     this.tiles = tiles.slice().sort(Constants.sort);
-    this.connector.publish('initial-tiles', { gameid: this.game.id, handid: this.hand.id, tiles: this.tiles });
+    this.connector.publish('initial-tiles', { gameid: this.game.id, handid: this.hand.id, tiles: this.tiles, wallSize });
     // wait for 'bonus-request' through connector
   }
 

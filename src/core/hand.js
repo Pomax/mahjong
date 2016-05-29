@@ -151,9 +151,10 @@ class Hand {
   dealInitialTiles() {
     this.setStage(stages.INITIALDEAL);
     this.listenForBonusRequests();
-    this.players.forEach(player => {
-      let tiles = this.wall.getInitialTiles();
-      player.setInitialTiles(tiles);
+    var tiles = this.players.map(() => this.wall.getInitialTiles());
+    var remaining = this.wall.playlength();
+    this.players.forEach((player,pos) => {
+      player.setInitialTiles(tiles[pos], remaining);
     });
   }
 

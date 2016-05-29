@@ -69,7 +69,7 @@ class Client {
    * bonus tiles, which need to be moved out
    * and compensated for, handled in 'checkDealBonus'.
    */
-  setInitialTiles(tiles) {
+  setInitialTiles(tiles, wallSize) {
     this.tiles = tiles.map(v => parseInt(v));
     this.players.forEach(player => { player.handSize = this.tiles.length; });
     this.checkDealBonus();
@@ -321,7 +321,7 @@ class Client {
 
       c.subscribe('initial-tiles', data => {
         this.log('initial tiles for ${this.name}: ', data.tiles);
-        this.setInitialTiles(data.tiles);
+        this.setInitialTiles(data.tiles, parseInt(data.wallSize));
       });
 
       c.subscribe('deal-bonus-compensation', data => {

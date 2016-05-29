@@ -5,10 +5,7 @@ var Tile = function render(props) {
     className: 'tile' + (props.highlight ? ' highlight':''),
     'data-tile': props.value,
     src: '/images/tiles/classic/' + props.value + '.jpg',
-    onClick: props.disabled ? null : props.onClick,
-    style: {
-      width:'2em'
-    }
+    onClick: props.disabled ? null : props.onClick
   };
   return <img {...opts}/>;
 };

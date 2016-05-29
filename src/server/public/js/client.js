@@ -89,7 +89,8 @@
 	      client: false,
 	      settings: new Settings(params.localStorageId),
 	      currentDiscard: false,
-	      ourturn: false
+	      ourturn: false,
+	      discardsSeen: []
 	    };
 	  },
 
@@ -120,7 +121,9 @@
 	        this.state.modal
 	      ) : null,
 	      this.renderDiscard(),
-	      this.renderPlayers()
+	      this.renderPlayers(),
+	      this.renderWall(),
+	      this.renderDiscardsSeen()
 	    );
 	  },
 
@@ -400,6 +403,42 @@
 	    return React.createElement(ClaimMenu, { mayChow: mayChow, claim: this.sendClaim });
 	  },
 
+	  renderWall() {
+	    if (!this.state.currentGame) return null;
+	    var tiles = [];
+	    var n = this.state.wallSize;
+	    while (n--) {
+	      tiles.push(React.createElement(Tile, { value: 'concealed', key: n }));
+	    }
+	    return React.createElement(
+	      'div',
+	      { className: 'wall' },
+	      React.createElement(
+	        'p',
+	        null,
+	        'Tiles left in the wall:'
+	      ),
+	      tiles
+	    );
+	  },
+
+	  renderDiscardsSeen() {
+	    if (!this.state.currentGame) return null;
+	    var tiles = this.state.discardsSeen.map((tile, pos) => React.createElement(Tile, { value: tile, key: pos }));
+	    return React.createElement(
+	      'div',
+	      { className: 'discards-seen' },
+	      React.createElement(
+	        'p',
+	        null,
+	        'Discards so far:'
+	      ),
+	      tiles
+	    );
+	  },
+
+	  // ========================================================================
+
 	  changePlayerName(evt) {
 	    var settings = this.state.settings;
 	    settings.setName(evt.target.value);
@@ -501,18 +540,21 @@
 	    });
 	  },
 
-	  setInitialTiles(tiles) {
+	  // ========================================================================
+
+	  setInitialTiles(tiles, wallSize) {
 	    var players = this.state.players;
 	    players.map(player => {
 	      if (player.position !== this.state.currentGame.position) {
 	        player.handSize = tiles.length;
 	      }
 	    });
-	    this.setState({ players, tiles });
+	    this.setState({ players, tiles, wallSize });
 	  },
 
 	  addTile(tile, wallSize) {
 	    this.setState({
+	      currentDiscard: false,
 	      ourturn: true,
 	      drawtile: tile,
 	      wallSize
@@ -520,17 +562,24 @@
 	  },
 
 	  playerReceivedDeal(playerPosition) {
+	    if (playerPosition === this.state.currentGame.position) return;
 	    var players = this.state.players;
 	    players[playerPosition].handSize++;
+	    var discardsSeen = this.state.discardsSeen;
+	    var currentDiscard = this.state.currentDiscard;
+	    console.log(currentDiscard);
+	    discardsSeen.push(currentDiscard.tile);
 	    this.setState({
 	      ourturn: false,
 	      players,
-	      currentDiscard: false
+	      currentDiscard: false,
+	      discardsSeen: discardsSeen,
+	      wallSize: this.state.wallSize - 1
 	    });
 	  },
 
 	  setTilesPriorToDiscard(tiles, bonus, revealed) {
-	    this.setState({ currentDiscard: false, tiles, bonus, revealed, discarding: true });
+	    this.setState({ tiles, bonus, revealed, discarding: true });
 	  },
 
 	  discard(evt) {
@@ -574,7 +623,6 @@
 	  ignoreClaim() {
 	    var claim = { claimType: Constants.NOTHING };
 	    this.state.currentDiscard.sendClaim(claim);
-	    this.setState({ currentDiscard: false });
 	  },
 
 	  getClaim() {
@@ -611,7 +659,10 @@
 	    var players = this.state.players;
 	    var player = players[playerPosition];
 	    player.bonus = player.bonus.concat(tiles);
-	    this.setState({ players });
+	    this.setState({
+	      players,
+	      wallSize: this.state.wallSize - 1
+	    });
 	  },
 
 	  revealAllTiles(alltiles, onReveal) {
@@ -20710,9 +20761,9 @@
 	    this.app.setGameData(JSON.parse(JSON.stringify(data)));
 	  }
 
-	  setInitialTiles(tiles) {
-	    super.setInitialTiles(tiles);
-	    this.app.setInitialTiles(JSON.parse(JSON.stringify(tiles)));
+	  setInitialTiles(tiles, wallSize) {
+	    super.setInitialTiles(tiles, wallSize);
+	    this.app.setInitialTiles(JSON.parse(JSON.stringify(tiles)), wallSize);
 	  }
 
 	  addTile(tile, wallSize) {
@@ -20860,7 +20911,7 @@
 	   * bonus tiles, which need to be moved out
 	   * and compensated for, handled in 'checkDealBonus'.
 	   */
-	  setInitialTiles(tiles) {
+	  setInitialTiles(tiles, wallSize) {
 	    this.tiles = tiles.map(v => parseInt(v));
 	    this.players.forEach(player => {
 	      player.handSize = this.tiles.length;
@@ -21137,7 +21188,7 @@
 
 	      c.subscribe('initial-tiles', data => {
 	        this.log('initial tiles for ${this.name}: ', data.tiles);
-	        this.setInitialTiles(data.tiles);
+	        this.setInitialTiles(data.tiles, parseInt(data.wallSize));
 	      });
 
 	      c.subscribe('deal-bonus-compensation', data => {
@@ -30467,10 +30518,7 @@
 	    className: 'tile' + (props.highlight ? ' highlight' : ''),
 	    'data-tile': props.value,
 	    src: '/images/tiles/classic/' + props.value + '.jpg',
-	    onClick: props.disabled ? null : props.onClick,
-	    style: {
-	      width: '2em'
-	    }
+	    onClick: props.disabled ? null : props.onClick
 	  };
 	  return React.createElement('img', opts);
 	};

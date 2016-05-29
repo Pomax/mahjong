@@ -22,9 +22,9 @@ class ClientPassThrough extends BaseClient {
     this.app.setGameData(JSON.parse(JSON.stringify(data)));
   }
 
-  setInitialTiles(tiles) {
-    super.setInitialTiles(tiles);
-    this.app.setInitialTiles(JSON.parse(JSON.stringify(tiles)));
+  setInitialTiles(tiles, wallSize) {
+    super.setInitialTiles(tiles, wallSize);
+    this.app.setInitialTiles(JSON.parse(JSON.stringify(tiles)), wallSize);
   }
 
   addTile(tile, wallSize) {

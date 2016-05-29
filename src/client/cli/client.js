@@ -34,9 +34,9 @@ class Client extends BaseClient {
     super.setGameData(data);
   }
 
-  setInitialTiles(tiles) {
+  setInitialTiles(tiles, wallSize) {
     console.log("Getting tiles for this round...");
-    super.setInitialTiles(tiles);
+    super.setInitialTiles(tiles, wallSize);
     console.log("Tiles received, starting the round.\n");
   }
 
