@@ -189,7 +189,16 @@ var ClientApp = React.createClass({
     if (!this.state.currentGame) return <div className="discard"/>;
 
     if (this.state.ourturn) {
-      content = <button onClick={this.discard} data-tile={Constants.NOTILE}>Declare win</button>;
+      content = [
+        <button onClick={this.discard} data-tile={Constants.NOTILE}>Declare win</button>
+      ];
+      if (this.state.kongs) {
+        this.state.kongs.forEach(tile => {
+          content.push(
+            <button onClick={() => this.declareKong(tile)}>Declare kong {tile}</button>
+          );
+        });
+      }
     }
 
     var currentDiscard = this.state.currentDiscard;
@@ -214,7 +223,6 @@ var ClientApp = React.createClass({
     var mayChow = (from + 1)%4 === this.state.currentGame.position;
     return <ClaimMenu mayChow={mayChow} claim={this.sendClaim} />;
   },
-
 
   renderWall() {
     if (!this.state.currentGame) return null;
@@ -386,7 +394,24 @@ var ClientApp = React.createClass({
   },
 
   setTilesPriorToDiscard(tiles, bonus, revealed) {
-    this.setState({ tiles, bonus, revealed, discarding:true });
+    this.setState({
+      tiles,
+      bonus,
+      revealed,
+      discarding:true
+    });
+    // do we have any kongs in hand? If so, allow
+    // the player to claim them.
+    var kongs = [];
+    var singles = tiles.filter((t,pos) => tiles.indexOf(t)===pos);
+    var tstring = tiles.join('');
+    singles.forEach(s => {
+      let sstring = ""+s+s+s+s;
+      if (tstring.indexOf(sstring)>-1) {
+        kongs.push(s);
+      }
+    });
+    this.setState({ kongs });
   },
 
   discard(evt) {

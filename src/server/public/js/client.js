@@ -352,11 +352,21 @@
 	    if (!this.state.currentGame) return React.createElement('div', { className: 'discard' });
 
 	    if (this.state.ourturn) {
-	      content = React.createElement(
+	      content = [React.createElement(
 	        'button',
 	        { onClick: this.discard, 'data-tile': Constants.NOTILE },
 	        'Declare win'
-	      );
+	      )];
+	      if (this.state.kongs) {
+	        this.state.kongs.forEach(tile => {
+	          content.push(React.createElement(
+	            'button',
+	            { onClick: () => this.declareKong(tile) },
+	            'Declare kong ',
+	            tile
+	          ));
+	        });
+	      }
 	    }
 
 	    var currentDiscard = this.state.currentDiscard;
@@ -579,7 +589,24 @@
 	  },
 
 	  setTilesPriorToDiscard(tiles, bonus, revealed) {
-	    this.setState({ tiles, bonus, revealed, discarding: true });
+	    this.setState({
+	      tiles,
+	      bonus,
+	      revealed,
+	      discarding: true
+	    });
+	    // do we have any kongs in hand? If so, allow
+	    // the player to claim them.
+	    var kongs = [];
+	    var singles = tiles.filter((t, pos) => tiles.indexOf(t) === pos);
+	    var tstring = tiles.join('');
+	    singles.forEach(s => {
+	      let sstring = "" + s + s + s + s;
+	      if (tstring.indexOf(sstring) > -1) {
+	        kongs.push(s);
+	      }
+	    });
+	    this.setState({ kongs });
 	  },
 
 	  discard(evt) {

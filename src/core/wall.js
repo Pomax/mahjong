@@ -23,6 +23,12 @@ class Wall {
       tile = tiles.splice(pos, 1)[0];
       this.tiles.push(tile);
     }
+
+    this.rigWall(this.tiles);
+  }
+
+  rigWall(tiles) {
+    // TODO: rig a wall
   }
 
   length() {
