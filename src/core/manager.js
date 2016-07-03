@@ -25,18 +25,24 @@ class Manager {
 
   createPlayer(options, sendConnectionInformation) {
     var player;
-    // reexisting player?
+
+    // preexisting player?
     if (options.uuid) {
       player = this.getPlayerByUUID(options.uuid);
       if (player) {
         console.log("new player is actually existing player:", options);
-        player.setupConnectorAgain(() => {
-          sendConnectionInformation(player.id, player.uuid, player.connector.port, player);
-        });
-        player.sendGamelistUpdate(this.getGameList());
-        return player;
+
+        // TODO: either reconnect or build new socket.
+
+//        player.setupConnectorAgain(() => {
+//          console.log("sending connection information to ", options.name);
+//          sendConnectionInformation(player.id, player.uuid, player.connector.port, player);
+//        });
+//        player.sendGamelistUpdate(this.getGameList());
+//        return player;
       }
     }
+
     // new player
     options.name = options.name || 'player ${options.id}';
     var playerid = playerids.next();

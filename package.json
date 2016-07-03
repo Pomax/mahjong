@@ -9,12 +9,14 @@
     "mahjong-web": "./bin/mahjong-web"
   },
   "scripts": {
+    "fix": "node src/lib/fix.js",
     "test": "node src/core/test/test.js",
     "cli": "node src/client/cli/test.js",
     "server": "node src/server/server.js",
     "open": "node-open http://localhost:8081/client",
     "dev": "webpack --prod --progress --colors --watch --config ./src/client/web/webpack.config.js",
-    "web": "npm-run-all --parallel server dev open"
+    "web": "npm-run-all --parallel server dev open",
+    "start": "npm run web"
   },
   "author": "Pomax",
   "dependencies": {

@@ -120,6 +120,7 @@
 	        null,
 	        this.state.modal
 	      ) : null,
+	      this.renderHandInformation(),
 	      this.renderDiscard(),
 	      this.renderPlayers(),
 	      this.renderWall(),
@@ -347,6 +348,18 @@
 	    return Tiles.getPositionWind(position);
 	  },
 
+	  renderHandInformation() {
+	    if (!this.state.currentGame) return null;
+	    return React.createElement(
+	      'div',
+	      null,
+	      'Hand ',
+	      this.state.currentGame.handid,
+	      ', wind of the round: ',
+	      this.state.currentGame.windOfTheRound
+	    );
+	  },
+
 	  renderDiscard() {
 	    var content = null;
 	    if (!this.state.currentGame) return React.createElement('div', { className: 'discard' });
@@ -522,7 +535,8 @@
 	      pendingGameId: false,
 	      tiles: [],
 	      bonus: [],
-	      revealed: []
+	      revealed: [],
+	      discardsSeen: []
 	    });
 	    if (data.tileSituation) {
 	      this.updatePlayerInformation(data.tileSituation, data.currentDiscard);
@@ -546,7 +560,8 @@
 	      bonus: us.bonus,
 	      revealed: us.revealed,
 	      discarding: !currentDiscard,
-	      currentDiscard
+	      currentDiscard,
+	      discardsSeen: []
 	    });
 	  },
 
@@ -573,17 +588,21 @@
 
 	  playerReceivedDeal(playerPosition) {
 	    if (playerPosition === this.state.currentGame.position) return;
+
 	    var players = this.state.players;
 	    players[playerPosition].handSize++;
 	    var discardsSeen = this.state.discardsSeen;
 	    var currentDiscard = this.state.currentDiscard;
-	    console.log(currentDiscard);
-	    discardsSeen.push(currentDiscard.tile);
+	    if (currentDiscard) {
+	      discardsSeen.push(currentDiscard.tile);
+	    } else {
+	      console.log(currentDiscard);
+	    }
 	    this.setState({
 	      ourturn: false,
 	      players,
 	      currentDiscard: false,
-	      discardsSeen: discardsSeen,
+	      discardsSeen,
 	      wallSize: this.state.wallSize - 1
 	    });
 	  },
@@ -21193,11 +21212,6 @@
 	   */
 	  setSocketBindings(port, connector, afterBinding) {
 	    var c = this.connector = connector;
-
-	    // make _sure_ this event is bound before we bind connection listening.
-	    c.subscribe('reconnection-data', data => {
-	      this.setReconnectionData(data);
-	    });
 
 	    c.subscribe('connect', data => {
 	      this.log('connected on port ${port}');

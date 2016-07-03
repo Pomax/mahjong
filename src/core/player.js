@@ -40,9 +40,9 @@ class Player {
     this.setConnnectorBindings(reconnection);
   }
 
-  setupConnectorAgain(sendConnectionInformation) {
-    this.setupConnector(sendConnectionInformation, true);
-  }
+//  setupConnectorAgain(sendConnectionInformation) {
+//    this.setupConnector(sendConnectionInformation, true);
+//  }
 
   lostConnection() {
     if (this.connected) {
@@ -66,38 +66,45 @@ class Player {
     c.subscribe('verify-result', data => this.verifyResultFromClient(data));
     // enabled for development only
     c.subscribe('disable-claim-timeout', data => this.disableClaimTimeout(data));
-    // if this is a reconnection, we need to communicate in-game information
-    if (reconnection) { this.sendReconnectionData(c); }
     this.connected = true;
+
+//    // if this is a reconnection, we need to communicate in-game information
+//    if (reconnection) {
+//      this.sendReconnectionData(c);
+//    }
   }
 
   sendGamelistUpdate(gamelist) {
     this.connector.publish('game-list', gamelist);
   }
 
-  sendReconnectionData(c) {
-    if (!this.game) return;
-    var currentDiscard = false;
-    if (this.hand.currentDiscard) {
-      currentDiscard = {
-        tile: this.hand.currentDiscard,
-        from: this.hand.discardingPlayer
-      }
-    }
-    c.publish('reconnection-data', {
-      ruleset: this.game.rulesetName,
-      gameid: this.game.id,
-      handid: this.hand.id,
-      position: this.position,
-      windOfTheRound: this.windOfTheRound,
-      playerNames: this.competitors,
-      tiles: this.tiles,
-      bonus: this.bonus,
-      revealed: this.revealed,
-      currentDiscard,
-      tileSituation: this.hand.getCurrentTileSituation(this)
-    });
-  }
+  // sendReconnectionData(c) {
+  //   if (!this.game) return;
+  //   var currentDiscard = false;
+  //   if (this.hand.currentDiscard) {
+  //     currentDiscard = {
+  //       tile: this.hand.currentDiscard,
+  //       from: this.hand.discardingPlayer
+  //     }
+  //   }
+
+  //   var reconnectionData = {
+  //     ruleset: this.game.rulesetName,
+  //     gameid: this.game.id,
+  //     handid: this.hand.id,
+  //     position: this.position,
+  //     windOfTheRound: this.windOfTheRound,
+  //     playerNames: this.competitors,
+  //     tiles: this.tiles,
+  //     bonus: this.bonus,
+  //     revealed: this.revealed,
+  //     currentDiscard,
+  //     tileSituation: this.hand.getCurrentTileSituation(this)
+  //   };
+
+  //   // this causes a weird connection loop
+  //   c.publish('reconnection-data-cake', reconnectionData);
+  // }
 
   getCurrentTileSituation(requestingPlayer) {
     if (this === requestingPlayer) {

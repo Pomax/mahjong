@@ -55,7 +55,7 @@ app.get('/register/:name/:uuid', (req, res) => {
     uuid: req.params.uuid
   };
   gm.createPlayer(options, (id, uuid, port, player) => {
-    console.log("createplayer response for "+player.name);
+    console.log("createplayer response for", player.name);
     res.json({ id, uuid, port });
   });
 });

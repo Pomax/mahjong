@@ -49,6 +49,7 @@ var ClientApp = React.createClass({
           { this.renderLobby() }
         </div>
         {this.state.modal ? <div>{this.state.modal}</div> : null}
+        { this.renderHandInformation() }
         { this.renderDiscard() }
         { this.renderPlayers() }
         { this.renderWall() }
@@ -182,6 +183,11 @@ var ClientApp = React.createClass({
 
   getWindFor(position) {
     return Tiles.getPositionWind(position);
+  },
+
+  renderHandInformation() {
+    if (!this.state.currentGame) return null;
+    return <div>Hand {this.state.currentGame.handid}, wind of the round: {this.state.currentGame.windOfTheRound}</div>;
   },
 
   renderDiscard() {
@@ -325,7 +331,8 @@ var ClientApp = React.createClass({
       pendingGameId: false,
       tiles: [],
       bonus: [],
-      revealed: []
+      revealed: [],
+      discardsSeen: []
     });
     if (data.tileSituation) {
       this.updatePlayerInformation(data.tileSituation, data.currentDiscard);
@@ -349,7 +356,8 @@ var ClientApp = React.createClass({
       bonus: us.bonus,
       revealed: us.revealed,
       discarding: !currentDiscard,
-      currentDiscard
+      currentDiscard,
+      discardsSeen: []
     });
   },
 
@@ -378,17 +386,21 @@ var ClientApp = React.createClass({
 
   playerReceivedDeal(playerPosition) {
     if (playerPosition === this.state.currentGame.position) return;
+
     var players = this.state.players;
     players[playerPosition].handSize++;
     var discardsSeen = this.state.discardsSeen;
     var currentDiscard = this.state.currentDiscard;
-    console.log(currentDiscard);
-    discardsSeen.push(currentDiscard.tile);
+    if (currentDiscard) {
+      discardsSeen.push(currentDiscard.tile);
+    } else {
+      console.log(currentDiscard);
+    }
     this.setState({
       ourturn: false,
       players,
       currentDiscard: false,
-      discardsSeen: discardsSeen,
+      discardsSeen,
       wallSize: this.state.wallSize - 1
     });
   },

@@ -300,11 +300,6 @@ class Client {
   setSocketBindings(port, connector, afterBinding) {
     var c = this.connector = connector;
 
-    // make _sure_ this event is bound before we bind connection listening.
-    c.subscribe('reconnection-data', data => {
-      this.setReconnectionData(data);
-    });
-
     c.subscribe('connect', data => {
       this.log('connected on port ${port}');
       this.socketPreBindings();
