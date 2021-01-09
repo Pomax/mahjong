@@ -1,0 +1,82 @@
+:root {
+    --green: rgb(50,120,50);
+    --cream: rgb(245,240,220);
+    --blue: rgb(20,50,180);
+    --prp: rgb(70,0,70);
+    --red: rgb(207, 24, 24);
+    --ochre: rgb(81, 77, 53);
+}
+
+.hidden {
+    display: none!important;
+}
+
+html {
+    background: var(--green);
+}
+
+body {
+    background: white;
+    width: 800px;
+    padding: 10px 80px 1em 80px;
+    margin: auto;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: Verdana;
+}
+
+h1 { font-size: 2rem; }
+
+h2 { font-size: 1.75rem; }
+
+p, li {
+    text-indent: 1em;
+    font-family: Arial, Hiragino, "MS Gothic", sans-serif;
+    text-align: justify;
+}
+
+ul {
+    width: 90%;
+}
+
+li, li > p {
+    text-indent: 0;
+}
+
+li img {
+    border: 1px solid black;
+    margin: 2px;
+    border-radius: 5px;
+}
+
+li + li {
+    margin-top: 1em
+}
+
+section table {
+    margin-left: 2em;
+}
+section table td {
+    border: 1px solid black;
+    text-align: center;
+}
+
+footer {
+    position: relative;
+    font-family: Verdana;
+    font-size: 85%;
+    text-align: center;
+}
+
+#this-game ul, #controls ul {
+    margin: 1em
+}
+
+#this-game ul li, #controls ul li {
+    margin: 0;
+}
+
+.fund {
+    float: right;
+}

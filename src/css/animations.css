@@ -1,0 +1,41 @@
+/**
+ * Tile discard animations
+ */
+
+game-tile.discard[from] {
+  position: relative;
+  top: 0;
+  left: 0;
+  transition: top, left;
+}
+
+@keyframes p0-discard { 0% { top: 20em; } 100% { top: 0; } }
+@keyframes p1-discard { 0% { left: -20em; } 100% { left: 0; } }
+@keyframes p2-discard { 0% { top: -20em; } 100% { top: 0; } }
+@keyframes p3-discard { 0% { left: 20em; } 100% { left: 0; } }
+
+game-tile.discard[from="0"] { animation: p0-discard 0.5s; }
+game-tile.discard[from="1"] { animation: p1-discard 0.5s; }
+game-tile.discard[from="2"] { animation: p2-discard 0.5s; }
+game-tile.discard[from="3"] { animation: p3-discard 0.5s; }
+
+@keyframes fade-out { 0% { opacity: 1; } 66% { opacity: 1; } 100% { opacity: 0; } }
+
+.announcement[data-player] {
+  opacity: 0;
+  background: white;
+  color: var(--prp);
+  border: 1px solid var(--prp);
+  box-shadow: 0 0 3px 0 var(--prp);
+  position: absolute;
+  border-radius: 7px;
+  padding: 0px 5px 2px;
+  font-family: verdana;
+  animation: fade-out 2s;
+  width: var(--ph);
+  text-align: center;
+}
+.announcement[data-player="0"] { bottom: var(--ph); right: calc(50% - 2em); }
+.announcement[data-player="1"] { left: var(--ph); top: 50%; }
+.announcement[data-player="2"] { top: var(--ph); right: calc(50% - 2em); }
+.announcement[data-player="3"] { right: calc(var(--ph) * 1); top: 50%; }

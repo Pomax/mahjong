@@ -1,0 +1,133 @@
+game-tile {
+  display: inline-block;
+
+  --lw: calc(0.5 * var(--ph));
+  --lh: calc(0.7 * var(--ph));
+  width: var(--lw);
+  height: var(--lh);
+  min-width: var(--lw);
+  min-height: var(--lh);
+  max-width: var(--lw);
+  max-height: var(--lh);
+
+  position: relative;
+  z-index: 1; /* ends up over the score box if we have lots of tiles */
+  margin-bottom: 2px;
+
+  border: 1px solid black;
+  border-radius: calc(0.05 * var(--ph));
+
+  background-color: rgb(245, 245, 245);
+  background-size: 100%;
+  background-position: center center;
+  background-repeat: no-repeat;
+}
+
+.player game-tile {
+  margin-top: calc(calc(var(--ph) / 6));
+}
+
+game-tile.latest {
+  border-bottom: 3px solid lime;
+}
+
+game-tile.selectable.highlight {
+  box-shadow: 0 0 3px 3px lime;
+  position: relative;
+  z-index: 10;
+}
+
+.discards game-tile.selectable.highlight.suggestion {
+  box-shadow: 0 0 3px 3px fuchsia;
+}
+
+game-tile.suggestion {
+  border-top: 3px solid var(--prp);
+}
+
+game-tile.discard {
+  box-shadow: 0 0 3px 0 var(--cream);
+}
+
+game-tile + game-tile {
+  margin-left: 1px;
+}
+
+[tile="-1"] { content: "unknown"; background-image: url("../../img/tiles/concealed.jpg"); box-shadow: -1px -1px 1px 0 inset #0d450e; }
+
+[tile="0"] { content: "bamboo-1"; background-image: url("../../img/tiles/0.jpg");}
+[tile="1"] { content: "bamboo-2"; background-image: url("../../img/tiles/1.jpg");}
+[tile="2"] { content: "bamboo-3"; background-image: url("../../img/tiles/2.jpg");}
+[tile="3"] { content: "bamboo-4"; background-image: url("../../img/tiles/3.jpg");}
+[tile="4"] { content: "bamboo-5"; background-image: url("../../img/tiles/4.jpg");}
+[tile="5"] { content: "bamboo-6"; background-image: url("../../img/tiles/5.jpg");}
+[tile="6"] { content: "bamboo-7"; background-image: url("../../img/tiles/6.jpg");}
+[tile="7"] { content: "bamboo-8"; background-image: url("../../img/tiles/7.jpg");}
+[tile="8"] { content: "bamboo-9"; background-image: url("../../img/tiles/8.jpg");}
+
+[tile="9"] { content: "characters-1"; background-image: url("../../img/tiles/9.jpg");}
+[tile="10"] { content: "characters-2"; background-image: url("../../img/tiles/10.jpg");}
+[tile="11"] { content: "characters-3"; background-image: url("../../img/tiles/11.jpg");}
+[tile="12"] { content: "characters-4"; background-image: url("../../img/tiles/12.jpg");}
+[tile="13"] { content: "characters-5"; background-image: url("../../img/tiles/13.jpg");}
+[tile="14"] { content: "characters-6"; background-image: url("../../img/tiles/14.jpg");}
+[tile="15"] { content: "characters-7"; background-image: url("../../img/tiles/15.jpg");}
+[tile="16"] { content: "characters-8"; background-image: url("../../img/tiles/16.jpg");}
+[tile="17"] { content: "characters-9"; background-image: url("../../img/tiles/17.jpg");}
+
+[tile="18"] { content: "dots-1"; background-image: url("../../img/tiles/18.jpg");}
+[tile="19"] { content: "dots-2"; background-image: url("../../img/tiles/19.jpg");}
+[tile="20"] { content: "dots-3"; background-image: url("../../img/tiles/20.jpg");}
+[tile="21"] { content: "dots-4"; background-image: url("../../img/tiles/21.jpg");}
+[tile="22"] { content: "dots-5"; background-image: url("../../img/tiles/22.jpg");}
+[tile="23"] { content: "dots-6"; background-image: url("../../img/tiles/23.jpg");}
+[tile="24"] { content: "dots-7"; background-image: url("../../img/tiles/24.jpg");}
+[tile="25"] { content: "dots-8"; background-image: url("../../img/tiles/25.jpg");}
+[tile="26"] { content: "dots-9"; background-image: url("../../img/tiles/26.jpg");}
+
+[tile="27"] { content: "E"; background-image: url("../../img/tiles/27.jpg");}
+[tile="28"] { content: "S"; background-image: url("../../img/tiles/28.jpg");}
+[tile="29"] { content: "W"; background-image: url("../../img/tiles/29.jpg");}
+[tile="30"] { content: "N"; background-image: url("../../img/tiles/30.jpg");}
+
+[tile="31"] { content: "F"; background-image: url("../../img/tiles/31.jpg");}
+[tile="32"] { content: "C"; background-image: url("../../img/tiles/32.jpg");}
+[tile="33"] { content: "P"; background-image: url("../../img/tiles/33.jpg");}
+
+[tile="38"] { content: "spring"; background-image: url("../../img/tiles/38.jpg");}
+[tile="39"] { content: "summer"; background-image: url("../../img/tiles/39.jpg");}
+[tile="40"] { content: "fall"; background-image: url("../../img/tiles/40.jpg");}
+[tile="41"] { content: "winter"; background-image: url("../../img/tiles/41.jpg");}
+
+[tile="34"] { content: "orchid"; background-image: url("../../img/tiles/34.jpg");}
+[tile="35"] { content: "plum"; background-image: url("../../img/tiles/35.jpg");}
+[tile="36"] { content: "chrysanthemum"; background-image: url("../../img/tiles/36.jpg");}
+[tile="37"] { content: "bamboo"; background-image: url("../../img/tiles/37.jpg");}
+
+game-tile[hidden] {
+  content: "unknown";
+  background-image: url("../../img/tiles/concealed.jpg");
+}
+
+game-tile[locked] {
+  margin-top: calc(0em - calc(var(--ph) / 6));
+  margin-top: calc(0em - calc(var(--ph) / 6));
+  width: calc(var(--lw) / 1.3);
+  height: calc(var(--lh) / 1.3);
+  min-height: 0;
+  min-width: 0;
+}
+
+game-tile[bonus] {
+  border: 1px solid red;
+}
+
+game-tile[winning] {
+  border-width: 5px 1px 1px 1px;
+  border-top-color: #00ff42;
+}
+
+game-tile[concealed] {
+  background-color: var(--green);
+  background-position: center calc(var(--lh) / 6);
+}

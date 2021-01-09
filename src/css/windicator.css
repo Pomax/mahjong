@@ -1,0 +1,134 @@
+.windicator {
+  --wi: 1.5em;
+  --slide: 0em;
+  --speed: 0.3s;
+  --fade-speed: 0.5s;
+  --wotr-dim: 8em;
+  --inner-dim: calc(var(--wotr-dim) / 6);
+  --offset: -11.5em;
+
+  font-family: Hiragina, 'MS Mincho', sans-serif;
+  border: 3px solid gold;
+  background: darkgreen;
+  width: var(--wotr-dim);
+  height: var(--wotr-dim);
+  position: absolute;
+  z-index: 2;
+  top: calc(50% - calc(var(--wotr-dim) / 2));
+  left: calc(50% - calc(var(--wotr-dim) / 2));
+  transform: rotate(45deg);
+  box-shadow: 3px 3px 13px 3px black;
+  margin-top: var(--offset);
+  margin-left: var(--offset);
+}
+
+.finished .windicator {
+  z-index: 10;
+}
+
+.windicator .wind-of-the-round {
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  text-indent: calc(calc(1em / 8) - var(--slide));
+  transition: text-indent;
+  transition-duration: var(--speed);
+  transition-timing-function: ease-in-out;
+  color: white;
+  font-size: calc(var(--wotr-dim) / 2.5);
+  position: absolute;
+  left: calc(50% - calc(var(--inner-dim) / 1.8));
+  top: calc(50% - calc(var(--inner-dim) / 1.8));
+  width: var(--inner-dim);
+  height: var(--inner-dim);
+  overflow: hidden;
+  background: indigo;
+  border: 3px solid gold;
+  transform: rotate(-45deg);
+  box-shadow: 3px 3px 13px 3px black;
+}
+
+.windicator .player-wind {
+  display: flex;
+  font-weight: 400;
+  justify-content: center;
+  align-items: center;
+  color: gold;
+  background: #222;
+  border: 1px solid gold;
+  box-shadow: 0 0 4px 1px gold;
+  border-radius: 50%;
+  margin: 3px;
+  position: absolute;
+  width: var(--wi);
+  height: var(--wi);
+  transform: rotate(-45deg);
+  transition: left, top, right, bottom;
+  transition-duration: var(--speed);
+  transition-timing-function: linear;
+}
+
+.windicator .e {
+  text-indent: 1px;
+}
+
+.windicator .tc {
+  left: 0;
+  top: 0;
+}
+
+.windicator .rc {
+  top: 0;
+  left: calc(100% - calc(1.35 * var(--wi)));
+}
+
+.windicator .bc {
+  top: calc(100% - calc(1.35 * var(--wi)));
+  left: calc(100% - calc(1.35 * var(--wi)));
+}
+
+.windicator .lc {
+  top: calc(100% - calc(1.35 * var(--wi)));
+  left: 0;
+}
+
+.windicator.done .wind-of-the-round {
+  color: transparent;
+}
+
+.windicator.done .wind-of-the-round:before {
+  text-indent: 0;
+  content: '〆';
+  color: white;
+  font-family: Hiragino, 'MS Mincho', sans-serif;
+  font-size: 300%;
+  position: absolute;
+  z-index: 3;
+  height: 1em;
+  width: 1em;
+  font-size: 123%;
+}
+
+.windicator.done .player-wind {
+  opacity: 0.2;
+}
+
+.windicator .hand-counter {
+  height: 1em;
+  color: gold;
+  position: absolute;
+  z-index: 100;
+  top: calc(calc(var(--wotr-dim) / 2) - 1.9em);
+  left: calc(calc(0em - calc(var(--wotr-dim) / 2)) - 1.4em);
+  transform: rotate(-45deg);
+  text-align: left;
+  font-family: arial;
+  padding: 4px;
+  padding-top: 4px;
+  font-weight: bold;
+  font-variant: small-caps;
+}
+
+.finished .windicator .hand-counter {
+  display: none;
+}

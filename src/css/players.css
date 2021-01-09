@@ -1,0 +1,85 @@
+:root {
+    --ph: 4em;
+    --sep: 3px;
+
+    --p1: 180deg;
+    --p2: 270deg;
+    --p3: 0deg;
+    --p4: 90deg;
+}
+
+
+.player {
+  width: calc(var(--w) - var(--ph));
+  height: var(--ph);
+  transform-origin: calc(var(--ph) / 2) calc(var(--ph) / 2);
+  color: var(--cream);
+  font-family: Verdana;
+  font-weight: bold;
+  text-shadow: 0 0 3px var(--prp);
+  border: var(--sep) solid var(--green);
+  box-sizing: border-box;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: var(--cream);
+}
+
+.player.waiting { background: rgb(248, 235, 144); }
+.player.winner { background: gold; }
+.player.winner:before { content: '✧'; }
+.player.game-winner { border: 4px solid gold; background: indigo; }
+
+.player.active::before { background: var(--blue); }
+.player::before {
+  content: attr(id);
+  white-space: pre;
+  font-weight: 400;
+  margin: 0.5em;
+  border: 1px solid var(--prp);
+  border-radius: 25%;
+  box-shadow: 0 0 6px 0px var(--prp);
+  padding: 0em 0.3em 0.1em;
+  text-align: center;
+  background: var(--green);
+  position: absolute;
+  left: 0;
+  z-index: 0;
+}
+
+.player::after {
+  /* content: attr(data-wincount); */
+  content: attr(data-score);
+  background: var(--prp);
+  box-shadow: 0 0 4px 0 var(--prp);
+  padding: 2px 5px;
+  position: absolute;
+  z-index: 0;
+  right: var(--sep);
+}
+
+.finished .player::after {
+  z-index: 100;
+}
+
+
+.player:nth-child(1) {
+  --xp: calc(var(--ph) - var(--w));
+  transform: rotate(var(--p1)) translate(var(--xp), 0);
+}
+
+.player:nth-child(2) {
+  --xp: calc(calc(2 * var(--ph)) - var(--w));
+  --yp: calc(var(--w) - var(--ph));
+  transform: rotate(var(--p2)) translate(var(--xp),var(--yp));
+}
+
+.player:nth-child(3) {
+  --yp: calc(var(--w) - calc(3 * var(--ph)));
+  transform: rotate(var(--p3)) translate(0, var(--yp));
+}
+
+.player:nth-child(4) {
+  --xp: calc(0em - calc(3 * var(--ph)));
+  transform: rotate(var(--p4)) translate(var(--xp), 0em);
+}

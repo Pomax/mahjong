@@ -1,0 +1,63 @@
+
+
+.discards {
+  --d: calc(var(--w) - calc(2 * var(--ph)));
+  position: absolute;
+  top: var(--ph);
+  left: var(--ph);
+  width: var(--d);
+  height: var(--d);
+  background-color: var(--prp);
+  background-image: url('../../img/background/opacity-05.png');
+  background-size: 100% 100%;
+  border: calc(3 * var(--sep)) solid var(--green);
+  box-sizing: border-box;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  color: var(--prp);
+  font-family: Arial;
+  font-weight: bold;
+  font-variant: small-caps;
+  text-shadow: 0 0 4px var(--cream);
+  overflow: hidden;
+}
+
+.discards::after {
+  position: absolute;
+  z-index: 10;
+  opacity: 0.9;
+  box-shadow: 0 0 10px 2px var(--prp);
+  padding: 20em;
+  white-space: nowrap;
+}
+
+.discards.exhausted::after {
+  content: "NO TILES LEFT TO DEAL: HAND IS A DRAW";
+  background: rgba(42, 7, 63, 0.67);
+}
+
+.discards.paused::after {
+  content: "GAME PAUSED";
+  background: rgba(42, 7, 63, 0.67);
+}
+
+.finished .discards::after {
+  content: "GAME WAS FINISHED - WINNING PLAYER IS HIGHLIGHTED";
+  background: rgba(42, 7, 63, 0.67);
+}
+
+.discards .countdown-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  background: transparent;
+  width: 0%;
+  box-sizing: border-box;
+}
+
+.discards .countdown-bar.active {
+  background: gold
+}

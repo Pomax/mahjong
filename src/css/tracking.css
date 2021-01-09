@@ -1,0 +1,40 @@
+
+.sidebar {
+  background: var(--green);
+  background-image: url('../../img/background/opacity-05-strip.png');
+  width: 10em;
+  height: var(--h);
+  position: relative;
+  z-index: 2;
+  right: calc(-100% - var(--sep));
+  top: calc(6.5em - calc(var(--h) / 2));
+  width: calc(4em + calc(2 * var(--sep)));
+  border: 1px solid black;
+  box-sizing: border-box;
+}
+
+.knowledge {
+  background: rgba(0,0,0,0.3);
+  transform: scale(0.9, 0.99) translate(1px, 0);
+  width: calc(100% - 2px);
+  height: calc(100% - 2px);
+}
+
+.tile-count {
+  height: calc(var(--h) / 34);
+  padding-left: 1px;
+}
+
+.tile-count game-tile[tile] {
+  display: inline-block;
+  background-size: auto 100%;
+  background-repeat: no-repeat;
+  height: calc(100% - 2px);
+  width: calc(calc(100% - 4px) / 4);
+  min-width: auto;
+  max-width: auto;
+  min-height: auto;
+  max-height: auto;
+  border: none;
+  border-radius: 0;
+}

@@ -1,0 +1,30 @@
+:root {
+    --w: 45em;
+    --h: var(--w);
+}
+
+.board {
+  position: relative;
+  width: var(--w);
+  height: var(--h);
+  background-color: var(--green);
+  outline: none;
+}
+
+.board .players {
+  transform: scale(-1, -1);
+  transform-origin: 50% calc(var(--h) / 2);
+}
+
+.board .wall.data {
+  position: absolute;
+  right: 5rem;
+  width: 7.5rem;
+  z-index: 10;
+  color: gold;
+  top: calc(var(--ph) * 1.5);
+  font-family: verdana;
+  font-weight: bold;
+  font-size: 0.8rem;
+  text-align: right;
+}
