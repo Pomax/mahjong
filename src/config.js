@@ -115,7 +115,7 @@ const DEFAULTS = {
 
 // runtime overrides?
 if (typeof window !== "undefined") {
-    let params = new URLSearchParams(window.location.search.replace(/(\w+)=/g, (a,b) => b.toUpperCase() + '='));
+    let params = new URLSearchParams(window.location.search.replace(/([a-z_]+)=/g, (a,b) => b.toUpperCase() + '='));
 
     DEBUG = (params.get(`DEBUG`)==='true') ? true : DEBUG;
     NO_SOUND = (params.get(`NO_SOUND`)==='true') ? true : NO_SOUND;
