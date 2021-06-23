@@ -1,6 +1,6 @@
 # Mahjong. In the browser.
 
-1: We're talking real four player mahjong here. Not the one player solitair game. That "game" has literally nothing to do with mahjong.
+1: We're talking real "four players sitting around a table" mahjong here. Not the "one player solitaire" game. That game has literally nothing to do with mahjong.
 
 2: This README.md has been kept sparse pending a set of full length development articles that walk through going from "having an idea" to "having finished writing a fully functional game".
 
