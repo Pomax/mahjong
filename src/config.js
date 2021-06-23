@@ -125,8 +125,8 @@ if (typeof window !== "undefined") {
     PAUSE_ON_BLUR = (params.get(`PAUSE_ON_BLUR`)==='false') ? false: PAUSE_ON_BLUR;
     FORCE_DRAW = (params.get(`FORCE_DRAW`)==='true') ? true : FORCE_DRAW;
     FORCE_OPEN_BOT_PLAY = (params.get(`FORCE_OPEN_BOT_PLAY`)==='true') ? true : FORCE_OPEN_BOT_PLAY;
-    SHOW_CLAIM_SUGGESTION = (params.get(`SHOW_CLAIM_SUGGESTION`)==='true') ? true : SHOW_CLAIM_SUGGESTION;
-    SHOW_BOT_SUGGESTION = (params.get(`SHOW_BOT_SUGGESTION`)==='true') ? true : SHOW_BOT_SUGGESTION;
+    SHOW_CLAIM_SUGGESTION = (params.get(`SHOW_CLAIM_SUGGESTION`)==='false') ? false : SHOW_CLAIM_SUGGESTION;
+    SHOW_BOT_SUGGESTION = (params.get(`SHOW_BOT_SUGGESTION`)==='false') ? false : SHOW_BOT_SUGGESTION;
     BOT_CHICKEN_THRESHOLD = params.get(`BOT_CHICKEN_THRESHOLD`) ? parseFloat(params.get(`BOT_CHICKEN_THRESHOLD`)) : BOT_CHICKEN_THRESHOLD;
     PLAY_INTERVAL = params.get(`PLAY_INTERVAL`) ? parseInt(params.get(`PLAY_INTERVAL`)) : PLAY_INTERVAL;
     HAND_INTERVAL = params.get(`HAND_INTERVAL`) ? parseInt(params.get(`HAND_INTERVAL`)) : HAND_INTERVAL;
