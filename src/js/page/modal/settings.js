@@ -27,29 +27,29 @@ class SettingsModal {
     panel.appendChild(form);
 
     // add all config options here
-    const defaults = config.DEFAULTS;
+    const defaults = config.DEFAULT_CONFIG;
     const values = {};
 
-    const differs = key => defaults[key.toUpperCase()].toString() !== values[key];
+    const differs = key => defaults[key.toUpperCase()] != values[key];
 
     Object.keys(defaults).forEach(key => {
-      values[key.toLowerCase()] = config[key].toString();
+      values[key.toLowerCase()] = config[key];
     });
 
     const options = {
       'Rules': { key: 'rules', options: [...Ruleset.getRulesetNames()] },
       '-0': {},
-      '🀄 Always show everyone\'s tiles': { key: 'force_open_bot_play', options: ['true','false'] },
-      '✨ Highlight claimable discards': { key: 'show_claim_suggestion', options: ['true','false'] },
-      '💬 Show bot play suggestions': { key: 'show_bot_suggestion', options: ['true','false'] },
+      '🀄 Always show everyone\'s tiles': { key: 'force_open_bot_play', options: [true,false] },
+      '✨ Highlight claimable discards': { key: 'show_claim_suggestion', options: [true,false] },
+      '💬 Show bot play suggestions': { key: 'show_bot_suggestion', options: [true,false] },
       '-1': {},
       // flags
-      '💻 Turn on debug logging' : { key: 'debug', options: ['true','false'] },
-      '🎵 Play without sound': { key: 'no_sound', options: ['true','false'] },
-      '♻️ Autostart bot play': { key: 'play_immediately', options: ['true','false'] },
-      '🛑 Pause game unless focused': { key: 'pause_on_blur', options: ['true','false'] },
-      '😐 Pretend hands start after a draw': { key: 'force_draw', options: ['true','false'] },
-      '📃 Generate game log after play': { key: 'write_game_log', options: ['true','false'] },
+      '💻 Turn on debug logging' : { key: 'debug', options: [true,false] },
+      '🎵 Play without sound': { key: 'no_sound', options: [true,false] },
+      '♻️ Autostart bot play': { key: 'play_immediately', options: [true,false] },
+      '🛑 Pause game unless focused': { key: 'pause_on_blur', options: [true,false] },
+      '😐 Pretend previous round was a draw': { key: 'force_draw', options: [true,false] },
+      '📃 Generate game log after play': { key: 'write_game_log', options: [true,false] },
       '-2': {},
       // values
       'Set random number seed': { key: 'seed' },
@@ -57,6 +57,7 @@ class SettingsModal {
       'Delay (in ms) between player turns': { key: 'play_interval' },
       'Delay (in ms) before starting next hand': { key: 'hand_interval' },
       'Delay (in ms) for bots reacting to things': { key: 'bot_delay_before_discard_ends' },
+      'Delay (in ms) during full bot play': { key: 'bot_play_delay' },
       'Set up a specific wall': { key: 'wall_hack', options: ['', ...Object.keys(WallHack.hacks)], value: values.wall_hack },
     };
 
@@ -72,7 +73,9 @@ class SettingsModal {
       let row = document.createElement('tr');
       let field = `<input class="field" type"text" value="${value}">`;
       if (data.options) {
-        field = `<select class="field">${data.options.map(t => `<option value="${t}"${t===value? ` selected`:``}>${t.replace(/_/g,' ')}</option>`)}</select>`;
+        field = `<select class="field">${data.options.map(t =>
+          `<option value="${t}"${t===value? ` selected`:``
+        }>${`${t}`.replace(/_/g,' ')}</option>`)}</select>`;
       }
       row.innerHTML = `
         <td>${label}</td>

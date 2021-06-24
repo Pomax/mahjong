@@ -68,7 +68,7 @@ class Game {
   async pause() {
     if (!this.GAME_START) return;
     console.debug('pausing game');
-    
+
     let players = this.players;
 
     this._playLock = new Promise(resolve => {
@@ -126,7 +126,7 @@ class Game {
             let gamewinner = finalScores.indexOf(highest);
             console.log(`\nfull game played: player ${gamewinner} is the winner!`);
             console.log(`(game took ${s}s. ${this.totalPlays} plays: ${this.hand} hands, ${this.totalDraws} draws)`);
-            
+
             await players.asyncAll(p => p.endOfGame(finalScores));
 
             return this.finish(s);
@@ -159,7 +159,9 @@ class Game {
     });
 
     // used for play debugging:
-    if (config.PAUSE_ON_HAND && this.hand === config.PAUSE_ON_HAND) config.HAND_INTERVAL = 60 * 60 * 1000;
+    if (config.PAUSE_ON_HAND && this.hand === config.PAUSE_ON_HAND) {
+      config.HAND_INTERVAL = 60 * 60 * 1000;
+    }
 
     // "Starting hand" / "Restarting hand"
     let pre = result.draw ? 'Res' : 'S';
@@ -182,7 +184,7 @@ class Game {
     config.log(`initial deal`);
 
     await this.dealTiles();
-    
+
     players.forEach(p => {
       let message = `tiles for ${p.id}: ${p.getTileFaces()}`;
       console.debug(message);
@@ -192,7 +194,7 @@ class Game {
     config.log(`prepare play`);
 
     await this.preparePlay(config.FORCE_DRAW || this.draws > 0);
-    
+
     players.forEach(p => {
       let message = `tiles for ${p.id}: ${p.getTileFaces()} [${p.getLockedTileFaces()}]`;
       console.debug(message);
@@ -224,7 +226,7 @@ class Game {
         tile = bank[t];
 
         await players.asyncAll(p => p.receivedTile(player));
-        
+
         let revealed = player.append(tile);
         if (revealed) {
           // bonus tile are shown to all other players.
@@ -459,7 +461,7 @@ class Game {
       console.log(`Hand ${hand} is a draw.`);
 
       await players.asyncAll(p => p.endOfHand());
-      
+
       let nextHand = () => this.startHand({ draw: true });
       if (!config.BOT_PLAY) {
         return modal.choiceInput("Hand was a draw", [{label:"OK"}], nextHand, nextHand);
@@ -473,7 +475,10 @@ class Game {
 
     this.currentPlayerId = (this.currentPlayerId + 1) % 4;
 
-    return setTimeout(() => { player.disable(); this.play(); }, this.playDelay);
+    return setTimeout(() => {
+      player.disable();
+      this.play();
+    }, config.BOT_PLAY ? config.BOT_PLAY_DELAY : this.playDelay);
   }
 
   /**
@@ -489,11 +494,11 @@ class Game {
       let players = this.players;
 
       await players.asyncAll(p => p.receivedTile(player));
-      
+
       console.debug(`${player.id} receives ${tile} - ${player.getTileFaces()}`);
       config.log(`${player.id} <  ${tile} - ${player.getTileFaces()} - PRNG: ${config.PRNG.seed()}`);
       revealed = player.append(tile);
-      
+
       if (revealed) {
         await players.asyncAll(p => p.see(revealed, player));
       }
@@ -553,7 +558,7 @@ class Game {
 
     // FIXME: TODO: can we get ths information async?
     players.forEach(p => { if(p.wind === 0) eastid = p.id; });
-    
+
     let adjustments = this.rules.settleScores(scores, player.id, eastid, discardpid);
 
     await players.asyncAll(p => {
@@ -634,7 +639,8 @@ class Game {
         p = pid;
       }
     });
-    //console.log(claims);
+
+    // console.log(claims);
 
     // artificial delay, if required for human play
     if (currentpid===0 && !config.BOT_PLAY && config.BOT_DELAY_BEFORE_DISCARD_ENDS) {
@@ -659,7 +665,7 @@ class Game {
     let discard = this.discard;
     //console.log(`${claim.p} wants ${discard.getTileFace()} for ${claim.claimtype}`);
     player.disable();
-    setTimeout(() => this.play(claim), this.playDelay);
+    setTimeout(() => this.play(claim), config.BOT_PLAY ? config.BOT_PLAY_DELAY : this.playDelay);
   }
 }
 
