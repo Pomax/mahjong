@@ -16,15 +16,25 @@
   transform-origin: 50% calc(var(--h) / 2);
 }
 
-.board .wall.data {
+.board .corner {
   position: absolute;
-  right: 5rem;
   width: 7.5rem;
   z-index: 10;
   color: gold;
-  top: calc(var(--ph) * 1.5);
   font-family: verdana;
   font-weight: bold;
   font-size: 0.8rem;
   text-align: right;
+}
+
+.board .corner.wall.data {
+  right: 5rem;
+  top: calc(var(--ph) * 1.5);
+}
+
+.board .corner.settings {
+  cursor: pointer;
+  color: silver;
+  left: 2rem;
+  bottom: calc(var(--ph) * 1.5);
 }

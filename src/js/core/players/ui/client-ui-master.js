@@ -19,22 +19,24 @@ class ClientUIMaster {
     this.discards = document.querySelector(`.discards`);
     this.playerbanks = document.querySelectorAll(`.player`);
     this.knowledge = document.querySelector(`.knowledge`);
+    this.settings = document.querySelector(`.settings`);
 
-    this.gameBoard = document.querySelector('.board');
+    this.gameBoard = document.querySelector(`.board`);
     if (config.PAUSE_ON_BLUR) {
-      this.gameBoard.addEventListener('blur', async (evt) => {
+      this.gameBoard.addEventListener(`blur`, async (evt) => {
         let resume = await this.player.game.pause();
 
         let handleResume = () => {
-          this.gameBoard.removeEventListener('focus', handleResume);
+          this.gameBoard.removeEventListener(`focus`, handleResume);
           resume();
           this.pause_protection = true;
         };
 
-        this.gameBoard.addEventListener('focus', handleResume);
+        this.gameBoard.addEventListener(`focus`, handleResume);
       });
     }
 
+    this.settings.addEventListener(`click`, () => modal.pickPlaySettings());
 
     this.el = this.playerbanks[this.id];
     this.reset(0,0);
