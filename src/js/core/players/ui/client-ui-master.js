@@ -20,6 +20,7 @@ class ClientUIMaster {
     this.playerbanks = document.querySelectorAll(`.player`);
     this.knowledge = document.querySelector(`.knowledge`);
     this.settings = document.querySelector(`.settings`);
+    this.theming = document.querySelector(`.theming`);
 
     this.gameBoard = document.querySelector(`.board`);
     if (config.PAUSE_ON_BLUR) {
@@ -37,6 +38,7 @@ class ClientUIMaster {
     }
 
     this.settings.addEventListener(`click`, () => modal.pickPlaySettings());
+    this.theming.addEventListener(`click`, () => modal.pickTheming());
 
     this.el = this.playerbanks[this.id];
     this.reset(0,0);

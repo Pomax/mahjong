@@ -21,6 +21,12 @@
   width: 7.5rem;
   z-index: 10;
   color: gold;
+  --sc: var(--prp);
+  text-shadow:
+    -1px -1px 0 var(--sc),
+     1px -1px 0 var(--sc),
+    -1px  1px 0 var(--sc),
+     1px  1px 0 var(--sc);
   font-family: verdana;
   font-weight: bold;
   font-size: 0.8rem;
@@ -36,5 +42,12 @@
   cursor: pointer;
   color: silver;
   left: 2rem;
+  bottom: calc(var(--ph) * 1.5);
+}
+
+.board .corner.theming {
+  cursor: pointer;
+  color: silver;
+  right: 5rem;
   bottom: calc(var(--ph) * 1.5);
 }

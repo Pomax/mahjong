@@ -116,6 +116,12 @@
 .windicator .hand-counter {
   height: 1em;
   color: gold;
+  --sc: var(--prp);
+  text-shadow:
+    -1px -1px 0 var(--sc),
+     1px -1px 0 var(--sc),
+    -1px  1px 0 var(--sc),
+     1px  1px 0 var(--sc);
   position: absolute;
   z-index: 100;
   top: calc(calc(var(--wotr-dim) / 2) - 1.9em);

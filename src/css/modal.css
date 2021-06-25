@@ -60,6 +60,14 @@
   height: 2em;
 }
 
+.modal .settings input[type=button] {
+  border: 1px solid gray;
+  border-radius: 5px;
+  font-size: 0.8rem;
+  width: 100%;
+  background: #E9E9ED;
+}
+
 .modal .panel table {
   width: 95%;
   margin: auto;

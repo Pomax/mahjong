@@ -20,6 +20,53 @@
     <link rel="stylesheet" href="src/css/players.css" />
     <link rel="stylesheet" href="src/css/tracking.css" />
     <link rel="stylesheet" href="src/css/animations.css" />
+
+    <script src="src/js/core/utils/math.js" defer></script>
+    <script src="src/js/core/utils/prng.js" defer></script>
+    <script src="src/js/core/utils/logger.js" defer></script>
+    <script src="src/config.js" defer></script>
+    <script src="src/js/core/game/game-tile.js" defer></script>
+    <script src="src/js/page/virtual-keys.js" defer></script>
+    <script src="src/js/core/utils/task-timer.js" defer></script>
+    <script src="src/js/core/utils/utils.js" defer></script>
+
+    <script src="src/js/page/audio.js" defer></script>
+    <script src="src/js/page/modal/options-dialog.js" defer></script>
+    <script src="src/js/page/modal/settings.js" defer></script>
+    <script src="src/js/page/modal/theming.js" defer></script>
+    <script src="src/js/page/modal/scores.js" defer></script>
+    <script src="src/js/page/modal/modal.js" defer></script>
+
+    <script src="src/js/core/game/wall/wall.js" defer></script>
+    <script src="src/js/core/game/wall/wall-hack.js" defer></script>
+
+    <script src="src/js/core/players/tracking/tile-tracker.js" defer></script>
+    <script src="src/js/core/players/ui/client-ui-master.js" defer></script>
+    <script src="src/js/core/players/ui/client-ui.js" defer></script>
+    <script src="src/js/core/players/ui/windicator.js" defer></script>
+    <script src="src/js/core/players/player-master.js" defer></script>
+    <script src="src/js/core/players/player.js" defer></script>
+    <script src="src/js/core/players/personality/stats.js" defer></script>
+    <script src="src/js/core/players/personality/personality.js" defer></script>
+    <script src="src/js/core/players/bot.js" defer></script>
+    <script src="src/js/core/players/human.js" defer></script>
+
+    <script src="src/js/core/algorithm/hash-printing.js" defer></script>
+    <script src="src/js/core/algorithm/pattern-set.js" defer></script>
+    <script src="src/js/core/algorithm/pattern.js" defer></script>
+    <script src="src/js/core/algorithm/tiles-needed.js" defer></script>
+
+    <script src="src/js/core/scoring/limit-hands.js" defer></script>
+    <script src="src/js/core/scoring/faan-laak-table.js" defer></script>
+    <script src="src/js/core/scoring/ruleset.js" defer></script>
+    <script src="src/js/core/scoring/cantonese.js" defer></script>
+    <script src="src/js/core/scoring/chinese-classical.js" defer></script>
+
+    <script src="src/js/core/game/game.js" defer></script>
+    <script src="src/js/core/game/game-manager.js" defer></script>
+
+    <!-- twitter the sparrows! -->
+    <script src="src/js/page/play-or-watch.js" defer></script>
   </head>
 
   <body>
@@ -35,6 +82,7 @@
 
       <div class="corner wall data"></div>
       <div class="corner settings">settings...</div>
+      <div class="corner theming">theme</div>
       <div class="discards"></div>
       <div class="sidebar">
         <div class="knowledge"></div>
@@ -650,54 +698,5 @@
       </ul>
 
     </section>
-
-    <section id="scripts" class="hidden">
-      <script src="src/js/core/utils/math.js"></script>
-      <script src="src/js/core/utils/prng.js"></script>
-      <script src="src/js/core/utils/logger.js"></script>
-      <script src="src/config.js"></script>
-      <script src="src/js/core/game/game-tile.js"></script>
-      <script src="src/js/page/virtual-keys.js"></script>
-      <script src="src/js/core/utils/task-timer.js"></script>
-      <script src="src/js/core/utils/utils.js"></script>
-
-      <script src="src/js/page/audio.js"></script>
-      <script src="src/js/page/modal/options-dialog.js"></script>
-      <script src="src/js/page/modal/settings.js"></script>
-      <script src="src/js/page/modal/scores.js"></script>
-      <script src="src/js/page/modal/modal.js"></script>
-
-      <script src="src/js/core/game/wall/wall.js"></script>
-      <script src="src/js/core/game/wall/wall-hack.js"></script>
-
-      <script src="src/js/core/players/tracking/tile-tracker.js"></script>
-      <script src="src/js/core/players/ui/client-ui-master.js"></script>
-      <script src="src/js/core/players/ui/client-ui.js"></script>
-      <script src="src/js/core/players/ui/windicator.js"></script>
-      <script src="src/js/core/players/player-master.js"></script>
-      <script src="src/js/core/players/player.js"></script>
-      <script src="src/js/core/players/personality/stats.js"></script>
-      <script src="src/js/core/players/personality/personality.js"></script>
-      <script src="src/js/core/players/bot.js"></script>
-      <script src="src/js/core/players/human.js"></script>
-
-      <script src="src/js/core/algorithm/hash-printing.js"></script>
-      <script src="src/js/core/algorithm/pattern-set.js"></script>
-      <script src="src/js/core/algorithm/pattern.js"></script>
-      <script src="src/js/core/algorithm/tiles-needed.js"></script>
-
-      <script src="src/js/core/scoring/limit-hands.js"></script>
-      <script src="src/js/core/scoring/faan-laak-table.js"></script>
-      <script src="src/js/core/scoring/ruleset.js"></script>
-      <script src="src/js/core/scoring/cantonese.js"></script>
-      <script src="src/js/core/scoring/chinese-classical.js"></script>
-
-      <script src="src/js/core/game/game.js"></script>
-      <script src="src/js/core/game/game-manager.js"></script>
-
-      <!-- twitter the sparrows! -->
-      <script src="src/js/page/play-or-watch.js"></script>
-    </section>
-
   </body>
 </html>

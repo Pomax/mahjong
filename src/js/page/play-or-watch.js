@@ -34,10 +34,13 @@
             { label: "I just want to watch the bots play", value: 'watch' },
             { description: "Alternatively, you can modify the game settings:", align: "center" },
             { label: "Change settings", value: 'settings', back: true },
+            { label: "Change theming", value: 'theming', back: true },
+            { description: "(you can also open the settings during play)", align: "center" },
         ], result => {
             config.BOT_PLAY = (result === 'watch');
             if (result === 'watch') config.FORCE_OPEN_BOT_PLAY = true;
             if (result === 'settings') return modal.pickPlaySettings();
+            if (result === 'theming') return modal.pickTheming();
             play();
         });
     }

@@ -18,6 +18,7 @@ class Modal {
     this.panels = [];
     this.choice = new OptionsDialog(this);
     this.settings = new SettingsModal(this);
+    this.theming = new ThemeModal(this);
     this.scores = new ScoreModal(this);
   }
 
@@ -132,6 +133,14 @@ class Modal {
   pickPlaySettings() {
     this.reveal()
     this.settings.show();
+  }
+
+  /**
+   * Show theming options for the game
+   */
+  pickTheming() {
+    this.reveal();
+    this.theming.show();
   }
 }
 
