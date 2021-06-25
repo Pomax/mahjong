@@ -234,7 +234,8 @@ class ThemeModal {
         handler: handle("Tileset"),
       },
       reset: {
-        label: "Reset defaults and reload",
+        label: "Reset theming and reload",
+        text: "reset & reload",
         button: true,
         handler: () => this.reset(),
       },
@@ -243,12 +244,12 @@ class ThemeModal {
     Object.keys(builder).forEach((key) => {
       const value = builder[key];
       const type = value.button ? `button` : `file`;
-      const text = value.button ? value.label : `pick...`;
+      const text = value.button ? value.text : `pick...`;
 
       const tr = document.createElement(`tr`);
       table.append(tr);
       tr.innerHTML = `
-        <td>${value.label}</td>
+        <td style="white-space: nowrap">${value.label}</td>
         <td><input class="picker" type="${type}" value="${text}"></td>
       `;
 
