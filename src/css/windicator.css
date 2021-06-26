@@ -8,8 +8,8 @@
   --offset: -11.5em;
 
   font-family: Hiragina, 'MS Mincho', sans-serif;
-  border: 3px solid gold;
-  background: darkgreen;
+  border: 3px solid var(--windicator-border);
+  background: var(--windicator-background);
   width: var(--wotr-dim);
   height: var(--wotr-dim);
   position: absolute;
@@ -17,7 +17,7 @@
   top: calc(50% - calc(var(--wotr-dim) / 2));
   left: calc(50% - calc(var(--wotr-dim) / 2));
   transform: rotate(45deg);
-  box-shadow: 3px 3px 13px 3px black;
+  box-shadow: 3px 3px 13px 3px var(--windicator-shadow);
   margin-top: var(--offset);
   margin-left: var(--offset);
 }
@@ -42,10 +42,10 @@
   width: var(--inner-dim);
   height: var(--inner-dim);
   overflow: hidden;
-  background: indigo;
-  border: 3px solid gold;
+  background: var(--windicator-wotr-background);
+  border: 3px solid var(--windicator-wotr-border);
   transform: rotate(-45deg);
-  box-shadow: 3px 3px 13px 3px black;
+  box-shadow: 3px 3px 13px 3px var(--windicator-wotr-shadow);
 }
 
 .windicator .player-wind {
@@ -53,10 +53,10 @@
   font-weight: 400;
   justify-content: center;
   align-items: center;
-  color: gold;
-  background: #222;
-  border: 1px solid gold;
-  box-shadow: 0 0 4px 1px gold;
+  color: var(--windicator-player-wind);
+  background: var(--windicator-player-wind-background);
+  border: 1px solid var(--windicator-player-wind-border);
+  box-shadow: 0 0 4px 1px var(--windicator-player-wind-border);
   border-radius: 50%;
   margin: 3px;
   position: absolute;
@@ -99,7 +99,7 @@
 .windicator.done .wind-of-the-round:before {
   text-indent: 0;
   content: '〆';
-  color: white;
+  color: var(--windicator-done);
   font-family: Hiragino, 'MS Mincho', sans-serif;
   font-size: 300%;
   position: absolute;
@@ -115,13 +115,12 @@
 
 .windicator .hand-counter {
   height: 1em;
-  color: gold;
-  --sc: var(--prp);
+  color: var(--windicator-color);
   text-shadow:
-    -1px -1px 0 var(--sc),
-     1px -1px 0 var(--sc),
-    -1px  1px 0 var(--sc),
-     1px  1px 0 var(--sc);
+    -1px -1px 0 var(--windicator-outline),
+     1px -1px 0 var(--windicator-outline),
+    -1px  1px 0 var(--windicator-outline),
+     1px  1px 0 var(--windicator-outline);
   position: absolute;
   z-index: 100;
   top: calc(calc(var(--wotr-dim) / 2) - 1.9em);

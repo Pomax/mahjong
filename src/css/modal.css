@@ -1,5 +1,5 @@
 .modal {
-  background: rgba(11, 59, 0, 0.67);
+  background: var(--modal-overlay);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -15,13 +15,13 @@
 }
 
 .modal .panel {
-  background: white;
+  background: var(--modal-panel-background);
   padding: 0em 1em 1em;
   display: inline-block;
   max-height: calc(100% + 8em);
   overflow: auto;
-  border: 1px solid black;
-  box-shadow: 0 0 5px 0 black;
+  border: 1px solid var(--modal-panel-border);
+  box-shadow: 0 0 5px 0 var(--modal-panel-border);
 }
 
 .modal .panel h1 {
@@ -43,7 +43,7 @@
   font-variant: small-caps;
   font-family: Verdana;
   cursor: pointer;
-  color: #444;
+  color: var(--modal-close);
   font-weight: normal;
   position: absolute;
   right: 0;
@@ -54,18 +54,18 @@
   display: block;
   width: 100%;
   white-space: nowrap;
-  background: #DDD;
+  background: var(--modal-button-background);
   font-size: 100%;
   border-width: 3px;
   height: 2em;
 }
 
 .modal .settings input[type=button] {
-  border: 1px solid gray;
+  border: 1px solid var(--modal-button-border);
   border-radius: 5px;
   font-size: 0.8rem;
   width: 100%;
-  background: #E9E9ED;
+  background: var(--modal-button-background);
 }
 
 .modal .panel table {
@@ -87,20 +87,18 @@
 .modal .panel.settings td.custom::after {
   content: '★';
   font-size: 75%;
-  color: #ecb01f;
+  color: var(--modal-customized);
   padding-left: 1em;
 }
 
 .modal .panel button:active,
 .modal .panel button:focus {
-  --light: rgb(130, 181, 238);
-  --dark: rgb(42, 42, 135);
   border: 3px solid;
   border-radius: 3px;
-  border-left-color: var(--light);
-  border-top-color: var(--light);
-  border-right-color: var(--dark);
-  border-bottom-color: var(--dark);
+  border-left-color: var(--modal-light);
+  border-top-color: var(--modal-light);
+  border-right-color: var(--modal-dark);
+  border-bottom-color: var(--modal-dark);
 }
 
 .modal .panel button + button {
@@ -113,7 +111,7 @@
 }
 
 .modal .panel.score-breakdown table tr th {
-  border-bottom: 1px solid black;
+  border-bottom: 1px solid var(--modal-panel-border);
 }
 
 .modal .panel.score-breakdown table tr th,
@@ -133,7 +131,7 @@
 .modal .panel.score-breakdown table tr td[colspan="2"] {
   text-align: center;
   padding-top:1em;
-  color: #999;
+  color: var(--table-separator);
 }
 
 .modal .panel.final-scores table {
@@ -147,12 +145,12 @@
 }
 
 .modal .panel.final-scores table tr:nth-child(2n) {
-  background: #f0f0f0;
+  background: var(--table-alternate);
 }
 
 .modal .panel.final-scores table tr th,
 .modal .panel.scores table tr th {
-  border-bottom: 1px solid black;
+  border-bottom: 1px solid var(--modal-panel-border);
 }
 
 .modal .panel.final-scores table tr td {
@@ -162,7 +160,7 @@
 .modal .panel.final-scores table tr td span.east {
   display: inline-block;
   width: 100%;
-  background: lemonchiffon;
+  background: var(--scores-east);
 }
 
 .modal .panel.final-scores table tr th:last-child {
@@ -172,7 +170,7 @@
 .modal .panel.final-scores table tr td:last-child,
 .modal .panel.final-scores table tr td:first-child,
 .modal .panel.final-scores table tr:nth-child(2) td {
-  background: white;
+  background: var(--modal-panel-background);
 }
 
 .modal .panel.final-scores table tr td:last-child,
@@ -181,7 +179,7 @@
 }
 
 .modal .panel.scores table tr:nth-last-child(2) td {
-  border-top: 1px solid black;
+  border-top: 1px solid var(--table-outer);
 }
 
 .modal .panel.scores table tr th:first-child,
@@ -205,7 +203,7 @@
 .modal .panel.scores table tr.details td button {
   border: none;
   background: inherit;
-  color: blue;
+  color: var(--scores-details);
   text-align: right;
   cursor: pointer;
   height: auto;

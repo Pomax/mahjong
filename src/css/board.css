@@ -7,7 +7,7 @@
   position: relative;
   width: var(--w);
   height: var(--h);
-  background-color: var(--green);
+  background-color: var(--board-background);
   outline: none;
 }
 
@@ -20,13 +20,12 @@
   position: absolute;
   width: 7.5rem;
   z-index: 10;
-  color: gold;
-  --sc: var(--prp);
+  color: var(--board-text-color);
   text-shadow:
-    -1px -1px 0 var(--sc),
-     1px -1px 0 var(--sc),
-    -1px  1px 0 var(--sc),
-     1px  1px 0 var(--sc);
+    -1px -1px 0 var(--board-shadow),
+     1px -1px 0 var(--board-shadow),
+    -1px  1px 0 var(--board-shadow),
+     1px  1px 0 var(--board-shadow);
   font-family: verdana;
   font-weight: bold;
   font-size: 0.8rem;
@@ -40,14 +39,14 @@
 
 .board .corner.settings {
   cursor: pointer;
-  color: silver;
+  color: var(--board-secondary-text-color);
   left: 2rem;
   bottom: calc(var(--ph) * 1.5);
 }
 
 .board .corner.theming {
   cursor: pointer;
-  color: silver;
+  color: var(--board-secondary-text-color);
   right: 5rem;
   bottom: calc(var(--ph) * 1.5);
 }

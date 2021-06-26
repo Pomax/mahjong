@@ -1,22 +1,14 @@
-:root {
-    --green: rgb(50,120,50);
-    --cream: rgb(245,240,220);
-    --blue: rgb(20,50,180);
-    --prp: rgb(70,0,70);
-    --red: rgb(207, 24, 24);
-    --ochre: rgb(81, 77, 53);
-}
 
 .hidden {
     display: none!important;
 }
 
 html {
-    background: var(--green);
+    background: var(--html-background);
 }
 
 body {
-    background: white;
+    background: var(--page-background);
     width: 800px;
     padding: 10px 80px 1em 80px;
     margin: auto;
@@ -45,7 +37,7 @@ li, li > p {
 }
 
 li img {
-    border: 1px solid black;
+    border: 1px solid var(--tile-border);
     margin: 2px;
     border-radius: 5px;
 }
@@ -58,7 +50,7 @@ section table {
     margin-left: 2em;
 }
 section table td {
-    border: 1px solid black;
+    border: 1px solid var(--table-border);
     text-align: center;
 }
 

@@ -47,7 +47,7 @@ class SettingsModal {
       '💻 Turn on debug logging' : { key: 'debug', options: [true,false] },
       '🎵 Play without sound': { key: 'no_sound', options: [true,false] },
       '♻️ Autostart bot play': { key: 'play_immediately', options: [true,false] },
-      '🛑 Pause game unless focused': { key: 'pause_on_blur', options: [true,false] },
+      '⏸️ Pause game unless focused': { key: 'pause_on_blur', options: [true,false] },
       '😐 Pretend previous round was a draw': { key: 'force_draw', options: [true,false] },
       '📃 Generate game log after play': { key: 'write_game_log', options: [true,false] },
       '-2': {},

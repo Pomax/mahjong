@@ -113,30 +113,17 @@ class ThemeModal {
             const tileNumber = this.getTileNumber(r, c);
             if (tileNumber === false) continue;
 
-            const box = {
-              x: tileWidth * c + 1,
-              y: tileHeight * r + 1,
-              w: tileWidth - 2,
-              h: tileHeight - 2,
-            };
+            const [x, y, w, h] = [
+              tileWidth * c + 1,
+              tileHeight * r + 1,
+              tileWidth - 2,
+              tileHeight - 2,
+            ];
 
             const crop = document.createElement(`canvas`);
-            crop.width = box.w;
-            crop.height = box.h;
-            console.log(r, c, `:`, box.x, box.y);
-            crop
-              .getContext("2d")
-              .drawImage(
-                canvas,
-                box.x,
-                box.y,
-                box.w,
-                box.h,
-                0,
-                0,
-                box.w,
-                box.h
-              );
+            crop.width = w;
+            crop.height = h;
+            crop.getContext("2d").drawImage(canvas, x, y, w, h, 0, 0, w, h);
             css.push(
               `[tile="${tileNumber}"] { background-image: url(${crop.toDataURL()}); }`
             );
@@ -150,22 +137,8 @@ class ThemeModal {
   getTileNumber(row, col) {
     if (row < 3) return col + 9 * row;
     if (row === 3) {
-      switch (col) {
-        case 0:
-          return 27;
-        case 1:
-          return 28;
-        case 2:
-          return 29;
-        case 3:
-          return 30;
-        case 5:
-          return 31;
-        case 6:
-          return 32;
-        case 7:
-          return 33;
-      }
+      if (col < 4) return 27 + col;
+      if (col < 8) return 31 - 5 + col;
     }
     if (row === 4) {
       if (col !== 8) return 34 + col;

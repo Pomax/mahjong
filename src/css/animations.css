@@ -24,9 +24,9 @@ game-tile.discard[from="3"] { animation: p3-discard 0.5s; }
 .announcement[data-player] {
   opacity: 0;
   background: white;
-  color: var(--prp);
-  border: 1px solid var(--prp);
-  box-shadow: 0 0 3px 0 var(--prp);
+  color: var(--announcement-outline);
+  border: 1px solid var(--announcement-outline);
+  box-shadow: 0 0 3px 0 var(--announcement-outline);
   position: absolute;
   border-radius: 7px;
   padding: 0px 5px 2px;

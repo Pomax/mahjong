@@ -13,45 +13,44 @@
   width: calc(var(--w) - var(--ph));
   height: var(--ph);
   transform-origin: calc(var(--ph) / 2) calc(var(--ph) / 2);
-  color: var(--cream);
+  color: var(--player-text-color);
   font-family: Verdana;
   font-weight: bold;
-  text-shadow: 0 0 3px var(--prp);
-  border: var(--sep) solid var(--green);
+  text-shadow: 0 0 3px var(--player-text-shadow);
+  border: var(--sep) solid var(--board-background);
   box-sizing: border-box;
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: var(--cream);
+  background-color: var(--player-background);
 }
 
-.player.waiting { background: rgb(248, 235, 144); }
-.player.winner { background: gold; }
+.player.waiting { background: var(--player-waiting); }
+.player.winner { background: var(--player-winner); }
 .player.winner:before { content: '✧'; }
-.player.game-winner { border: 4px solid gold; background: indigo; }
+.player.game-winner { border: 4px solid var(--player-winner); background: var(--player-game-winner); }
 
-.player.active::before { background: var(--blue); }
+.player.active::before { background: var(--player-active); }
 .player::before {
   content: attr(id);
   white-space: pre;
   font-weight: 400;
   margin: 0.5em;
-  border: 1px solid var(--prp);
+  border: 1px solid var(--player-id-shadow);
   border-radius: 25%;
-  box-shadow: 0 0 6px 0px var(--prp);
+  box-shadow: 0 0 6px 0px var(--player-id-shadow);
   padding: 0em 0.3em 0.1em;
   text-align: center;
-  background: var(--green);
+  background: var(--player-id-background);
   position: absolute;
   left: 0;
   z-index: 0;
 }
 
 .player::after {
-  /* content: attr(data-wincount); */
   content: attr(data-score);
-  background: var(--prp);
-  box-shadow: 0 0 4px 0 var(--prp);
+  background: var(--player-score-background);
+  box-shadow: 0 0 4px 0 var(--player-score-background);
   padding: 2px 5px;
   position: absolute;
   z-index: 0;
@@ -61,7 +60,6 @@
 .finished .player::after {
   z-index: 100;
 }
-
 
 .player:nth-child(1) {
   --xp: calc(var(--ph) - var(--w));

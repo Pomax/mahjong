@@ -14,10 +14,10 @@ game-tile {
   z-index: 1; /* ends up over the score box if we have lots of tiles */
   margin-bottom: 2px;
 
-  border: 1px solid black;
+  border: 1px solid var(--tile-border);
   border-radius: calc(0.05 * var(--ph));
 
-  background-color: rgb(245, 245, 245);
+  background-color: var(--tile-background);
   background-size: 100%;
   background-position: center center;
   background-repeat: no-repeat;
@@ -28,25 +28,33 @@ game-tile {
 }
 
 game-tile.latest {
-  border-bottom: 3px solid lime;
+  border-bottom: 3px solid var(--tile-latest);
 }
 
 game-tile.selectable.highlight {
-  box-shadow: 0 0 3px 3px lime;
+  box-shadow: 0 0 3px 3px var(--tile-highlight);
   position: relative;
   z-index: 10;
 }
 
+.discards game-tile.selectable {
+  box-shadow: 0 0 3px 3px var(--tile-selectable);
+}
+
+.discards game-tile.selectable.highlight {
+  box-shadow: 0 0 3px 3px var(--tile-highlight);
+}
+
 .discards game-tile.selectable.highlight.suggestion {
-  box-shadow: 0 0 3px 3px fuchsia;
+  box-shadow: 0 0 3px 3px var(--tile-suggestion-highlight);
 }
 
 game-tile.suggestion {
-  border-top: 3px solid var(--prp);
+  border-top: 3px solid var(--tile-suggestion);
 }
 
 game-tile.discard {
-  box-shadow: 0 0 3px 0 var(--cream);
+  box-shadow: 0 0 3px 0 var(--tile-discard);
 }
 
 game-tile + game-tile {
@@ -119,15 +127,15 @@ game-tile[locked] {
 }
 
 game-tile[bonus] {
-  border: 1px solid red;
+  border: 1px solid var(--tile-bonus);
 }
 
 game-tile[winning] {
   border-width: 5px 1px 1px 1px;
-  border-top-color: #00ff42;
+  border-top-color: var(--tile-winning);
 }
 
 game-tile[concealed] {
-  background-color: var(--green);
+  background-color: var(--tile-concealed);
   background-position: center calc(var(--lh) / 6);
 }

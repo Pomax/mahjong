@@ -10,6 +10,7 @@ class OptionsDialog {
    */
   show(label, options, resolve, cancel)  {
     let panel = this.modal.makePanel();
+    if (options.fixed) panel.fixed = true;
     panel.innerHTML = `<h1>${label}</h1>`;
 
     let bid = 0;

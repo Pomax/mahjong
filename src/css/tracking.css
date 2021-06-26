@@ -1,6 +1,6 @@
 
 .sidebar {
-  background: var(--green);
+  background: var(--board-background);
   background-image: url('../../img/background/opacity-05-strip.png');
   width: 10em;
   height: var(--h);
@@ -9,12 +9,12 @@
   right: calc(-100% - var(--sep));
   top: calc(6.5em - calc(var(--h) / 2));
   width: calc(4em + calc(2 * var(--sep)));
-  border: 1px solid black;
+  border: 1px solid var(--sidebar-border);
   box-sizing: border-box;
 }
 
 .knowledge {
-  background: rgba(0,0,0,0.3);
+  background: var(--sidebar-overlay);
   transform: scale(0.9, 0.99) translate(1px, 0);
   width: calc(100% - 2px);
   height: calc(100% - 2px);

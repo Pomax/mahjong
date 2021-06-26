@@ -12,7 +12,8 @@ if (typeof process !== "undefined") {
  * functionality such as show/hide and dialog stacking.
  */
 class Modal {
-  constructor() {
+  constructor(fixed=false) {
+    this.fixed = fixed;
     this.modal = document.querySelector(".modal");
     this.gameBoard = document.querySelector('.board');
     this.panels = [];

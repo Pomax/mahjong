@@ -1,0 +1,109 @@
+:root {
+    /* color vars */
+  --schoolbus: #ecb01f;
+  --gold: gold;
+  --yolk: rgb(248, 235, 144);
+  --chiffon: lemonchiffon;
+  --cream: rgb(245,240,220);
+  --lime:  lime;
+  --transparent-olive: rgba(11, 59, 0, 0.67);
+  --green: rgb(50,120,50);
+  --dark-green: darkgreen;
+  --denim: rgb(130, 181, 238);
+  --blue: rgb(20,50,180);
+  --dark-blue: rgb(42, 42, 135);
+  --indigo: indigo;
+  --purple: rgb(70,0,70);
+  --transparent-purple: rgba(42, 7, 63, 0.67);
+  --red: rgb(207, 24, 24);
+  --fuschia: fuchsia;
+
+  --black: black;
+  --off-black: #444;
+  --transparent-black: rgba(0,0,0,0.3);
+  --ochre: rgb(81, 77, 53);
+  --gray: gray;
+  --silver: silver;
+  --medium-gray: #DDD;
+  --light-gray: #E9E9E9;
+  --almost-white: rgb(245, 245, 245);
+  --white: white;
+
+    /* actual use vars */
+  --html-background: var(--green);
+  --page-background: var(--white);
+
+  --modal-light: var(--denim);
+  --modal-dark: var(--dark-blue);
+  --modal-overlay: var(--transparent-olive);
+  --modal-panel-background: var(--white);
+  --modal-panel-border: var(--black);
+  --modal-close: var(--off-black);
+  --modal-button-border: var(--gray);
+  --modal-button-background: var(--medium-gray);
+  --modal-customized: var(--schoolbus);
+
+  --table-outer: var(--black);
+  --table-separator: var(--gray);
+  --table-alternate: var(--light-gray);
+
+  --scores-details: var(--blue);
+  --scores-east: var(--chiffon);
+
+  --board-background: var(--green);
+  --board-shadow: var(--purple);
+  --board-text-color: var(--gold);
+  --board-secondary-text-color: var(--silver);
+
+  --sidebar-border: var(--black);
+  --sidebar-overlay: var(--transparent-black);
+
+  --announcement-outline: var(--purple);
+
+  --discard-background: var(--purple);
+  --discard-pause-text-color: var(--purple);
+  --discard-pause-text-shadow: var(--cream);
+  --discard-exhausted: var(--transparent-purple);
+  --discard-paused: var(--transparent-purple);
+  --discard-finished: var(--transparent-purple);
+
+  --countdown-bar: var(--gold);
+
+  --player-background: var(--cream);
+  --player-text-color: var(--cream);
+  --player-text-shadow: var(--purple);
+  --player-id-shadow: var(--purple);
+  --player-id-background: var(--green);
+  --player-score-background: var(--purple);
+
+  --player-active: var(--blue);
+  --player-waiting: var(--yolk);
+  --player-winner: var(--gold);
+  --player-game-winner: var(--indigo);
+
+  --tile-border: var(--black);
+  --tile-background: var(--almost-white);
+  --tile-suggestion: var(--purple);
+  --tile-discard: var(--cream);
+  --tile-concealed: var(--green);
+
+  --tile-bonus: var(--red);
+  --tile-winning: var(--lime);
+  --tile-latest: var(--lime);
+  --tile-highlight: var(--lime);
+  --tile-selectable: var(--denim);
+  --tile-suggestion-highlight: var(--fuschia);
+
+  --windicator-color: var(--gold);
+  --windicator-border: var(--gold);
+  --windicator-background: var(--dark-green);
+  --windicator-outline: var(--purple);
+  --windicator-done: var(--white);
+  --windicator-shadow: var(--black);
+  --windicator-player-wind: var(--gold);
+  --windicator-player-wind-background: var(--purple);
+  --windicator-player-wind-border: var(--gold);
+  --windicator-wotr-background: var(--indigo);
+  --windicator-wotr-border: var(--gold);
+  --windicator-wotr-shadow: var(--black);
+}
