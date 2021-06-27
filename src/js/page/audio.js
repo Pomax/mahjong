@@ -58,7 +58,7 @@ Object.keys(clips).forEach(bin => {
  * clip.
  */
 function playClip(name, id) {
-  if (config.NO_SOUND) return;
+  if (!config.USE_SOUND) return;
   let bin = clips[name];
   if (!bin) return console.error(`audio bin ${name} does not exist`);
 

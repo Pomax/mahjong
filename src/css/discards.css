@@ -10,7 +10,7 @@
   background-color: var(--discard-background);
   background-image: url('../../img/background/opacity-05.png');
   background-size: 100% 100%;
-  border: calc(3 * var(--sep)) solid var(--board-background);
+  border: var(--main-play-border) solid var(--board-background);
   box-sizing: border-box;
   display: flex;
   flex-wrap: wrap;

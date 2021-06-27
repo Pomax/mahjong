@@ -1,12 +1,8 @@
 class SettingsModal {
   constructor(modal) {
-      this.modal = modal;
+    this.modal = modal;
   }
 
-  /**
-   * Configure all the configurable options and
-   * then relaunch the game on the appropriate URL.
-   */
   show() {
     let panel = this.modal.makePanel(`settings`);
     panel.innerHTML = `
@@ -17,79 +13,19 @@ class SettingsModal {
         all the other options are primarily intended for debugging.
       </p>
     `;
-
-    let form = document.createElement('form');
+    const options = this.getOptions();
+    const form = this.modal.buildPanelContent(options, true);
     form.setAttribute("name", "settings");
     form.setAttribute("action", "index.html");
     form.setAttribute("method", "GET");
-    let table = document.createElement('table');
-    form.appendChild(table);
-    panel.appendChild(form);
+    this.addFormControls(panel, form, options);
+    this.modal.addFooter(panel, "Closing without saving");
+  }
 
-    // add all config options here
-    const defaults = config.DEFAULT_CONFIG;
-    const values = {};
-
-    const differs = key => defaults[key.toUpperCase()] != values[key];
-
-    Object.keys(defaults).forEach(key => {
-      values[key.toLowerCase()] = config[key];
-    });
-
-    const options = {
-      'Rules': { key: 'rules', options: [...Ruleset.getRulesetNames()] },
-      '-0': {},
-      '🀄 Always show everyone\'s tiles': { key: 'force_open_bot_play', options: [true,false] },
-      '✨ Highlight claimable discards': { key: 'show_claim_suggestion', options: [true,false] },
-      '💬 Show bot play suggestions': { key: 'show_bot_suggestion', options: [true,false] },
-      '-1': {},
-      // flags
-      '💻 Turn on debug logging' : { key: 'debug', options: [true,false] },
-      '🎵 Play without sound': { key: 'no_sound', options: [true,false] },
-      '♻️ Autostart bot play': { key: 'play_immediately', options: [true,false] },
-      '⏸️ Pause game unless focused': { key: 'pause_on_blur', options: [true,false] },
-      '😐 Pretend previous round was a draw': { key: 'force_draw', options: [true,false] },
-      '📃 Generate game log after play': { key: 'write_game_log', options: [true,false] },
-      '-2': {},
-      // values
-      'Set random number seed': { key: 'seed' },
-      'Bot quick play threshold': { key: 'bot_chicken_threshold' },
-      'Delay (in ms) between player turns': { key: 'play_interval' },
-      'Delay (in ms) before starting next hand': { key: 'hand_interval' },
-      'Delay (in ms) for bots reacting to things': { key: 'bot_delay_before_discard_ends' },
-      'Delay (in ms) during full bot play': { key: 'bot_play_delay' },
-      'Set up a specific wall': { key: 'wall_hack', options: ['', ...Object.keys(WallHack.hacks)], value: values.wall_hack },
-    };
-
-
-    Object.keys(options).forEach(label => {
-      if (label.startsWith('-')) {
-        let row = document.createElement('tr');
-        row.innerHTML = `<td colspan="2">&nbsp;</td>`;
-        return table.appendChild(row);
-      }
-      let data = options[label];
-      let value = values[data.key];
-      let row = document.createElement('tr');
-      let field = `<input class="field" type"text" value="${value}">`;
-      if (data.options) {
-        field = `<select class="field">${data.options.map(t =>
-          `<option value="${t}"${t===value? ` selected`:``
-        }>${`${t}`.replace(/_/g,' ')}</option>`)}</select>`;
-      }
-      row.innerHTML = `
-        <td>${label}</td>
-        <td${differs(data.key) ? ` class='custom'` : ``}>${field}</td>
-      `;
-      table.appendChild(row);
-      let element = row.querySelector('.field:last-child');
-      element.addEventListener('input', evt => {
-        values[data.key] = evt.target.value;
-      });
-    });
-
-    let row = document.createElement('tr');
-    row.classList.add('spacer-1');
+  addFormControls(panel, form, options) {
+    const table = form.querySelector(`table`);
+    let row = document.createElement(`tr`);
+    row.classList.add(`spacer-1`);
     row.innerHTML = `
       <td>
         <input id="reset" type="reset" value="Reset to default settings">
@@ -100,24 +36,129 @@ class SettingsModal {
     `;
     table.appendChild(row);
 
-    form.addEventListener("submit", evt => {
+    form.addEventListener(`submit`, (evt) => {
       evt.preventDefault();
-      let suffix = Object
-        .keys(values)
-        .filter(key => differs(key))
-        .map(key => `${key}=${values[key]}`)
-        .join('&');
-
+      let suffix = options
+        .filter((e) => e.value != e.default_value)
+        .map((e) => `${e.key}=${e.value}`)
+        .join("&");
       window.location.search = suffix ? `?${suffix}` : ``;
     });
 
-    let ok = table.querySelector('#ok');
+    let ok = table.querySelector(`#ok`);
     panel.gainFocus = () => ok.focus();
 
-    let reset = table.querySelector('#reset');
-    reset.addEventListener('click', evt => (window.location.search=''));
+    let reset = table.querySelector(`#reset`);
+    reset.addEventListener("click", (evt) => (window.location.search = ""));
+  }
 
-    this.modal.addFooter(panel, "Discard changes");
+  getOptions() {
+    const options = [
+      {
+        label: `Rules`,
+        key: `rules`,
+        options: [...Ruleset.getRulesetNames()],
+      },
+      {
+        // basic boolean flags:
+      },
+      {
+        label: `🀄 Always show everyone's tiles`,
+        key: `force_open_bot_play`,
+        options: [true, false],
+      },
+      {
+        label: `✨ Highlight claimable discards`,
+        key: `show_claim_suggestion`,
+        options: [true, false],
+      },
+      {
+        label: `💬 Show bot play suggestions`,
+        key: `show_bot_suggestion`,
+        options: [true, false],
+      },
+      {
+        // additional boolean flags:
+      },
+      {
+        label: `🎵 Play sounds`,
+        key: `use_sound`,
+        options: [true, false],
+      },
+      {
+        label: `♻️ Autostart bot play`,
+        key: `play_immediately`,
+        options: [true, false],
+      },
+      {
+        label: `⏸️ Pause game unless focused`,
+        key: `pause_on_blur`,
+        options: [true, false],
+      },
+      {
+        label: `💻 Turn on debug mode`,
+        key: `debug`,
+        options: [true, false],
+      },
+      {
+        label: `😐 Pretend previous round was a draw`,
+        key: `force_draw`,
+        options: [true, false],
+        debug_only: true,
+      },
+      {
+        label: `📃 Generate game log after play`,
+        key: `write_game_log`,
+        options: [true, false],
+        debug_only: true,
+      },
+      {
+        // numerical values:
+      },
+      {
+        label: `Set game PRNG seed`,
+        key: `seed`,
+        debug_only: true,
+      },
+      {
+        label: `Bot quick play threshold`,
+        key: `bot_chicken_threshold`,
+        debug_only: true,
+      },
+      {
+        label: `Delay (in ms) between player turns`,
+        key: `play_interval`,
+      },
+      {
+        label: `Delay (in ms) before starting next hand`,
+        key: `hand_interval`,
+      },
+      {
+        label: `Delay (in ms) for bots reacting to things`,
+        key: `bot_delay_before_discard_ends`,
+      },
+      {
+        label: `Delay (in ms) during full bot play`,
+        key: `bot_play_delay`,
+      },
+      // and debug hacking
+      {
+        label: `Set up a specific wall`,
+        key: `wall_hack`,
+        options: [``, ...Object.keys(WallHack.hacks)],
+        debug_only: true,
+      },
+    ];
+
+    options.forEach((entry) => {
+      const { key } = entry;
+      if (key) {
+        const CONFIG_KEY = key.toUpperCase();
+        entry.value = config[CONFIG_KEY];
+        entry.default_value = config.DEFAULT_CONFIG[CONFIG_KEY];
+      }
+    });
+    return options;
   }
 }
 

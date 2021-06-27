@@ -70,6 +70,72 @@ class Modal {
   }
 
   /**
+   * TODO: merge options, values, and differs, because
+   * there is no reason at all for those to not be unified.
+   */
+   buildPanelContent(options, wrapInForm=false) {
+     const debug = config.DEBUG;
+
+     const form = wrapInForm ? document.createElement(`form`) : undefined;
+     const table = document.createElement(`table`);
+     this.panels.last().append(table);
+
+    options.forEach(entry => {
+      const { label, key, value, default_value, options, type, evtType, handler, debug_only } = entry;
+      let row;
+
+      if (!label) {
+        row = document.createElement(`tr`);
+        row.innerHTML = `<td colspan="2">&nbsp;</td>`;
+        return table.appendChild(row);
+      }
+
+      if (debug_only && !debug) {
+        return;
+      }
+
+      row = document.createElement(`tr`);
+      let field = `<input class="${key} field" type"${type || `text`}" value="${value}">`;
+
+      if (options) {
+        field = `
+          <select class="${key} field">
+            ${options.map(opt =>
+              `<option value="${opt}"${opt === value? ` selected`:``
+            }>${`${opt}`.replace(/_/g,' ')}</option>`)}
+          </select>`;
+      }
+
+      if (type === `file`) {
+        field = `<input class="${key} picker field" type="${type}" value="pick...">`;
+      }
+
+      row.innerHTML = `
+        <td style="white-space: nowrap">${label}</td>
+        <td${value != default_value ? ` class="custom"` : ``}>${field}</td>
+      `;
+      table.appendChild(row);
+
+      row.querySelector(`.field:last-child`).addEventListener(evtType || `input`, evt => {
+        if (handler) {
+          handler(entry, evt);
+        } else {
+          entry.value = evt.target.value;
+        }
+      });
+    });
+
+    if (wrapInForm) {
+      form.append(table);
+      this.panels.last().append(form);
+      return form;
+    }
+
+    this.panels.last().append(table);
+    return table;
+  }
+
+  /**
    * Add a generic footer with an "OK" button,
    * and automated focus handling.
    */

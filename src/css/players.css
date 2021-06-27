@@ -1,14 +1,3 @@
-:root {
-    --ph: 4em;
-    --sep: 3px;
-
-    --p1: 180deg;
-    --p2: 270deg;
-    --p3: 0deg;
-    --p4: 90deg;
-}
-
-
 .player {
   width: calc(var(--w) - var(--ph));
   height: var(--ph);

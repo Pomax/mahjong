@@ -1,3 +1,21 @@
+function fileLoader(evt) {
+  return new Promise((resolve, reject) => {
+    const file = evt.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        file.dataURL = e.target.result;
+        if (file.size > 500000) {
+          alert("Images over 500kb are not supported");
+          return reject();
+        }
+        resolve(file);
+      };
+      reader.readAsDataURL(file);
+    } else reject();
+  });
+}
+
 class ThemeModal {
   constructor(modal) {
     this.modal = modal;
@@ -9,6 +27,7 @@ class ThemeModal {
     this.loadSidebar();
     this.loadPlayerBanks();
     this.loadTileset();
+    this.loadColorScheme();
   }
 
   reset() {
@@ -151,69 +170,89 @@ class ThemeModal {
     localStorage.setItem("mahjongTileset", background);
   }
 
+  getCSSColors() {
+    const s = Array.from(document.styleSheets).find((s) =>
+      s.ownerNode.href.includes(`/colors.css`)
+    );
+    const colors = Array.from(s.rules[0].style);
+    const colorsForHumans = colors.map((v) =>
+      v.replace(/^--/, "").replaceAll("-", " ")
+    );
+    const values = colors.map((v) =>
+      getComputedStyle(document.documentElement).getPropertyValue(v)
+    );
+    return { colors, colorsForHumans, values };
+  }
+
+  loadColorScheme() {
+    const colorCSS = localStorage.getItem("mahjongCSS");
+    if (colorCSS) {
+      this.setStyleSheet(`mahjongCSS`, mahjongCSS);
+    }
+    return !!colorCSS;
+  }
+
   /**
    * Configure all the configurable options and
    * then relaunch the game on the appropriate URL.
    */
   show() {
     const panel = this.modal.makePanel(`settings`);
-
     panel.innerHTML = `<h3>Change the game theme</h3>`;
+    const options = this.getOptions();
+    const table = this.modal.buildPanelContent(options);
+    this.addFormControls(panel, table, options);
+    this.modal.addFooter(panel, "Close");
+  }
 
-    const table = document.createElement(`table`);
-    panel.append(table);
+  addFormControls(panel, table, options) {
+    let row = document.createElement(`tr`);
+    row.classList.add(`spacer-1`);
+    row.innerHTML = `
+      <td colspan="2">
+        <input id="reset" type="reset" value="Reset to default settings">
+      </td>
+    `;
+    table.appendChild(row);
 
-    function fileLoader(evt) {
-      return new Promise((resolve, reject) => {
-        const file = evt.target.files[0];
-        if (file) {
-          const reader = new FileReader();
-          reader.onload = (e) => {
-            file.dataURL = e.target.result;
-            if (file.size > 500000) {
-              alert("Images over 500kb are not supported");
-              return reject();
-            }
-            resolve(file);
-          };
-          reader.readAsDataURL(file);
-        } else reject();
-      });
-    }
+    let reset = table.querySelector(`#reset`);
+    reset.addEventListener("click", () => this.reset());
+  }
 
-    // FIXME: TODO: make this create a stylesheet rather than assigning style directly
-
-    const handle = (fnName) => (evt) =>
+  getOptions() {
+    const handle = (fnName) => (entry, evt) =>
       fileLoader(evt).then((file) => {
         this[`save${fnName}`](file.dataURL);
         this[`load${fnName}`]();
       });
 
-    const builder = {
-      background: {
+    const options = [
+      {
         label: "Background image",
+        type: `file`,
         handler: handle("Background"),
       },
-      sidebar: {
+      {
         label: "Sidebar image",
+        type: `file`,
         handler: handle("Sidebar"),
       },
-      bank: {
+      {
         label: "Player banks",
+        type: `file`,
         handler: handle("PlayerBanks"),
       },
-      tileset: {
+      {
         label: "Tileset",
+        type: `file`,
         handler: handle("Tileset"),
       },
-      reset: {
-        label: "Reset theming and reload",
-        text: "reset & reload",
-        button: true,
-        handler: () => this.reset(),
-      },
-    };
+    ];
 
+    return options;
+  }
+
+  /*
     Object.keys(builder).forEach((key) => {
       const value = builder[key];
       const type = value.button ? `button` : `file`;
@@ -230,9 +269,7 @@ class ThemeModal {
       const evtType = value.button ? `click` : `input`;
       picker.addEventListener(evtType, (evt) => builder[key].handler(evt));
     });
-
-    this.modal.addFooter(panel, "Close");
-  }
+    */
 }
 
 if (typeof process !== "undefined") {

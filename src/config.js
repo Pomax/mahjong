@@ -6,8 +6,11 @@ const noop = () => {};
 const __console_debug = console.debug.bind(console);
 
 const DEFAULT_CONFIG = {
+  // This flag needs no explanation
+  DEBUG: false,
+
   // This flag also needs no explanation
-  NO_SOUND: false,
+  USE_SOUND: true,
 
   // The pseudo-random number generator seed.
   // This value lets us "replay" problematic
@@ -121,7 +124,7 @@ console.log("playing with", currentConfig);
 
 if (currentConfig.WALL_HACK || currentConfig.PLAY_IMMEDIATELY) {
   currentConfig.FORCE_OPEN_BOT_PLAY = true;
-  currentConfig.NO_SOUND = true;
+  currentConfig.USE_SOUND = true;
 }
 
 // The simple config is for settings I personally change a lot during development.

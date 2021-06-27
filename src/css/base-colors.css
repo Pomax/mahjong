@@ -1,0 +1,30 @@
+:root {
+  --schoolbus: #ecb01f;
+  --gold: gold;
+  --yolk: rgb(248, 235, 144);
+  --chiffon: lemonchiffon;
+  --cream: rgb(245, 240, 220);
+  --lime: lime;
+  --transparent-olive: rgba(11, 59, 0, 0.67);
+  --green: rgb(50, 120, 50);
+  --dark-green: darkgreen;
+  --denim: rgb(130, 181, 238);
+  --blue: rgb(20, 50, 180);
+  --dark-blue: rgb(42, 42, 135);
+  --indigo: indigo;
+  --purple: rgb(70, 0, 70);
+  --transparent-purple: rgba(42, 7, 63, 0.67);
+  --red: rgb(207, 24, 24);
+  --fuschia: fuchsia;
+
+  --black: black;
+  --off-black: #444;
+  --transparent-black: rgba(0, 0, 0, 0.3);
+  --ochre: rgb(81, 77, 53);
+  --gray: gray;
+  --silver: silver;
+  --medium-gray: #ddd;
+  --light-gray: #e9e9e9;
+  --almost-white: rgb(245, 245, 245);
+  --white: white;
+}
