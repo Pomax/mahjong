@@ -1,84 +1,124 @@
 :root {
-    --ph: 4em;
-    --sep: 3px;
-    --main-play-border: calc(3 * var(--sep));
+  --ph: 4em;
+  --sep: 3px;
+  --main-play-border: calc(3 * var(--sep));
 
-    --p1: 180deg;
-    --p2: 270deg;
-    --p3: 0deg;
-    --p4: 90deg;
+  --p1: 180deg;
+  --p2: 270deg;
+  --p3: 0deg;
+  --p4: 90deg;
 }
 
 .hidden {
-    display: none!important;
+  display: none !important;
 }
 
 html {
-    background: var(--html-background);
+  background: var(--html-background);
 }
 
 body {
-    background: var(--page-background);
-    width: 800px;
-    padding: 10px 80px 1em 80px;
-    margin: auto;
+  background: var(--page-background);
+  width: 800px;
+  padding: 10px 80px 1em 80px;
+  margin: auto;
 }
 
-h1, h2, h3, h4, h5, h6 {
-    font-family: Verdana;
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: Verdana;
 }
 
-h1 { font-size: 2rem; }
+h1 {
+  font-size: 2rem;
+}
 
-h2 { font-size: 1.75rem; }
+h2 {
+  font-size: 1.75rem;
+}
 
-p, li {
-    text-indent: 1em;
-    font-family: Arial, Hiragino, "MS Gothic", sans-serif;
-    text-align: justify;
+p,
+li {
+  text-indent: 1em;
+  font-family: Arial, Hiragino, "MS Gothic", sans-serif;
+  text-align: justify;
 }
 
 ul {
-    width: 90%;
+  width: 90%;
 }
 
-li, li > p {
-    text-indent: 0;
+li,
+li > p {
+  text-indent: 0;
 }
 
 li img {
-    border: 1px solid var(--tile-border);
-    margin: 2px;
-    border-radius: 5px;
+  border: 1px solid var(--tile-border);
+  margin: 2px;
+  border-radius: 5px;
 }
 
 li + li {
-    margin-top: 1em
+  margin-top: 1em;
 }
 
 section table {
-    margin-left: 2em;
+  margin-left: 2em;
 }
 section table td {
-    border: 1px solid var(--table-border);
-    text-align: center;
+  border: 1px solid var(--table-border);
+  text-align: center;
 }
 
 footer {
-    position: relative;
-    font-family: Verdana;
-    font-size: 85%;
-    text-align: center;
+  position: relative;
+  font-family: Verdana;
+  font-size: 85%;
+  text-align: center;
 }
 
-#this-game ul, #controls ul {
-    margin: 1em
+#this-game ul,
+#controls ul {
+  margin: 1em;
 }
 
-#this-game ul li, #controls ul li {
-    margin: 0;
+#this-game ul li,
+#controls ul li {
+  margin: 0;
 }
 
 .fund {
-    float: right;
+  float: right;
+}
+
+h1 a,
+h2 a {
+  text-decoration: none;
+  color: black;
+}
+
+h1 a:hover:before,
+h2 a:hover:before {
+  content: "#";
+  position: relative;
+  left: -1rem;
+
+  width: 0;
+  display: block;
+  height: 0;
+  color: var(--denim);
+  font-size: 1rem;
+}
+
+h1 a:hover:before {
+  bottom: -0.7em;
+}
+
+h2 a:hover:before {
+  bottom: -0.5em;
 }

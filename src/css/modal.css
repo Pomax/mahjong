@@ -88,7 +88,11 @@
   content: '★';
   font-size: 75%;
   color: var(--modal-customized);
-  padding-left: 1em;
+  position:relative;
+  display: inline-block;
+  width: 0;
+  height: 0;
+  left: -1em;
 }
 
 .modal .panel button:active,

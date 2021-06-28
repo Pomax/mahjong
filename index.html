@@ -38,6 +38,7 @@
   <script src="src/js/page/audio.js" defer></script>
   <script src="src/js/page/modal/options-dialog.js" defer></script>
   <script src="src/js/page/modal/settings.js" defer></script>
+  <script src="src/js/page/modal/colors.js" defer></script>
   <script src="src/js/page/modal/theming.js" defer></script>
   <script src="src/js/page/modal/scores.js" defer></script>
   <script src="src/js/page/modal/modal.js" defer></script>
@@ -120,7 +121,7 @@
   </footer>
 
   <section id="tutorial" style="display: none">
-    <h1>This is a programming tutorial.</h1>
+    <h1><a href="#tutorial">This is a programming tutorial.</a></h1>
 
     <p>
       This is a fully functional implementation of the game of mahjong,
@@ -184,7 +185,7 @@
   </section>
 
   <section id="explanation">
-    <h1>The how of Mahjong</h1>
+    <h1><a href="#explanation">The how of Mahjong</a></h1>
 
     <p>
       Mahjong is a four player tile game where players compete to form a
@@ -195,14 +196,14 @@
 
     <p>
       The traditional game uses 144 tiles, consisting of three numbered suits,
-      seven types of "honour" tile, and two sets of bonus tiles. Specifically:
+      seven types of "honour" tile split into "winds" and "dragons", and two
+      sets of bonus tiles. Specifically:
     </p>
 
     <ul>
       <li>
         <p>
-          4x Numerical tiles 1 through 9 with "dots" ornamentation<br />(traditionally
-          called 筒, "coin").
+          Four sets of the numerical tiles 1 through 9 with "dots" ornamentation (traditionally called 筒, "coin"):
         </p>
         <div>
           <img src="./img/tiles/18.jpg">
@@ -218,8 +219,7 @@
       </li>
       <li>
         <p>
-          4x Numerical tiles 1 through 9 with "bamboo"/"sticks"
-          ornamentation<br />(traditionally called 索, "coin string")
+          Four sets of the numerical tiles 1 through 9 with "bamboo"/"sticks" ornamentation (traditionally called 索, "coin string"):
         </p>
         <div>
           <img src="./img/tiles/0.jpg">
@@ -235,8 +235,7 @@
       </li>
       <li>
         <p>
-          4x Numerical tiles 1 through 9 with "Chinese character"
-          ornamentation<br />(traditionally called 萬, "10,000")
+          Four sets of the numerical tiles 1 through 9 with "Chinese character" ornamentation (traditionally called 萬, "10,000"):
         </p>
         <div>
           <img src="./img/tiles/9.jpg">
@@ -252,7 +251,7 @@
       </li>
       <li>
         <p>
-          4x The four cardinal directions (labelled E,S,N,W or 東,南,北,西)
+          Four sets of the four cardinal "wind" directions:
         </p>
         <div>
           <img src="./img/tiles/27.jpg">
@@ -263,9 +262,7 @@
       </li>
       <li>
         <p>
-          4x Three "dragons", (labelled F,C,P or 發,中,▯ called "green",
-          "red", and "white" dragon after the colors used for the character on
-          each of these tiles)
+          Four sets of "dragon" tiles:
         </p>
         <div>
           <img src="./img/tiles/31.jpg">
@@ -277,7 +274,7 @@
 
     <p>
       With eight bonus tiles (not part of play - they are set aside
-      immediately when drawn, with a new tile is drawn to replace it):
+      immediately when drawn, with a new tile drawn to replace it):
     </p>
 
     <ul>
@@ -308,14 +305,14 @@
   </section>
 
   <section id="gameplay">
-    <h2>Game play</h2>
+    <h2><a href="#gameplay">Game play</a></h2>
 
     <p>
       Core game play is about as simple as it gets: everyone starts with 13
-      tiles, and players take turns in which they draw a tile from the pile of
-      undealt tiles, check to see if they can form a winning, 14 tile pattern,
-      and if not, discard one of their tiles so they're back at 13, after
-      which it is the next player's turn.
+      tiles, and players take turns in which they draw a tile from the set of
+      undealt tiles, check to see if they can form a winning pattern, and if
+      not, discard one of their tiles so they're back at 13, after which it
+      is the next player's turn.
     </p>
 
     <p>
@@ -329,16 +326,17 @@
   </section>
 
   <section id="rules">
-    <h2>Rules around claiming discards</h2>
+    <h2><a href="#rules">Rules around claiming discards</a></h2>
 
     <ul>
       <li>
         if a player has two identical tiles in their hand, they may claim a
-        third tile when another player discards it.
+        third tile when another player discards it. This is called a "pung".
       </li>
       <li>
         if a player has three identical tiles in their hand, they may claim
-        the fourth tile when another player discards it.
+        the fourth tile when another player discards it. This is called a
+        "kong".
       </li>
       <li>
         if a player is waiting for a specific tile to win, they may claim that
@@ -352,9 +350,10 @@
       If none of the above claims are made, then the player whose turn it is
       next is allowed to pick up the discard tile rather than drawing a tile
       from the undealt tiles, in order to form a set consisting of three
-      consecutive numbers within the same suit. Note that these sets are
-      typically worth no points, and will typically even negatively impact the
-      hand score by ruling out scores based on true-set hand patterns.
+      consecutive numbers within the same suit, called a "chow". Note that
+      these sets are typically worth no points, and will typically even
+      negatively impact the hand score by ruling out scores based on true-set
+      hand patterns.
     </p>
 
     <p>
@@ -381,7 +380,7 @@
       of tiles.
     </p>
 
-    <h2>Rule clarifications</h2>
+    <h2 id="rule-clarification"><a href="#rule-clarification">Rule clarifications</a></h2>
 
     <p>
       A player is <em>not required</em> to declare sets if they do not need to
@@ -411,7 +410,7 @@
   </section>
 
   <section id="scoring">
-    <h2>Scoring</h2>
+    <h2><a href="#scoring">Scoring</a></h2>
 
     <p>
       Scoring of hands is entirely dependent on the style of mahjong played,
@@ -457,14 +456,14 @@
   </section>
 
   <section id="this-game">
-    <h1>About this particular implementation</h1>
+    <h1><a href="#this-game">About this particular implementation</a></h1>
 
     <p>
       The game on this page can be played using two different rulesets:
       Chinese Classical rules, and Cantonese rules.
     </p>
 
-    <h2>Chinese Classical (default)</h2>
+    <h2 id="chinese-classical-rules"><a href="#chinese-classical-rules">Chinese Classical (default)</a></h2>
 
     <ul>
       <li>scoring is based on points and doubles</li>
@@ -553,8 +552,7 @@
       East, then South, then West, then North.
     </p>
 
-
-    <h2>Cantonese</h2>
+    <h2 id="cantonese-rules"><a href="#cantonese-rules">Cantonese</a></h2>
 
     <ul>
       <li>scoring is based on points ("faan") and tiered limits ("laak"), which are mapped to a real score</li>
@@ -651,7 +649,7 @@
   </section>
 
   <section id="controls">
-    <h2>Using the game interface</h2>
+    <h2><a href="#controls">Using the game interface</a></h2>
 
     <p>
       This game can be played with either a mouse or keyboard (or combination of the two).

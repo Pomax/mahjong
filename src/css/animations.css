@@ -34,6 +34,7 @@ game-tile.discard[from="3"] { animation: p3-discard 0.5s; }
   animation: fade-out 2s;
   width: var(--ph);
   text-align: center;
+  z-index: 1000;
 }
 .announcement[data-player="0"] { bottom: var(--ph); right: calc(50% - 2em); }
 .announcement[data-player="1"] { left: var(--ph); top: 50%; }

@@ -27,7 +27,6 @@ class ThemeModal {
     this.loadSidebar();
     this.loadPlayerBanks();
     this.loadTileset();
-    this.loadColorScheme();
   }
 
   reset() {
@@ -36,6 +35,7 @@ class ThemeModal {
       `mahjongSidebar`,
       `mahjongPlayerBanks`,
       `mahjongTileset`,
+      `mahjongCSS`,
     ].forEach((key) => {
       localStorage.removeItem(key);
       const e = document.getElementById(`mahjongBackground`);
@@ -46,22 +46,10 @@ class ThemeModal {
     window.location.reload();
   }
 
-  setStyleSheet(id, css) {
-    let style = document.getElementById(id);
-    if (style) {
-      style.parentNode.removeChild(style);
-    } else {
-      style = document.createElement(`style`);
-    }
-    style.id = id;
-    style.textContent = css;
-    document.body.append(style);
-  }
-
   loadBackground() {
     const dataURL = localStorage.getItem("mahjongBackground");
     if (dataURL) {
-      this.setStyleSheet(
+      this.modal.setStyleSheet(
         `mahjongBackground`,
         `.board .discards { background-image: url(${dataURL}); }`
       );
@@ -76,7 +64,7 @@ class ThemeModal {
   loadSidebar() {
     const dataURL = localStorage.getItem("mahjongSidebar");
     if (dataURL) {
-      this.setStyleSheet(
+      this.modal.setStyleSheet(
         `mahjongSidebar`,
         `.board .sidebar { background-image: url(${dataURL}); }`
       );
@@ -91,7 +79,7 @@ class ThemeModal {
   loadPlayerBanks() {
     const dataURL = localStorage.getItem("mahjongPlayerBanks");
     if (dataURL) {
-      this.setStyleSheet(
+      this.modal.setStyleSheet(
         `mahjongPlayerBanks`,
         `.players .player { background-image: url(${dataURL}); }`
       );
@@ -106,7 +94,7 @@ class ThemeModal {
   async loadTileset() {
     const dataURL = localStorage.getItem("mahjongTileset");
     if (dataURL) {
-      this.setStyleSheet(
+      this.modal.setStyleSheet(
         `mahjongTileset`,
         await this.createTileSetCSS(dataURL)
       );
@@ -170,28 +158,6 @@ class ThemeModal {
     localStorage.setItem("mahjongTileset", background);
   }
 
-  getCSSColors() {
-    const s = Array.from(document.styleSheets).find((s) =>
-      s.ownerNode.href.includes(`/colors.css`)
-    );
-    const colors = Array.from(s.rules[0].style);
-    const colorsForHumans = colors.map((v) =>
-      v.replace(/^--/, "").replaceAll("-", " ")
-    );
-    const values = colors.map((v) =>
-      getComputedStyle(document.documentElement).getPropertyValue(v)
-    );
-    return { colors, colorsForHumans, values };
-  }
-
-  loadColorScheme() {
-    const colorCSS = localStorage.getItem("mahjongCSS");
-    if (colorCSS) {
-      this.setStyleSheet(`mahjongCSS`, mahjongCSS);
-    }
-    return !!colorCSS;
-  }
-
   /**
    * Configure all the configurable options and
    * then relaunch the game on the appropriate URL.
@@ -247,29 +213,19 @@ class ThemeModal {
         type: `file`,
         handler: handle("Tileset"),
       },
+      {
+        label: "CSS colors",
+        button_label: "Change...",
+        type: `button`,
+        evtType: `click`,
+        handler: (entry, evt) => {
+          this.modal.pickColors();
+        }
+      }
     ];
 
     return options;
   }
-
-  /*
-    Object.keys(builder).forEach((key) => {
-      const value = builder[key];
-      const type = value.button ? `button` : `file`;
-      const text = value.button ? value.text : `pick...`;
-
-      const tr = document.createElement(`tr`);
-      table.append(tr);
-      tr.innerHTML = `
-        <td style="white-space: nowrap">${value.label}</td>
-        <td><input class="picker" type="${type}" value="${text}"></td>
-      `;
-
-      const picker = tr.querySelector(`.picker`);
-      const evtType = value.button ? `click` : `input`;
-      picker.addEventListener(evtType, (evt) => builder[key].handler(evt));
-    });
-    */
 }
 
 if (typeof process !== "undefined") {

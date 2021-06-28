@@ -1,9 +1,8 @@
 if (typeof process !== "undefined") {
-  OptionsDialog = require('./options-dialog.js');
-  SettingsModal = require('./settings.js');
-  ScoreModal = require('./scores.js');
+  OptionsDialog = require("./options-dialog.js");
+  SettingsModal = require("./settings.js");
+  ScoreModal = require("./scores.js");
 }
-
 
 /**
  * A modal dialog handling class. The actual dialog
@@ -12,35 +11,42 @@ if (typeof process !== "undefined") {
  * functionality such as show/hide and dialog stacking.
  */
 class Modal {
-  constructor(fixed=false) {
+  constructor(fixed = false) {
     this.fixed = fixed;
     this.modal = document.querySelector(".modal");
-    this.gameBoard = document.querySelector('.board');
+    this.gameBoard = document.querySelector(".board");
     this.panels = [];
     this.choice = new OptionsDialog(this);
     this.settings = new SettingsModal(this);
     this.theming = new ThemeModal(this);
+    this.colors = new ColorModal(this);
     this.scores = new ScoreModal(this);
   }
 
   // show the modal stack
-  reveal() { this.modal.classList.remove("hidden"); }
+  reveal() {
+    this.modal.classList.remove("hidden");
+  }
 
   // is the modal stack visible?
-  isHidden() { return this.modal.classList.contains('hidden'); }
+  isHidden() {
+    return this.modal.classList.contains("hidden");
+  }
 
   // hide the modal stack
-  hide() { this.modal.classList.add("hidden"); }
+  hide() {
+    this.modal.classList.add("hidden");
+  }
 
   /**
    * Create a new modal panel to show data in.
    */
-  makePanel (name) {
+  makePanel(name) {
     let panels = this.panels;
     let panel = document.createElement("div");
     panel.classList.add("panel");
     if (name) panel.classList.add(name);
-    panels.forEach(p => (p.style.display = "none"));
+    panels.forEach((p) => (p.style.display = "none"));
     panels.push(panel);
     this.modal.appendChild(panel);
     return panel;
@@ -50,8 +56,8 @@ class Modal {
    * Close the currently-active modal, which will either
    * reveal the underlying modal, or hide the master overlay.
    */
-  close(unbind=[]) {
-    unbind.forEach(opt => {
+  close(unbind = []) {
+    unbind.forEach((opt) => {
       opt.object.addEventListener(opt.evtName, opt.handler);
     });
     let modal = this.modal;
@@ -59,11 +65,10 @@ class Modal {
     let panel = panels.pop();
     if (panel) modal.removeChild(panel);
     if (panels.length) {
-      let panel = panels[panels.length - 1]
+      let panel = panels[panels.length - 1];
       panel.style.display = "block";
       if (panel.gainFocus) panel.gainFocus();
-    }
-    else {
+    } else {
       this.hide();
       this.gameBoard.focus();
     }
@@ -73,15 +78,26 @@ class Modal {
    * TODO: merge options, values, and differs, because
    * there is no reason at all for those to not be unified.
    */
-   buildPanelContent(options, wrapInForm=false) {
-     const debug = config.DEBUG;
+  buildPanelContent(options, wrapInForm = false) {
+    const debug = config.DEBUG;
 
-     const form = wrapInForm ? document.createElement(`form`) : undefined;
-     const table = document.createElement(`table`);
-     this.panels.last().append(table);
+    const form = wrapInForm ? document.createElement(`form`) : undefined;
+    const table = document.createElement(`table`);
+    this.panels.last().append(table);
 
-    options.forEach(entry => {
-      const { label, key, value, default_value, options, type, evtType, handler, debug_only } = entry;
+    options.forEach((entry) => {
+      const {
+        label,
+        button_label,
+        key,
+        value,
+        default_value,
+        options,
+        type,
+        evtType,
+        handler,
+        debug_only,
+      } = entry;
       let row;
 
       if (!label) {
@@ -95,19 +111,39 @@ class Modal {
       }
 
       row = document.createElement(`tr`);
-      let field = `<input class="${key} field" type"${type || `text`}" value="${value}">`;
+      let field = `<input class="${key} field" type"${
+        type || `text`
+      }" value="${value}">`;
 
       if (options) {
         field = `
           <select class="${key} field">
-            ${options.map(opt =>
-              `<option value="${opt}"${opt === value? ` selected`:``
-            }>${`${opt}`.replace(/_/g,' ')}</option>`)}
+            ${options.map(
+              (opt) =>
+                `<option value="${opt}"${
+                  opt === value ? ` selected` : ``
+                }>${`${opt}`.replace(/_/g, " ")}</option>`
+            )}
           </select>`;
       }
 
       if (type === `file`) {
         field = `<input class="${key} picker field" type="${type}" value="pick...">`;
+      }
+
+      if (type === `button`) {
+        field = `<input class="${key} picker field" type="${type}" value="${button_label}">`;
+      }
+
+      if (type === `color`) {
+        field = `<input class="${key} picker field" type="${type}" value="${value.substring(0,7)}">`;
+        if (value.length === 9) {
+          // HTML5 can't do opacity natively using <input type="color">...
+          field += `<input class="${key} opacity" type="range" min="0" max="255" step="1" value="${parseInt(
+            value.substring(7),
+            16
+          )}">`;
+        }
       }
 
       row.innerHTML = `
@@ -116,13 +152,25 @@ class Modal {
       `;
       table.appendChild(row);
 
-      row.querySelector(`.field:last-child`).addEventListener(evtType || `input`, evt => {
-        if (handler) {
-          handler(entry, evt);
-        } else {
-          entry.value = evt.target.value;
+      row
+        .querySelector(`.field`)
+        .addEventListener(evtType || `input`, (evt) => {
+          if (handler) {
+            handler(entry, evt);
+          } else {
+            entry.value = evt.target.value;
+          }
+        });
+
+      // make sure we get opacity changes set over as well.
+      if (type === `color`) {
+        const opacity = row.querySelector(`.field + .opacity`);
+        if (opacity) {
+          opacity.addEventListener(`input`, (evt) => {
+            handler(entry, false, evt.target.value);
+          });
         }
-      });
+      }
     });
 
     if (wrapInForm) {
@@ -139,41 +187,43 @@ class Modal {
    * Add a generic footer with an "OK" button,
    * and automated focus handling.
    */
-  addFooter(panel, modalLabel="OK", resolve=(()=>{}), botDismissible) {
-    let ok = document.createElement('button');
+  addFooter(panel, modalLabel = "OK", resolve = () => {}, botDismissible) {
+    let ok = document.createElement("button");
     ok.textContent = modalLabel;
-    ok.addEventListener('click', () => {
-      this.close([{ object:document, evntName:'focus', handler: panel.gainFocus }]);
+    ok.addEventListener("click", () => {
+      this.close([
+        { object: document, evntName: "focus", handler: panel.gainFocus },
+      ]);
       resolve();
     });
     panel.appendChild(ok);
 
     // Auto-dismiss the score panel during bot play,
     // UNLESS the user interacts with the modal.
-    if(config.BOT_PLAY && botDismissible) {
+    if (config.BOT_PLAY && botDismissible) {
       let dismiss = () => ok.click();
       setTimeout(() => dismiss(), config.HAND_INTERVAL);
-      panel.addEventListener('click', () => dismiss = () => {});
+      panel.addEventListener("click", () => (dismiss = () => {}));
     }
 
     panel.gainFocus = () => ok.focus();
-    document.addEventListener('focus', panel.gainFocus);
+    document.addEventListener("focus", panel.gainFocus);
 
-    let defaultFocus = evt => {
+    let defaultFocus = (evt) => {
       let name = evt.target.nodeName.toLowerCase();
-      if (name === 'select' || name === 'input') return;
+      if (name === "select" || name === "input") return;
       panel.gainFocus();
     };
 
-    panel.addEventListener('click', defaultFocus);
-    panel.addEventListener('touchstart', defaultFocus, {passive:true});
+    panel.addEventListener("click", defaultFocus);
+    panel.addEventListener("touchstart", defaultFocus, { passive: true });
     panel.gainFocus();
   }
 
   /**
    * Offer a button dialog modal
    */
-  choiceInput(label, options, resolve, cancel)  {
+  choiceInput(label, options, resolve, cancel) {
     this.reveal();
     this.choice.show(label, options, resolve, cancel);
   }
@@ -182,9 +232,9 @@ class Modal {
    * Show the end-of-hand score breakdown.
    */
   setScores(hand, rules, scores, adjustments, resolve) {
-    this.reveal()
+    this.reveal();
     this.scores.show(hand, rules, scores, adjustments, resolve);
-  };
+  }
 
   /**
    * Show the end-of-game score breakdown.
@@ -198,7 +248,7 @@ class Modal {
    * Show all available settings for the game.
    */
   pickPlaySettings() {
-    this.reveal()
+    this.reveal();
     this.settings.show();
   }
 
@@ -208,6 +258,29 @@ class Modal {
   pickTheming() {
     this.reveal();
     this.theming.show();
+  }
+
+  /**
+   * Show theming options for the game
+   */
+  pickColors() {
+    this.reveal();
+    this.colors.show();
+  }
+
+  /**
+   * Theminig/coloring utility function
+   */
+  setStyleSheet(id, css) {
+    let style = document.getElementById(id);
+    if (style) {
+      style.parentNode.removeChild(style);
+    } else {
+      style = document.createElement(`style`);
+    }
+    style.id = id;
+    style.textContent = css;
+    document.body.append(style);
   }
 }
 
