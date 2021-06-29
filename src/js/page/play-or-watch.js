@@ -2,6 +2,7 @@ import "../core/utils/utils.js";
 import { config } from "../../config.js";
 import { modal } from "../page/modal/modal.js";
 import { GameManager } from "../core/game/game-manager.js";
+import { rotateWinds } from "../core/players/ui/windicator.js";
 
 // import { ClientUIMaster } from "../core/players/ui/client-ui-master.js";
 
