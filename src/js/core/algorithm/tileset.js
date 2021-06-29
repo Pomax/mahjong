@@ -80,6 +80,4 @@ class TileSet {
     }
 }
 
-if (typeof process !== "undefined") {
-    module.exports = TileSet;
-}
+export { TileSet };

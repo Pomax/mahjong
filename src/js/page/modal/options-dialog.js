@@ -1,3 +1,5 @@
+import { VK_UP, VK_DOWN, VK_START, VK_END } from "../virtual-keys.js";
+
 class OptionsDialog {
   constructor(modal) {
       this.modal = modal;
@@ -82,6 +84,4 @@ class OptionsDialog {
   }
 }
 
-if (typeof process !== "undefined") {
-  module.exports = OptionsDialog;
-}
+export { OptionsDialog };

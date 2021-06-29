@@ -1,8 +1,7 @@
-if (typeof process !== "undefined") {
-  config = require('../../../../config.js');
-  buildStatsContainer = require('./stats.js');
-  max = require('../../utils/math.js').max;
-}
+import { config, CLAIM } from "../../../../config.js";
+import { buildStatsContainer } from "./stats.js";
+import { max } from "../../utils/math.js";
+
 
 /**
  * This is a class that regulates, given a tile that a bot might
@@ -315,6 +314,4 @@ class Personality {
   }
 }
 
-if (typeof process !== "undefined") {
-  module.exports = Personality;
-}
+export { Personality };

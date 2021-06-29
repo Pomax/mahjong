@@ -1,3 +1,7 @@
+import { config } from "../../../config.js";
+import { Ruleset } from "../../core/scoring/ruleset.js";
+import { WallHack  } from "../../core/game/wall/wall-hack.js";
+
 class SettingsModal {
   constructor(modal) {
     this.modal = modal;
@@ -162,6 +166,4 @@ class SettingsModal {
   }
 }
 
-if (typeof process !== "undefined") {
-  module.exports = SettingsModal;
-}
+export { SettingsModal };

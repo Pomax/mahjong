@@ -1,8 +1,9 @@
-if (typeof process !== "undefined") {
-  Player = require('./player.js');
-  Personality = require('./personality/personality.js');
-  tilesNeeded = require('../algorithm/tiles-needed.js');
-}
+import { Player } from "./player.js";
+import { Personality } from "./personality/personality.js";
+import { config, CLAIM, Constants } from "../../../config.js";
+import { min, max } from "../utils/math.js";
+import { unhash, hash } from "../../core/algorithm/hash-printing.js";
+import { create } from "../utils/utils.js";
 
 /**
  * This guy should be obvious: bots are simply
@@ -541,6 +542,4 @@ class BotPlayer extends Player {
   }
 }
 
-if (typeof process !== "undefined") {
-  module.exports = BotPlayer;
-}
+export { BotPlayer };

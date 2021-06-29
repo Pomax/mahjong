@@ -159,6 +159,4 @@ const create = (tileNumber, hidden) => {
   return span;
 }
 
-if (typeof process !== "undefined") {
-  module.exports = create;
-}
+export { create, GameTile };

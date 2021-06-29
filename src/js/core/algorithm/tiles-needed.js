@@ -1,9 +1,8 @@
-if (typeof process !== "undefined") {
-  Pattern = require("./pattern.js");
-  unroll = require('../utils/utils.js').unroll;
-  TileSet = require("./tileset.js");
-  Constants = require("../../../config.js").Constants;
-}
+import { Pattern } from "./pattern.js";
+import { PatternSet } from "./pattern-set.js";
+import { unroll } from "../utils/utils.js";
+import { TileSet } from "./tileset.js";
+import { Constants } from "../../../config.js";
 
 
 /**
@@ -344,3 +343,5 @@ if (typeof process !== "undefined") { (function() {
     });
   }
 })()}
+
+export { tilesNeeded };

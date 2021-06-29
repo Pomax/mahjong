@@ -68,6 +68,4 @@ PatternSet.fromTiles = (tiles, locked, concealed) => {
   return new PatternSet(type, tile, locked, concealed);
 }
 
-if (typeof process !== "undefined") {
-  module.exports = PatternSet;
-}
+export { PatternSet };

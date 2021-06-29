@@ -1,8 +1,10 @@
-if (typeof process !== "undefined") {
-  OptionsDialog = require("./options-dialog.js");
-  SettingsModal = require("./settings.js");
-  ScoreModal = require("./scores.js");
-}
+import { config } from "../../../config.js";
+import { OptionsDialog } from "./options-dialog.js";
+import { SettingsModal } from "./settings.js";
+import { ScoreModal } from "./scores.js";
+import { ThemeModal } from "./theming.js";
+import { ColorModal } from "./colors.js";
+
 
 /**
  * A modal dialog handling class. The actual dialog
@@ -286,6 +288,4 @@ class Modal {
 
 let modal = new Modal();
 
-if (typeof process !== "undefined") {
-  module.exports = modal;
-}
+export { modal };

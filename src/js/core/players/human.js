@@ -1,7 +1,7 @@
-if (typeof process !== "undefined") {
-  BotPlayer = require('./bot.js');
-  ClientUI = require('./ui/client-ui.js');
-}
+import { config, CLAIM } from "../../../config.js";
+import { BotPlayer } from "./bot.js";
+import { ClientUI } from "./ui/client-ui.js";
+
 
 /**
  * And this is a human player... which is "a kind
@@ -82,6 +82,4 @@ class HumanPlayer extends BotPlayer {
   }
 }
 
-if (typeof process !== "undefined") {
-  module.exports = HumanPlayer;
-}
+export { HumanPlayer };

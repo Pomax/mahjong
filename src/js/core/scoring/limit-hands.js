@@ -41,6 +41,4 @@ class LimitHands {
   }
 }
 
-if (typeof process !== "undefined") {
-  module.exports = LimitHands;
-}
+export { LimitHands };

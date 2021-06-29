@@ -1,8 +1,7 @@
-if (typeof process !== "undefined") {
-  document = require('../utils/dom-shim.js');
-  TileTracker = require('./tracking/tile-tracker.js');
-  tilesNeeded = require('./../algorithm/tiles-needed.js');
-}
+import { TileTracker } from "./tracking/tile-tracker.js";
+import { tilesNeeded } from "./../algorithm/tiles-needed.js";
+import { create } from "../utils/utils.js";
+
 
 // =========================================
 //        Let's define a Player class!
@@ -452,6 +451,4 @@ class PlayerMaster {
   }
 }
 
-if (typeof process !== "undefined") {
-  module.exports = PlayerMaster;
-}
+export { PlayerMaster };

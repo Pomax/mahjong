@@ -1,3 +1,5 @@
+import { Constants } from "../../../config.js";
+
 /**
  * hash a tile requirement object to a compact string form.
  */
@@ -22,7 +24,4 @@ function unhash(print, tile) {
   return obj;
 }
 
-// node context
-if (typeof process !== "undefined") {
-  module.exports = { hash, unhash };
-}
+export { unhash, hash };

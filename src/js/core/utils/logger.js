@@ -25,6 +25,7 @@ const playlog = {
     }
 };
 
+/*
 if (typeof process !== "undefined") {
     const noop = ()=>{};
     const fs = require('fs');
@@ -60,3 +61,6 @@ if (typeof process !== "undefined") {
 
     module.exports = playlog;
 }
+*/
+
+export { playlog };

@@ -1,6 +1,5 @@
-if (typeof process !== "undefined") {
-  Ruleset = require('./ruleset.js');
-}
+import { config } from "../../../config.js";
+import { Ruleset } from "./ruleset.js";
 
 /**
  * Cantonese rules.
@@ -202,3 +201,5 @@ class Cantonese extends Ruleset {
 
 // register as a ruleset
 Ruleset.register(Cantonese);
+
+export { Cantonese };

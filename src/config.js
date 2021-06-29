@@ -1,6 +1,8 @@
-if (typeof process !== "undefined") {
-  Random = require("./js/core/utils/prng.js");
-}
+import { Random } from "./js/core/utils/prng.js";
+import { playlog } from "./js/core/utils/logger.js";
+
+import "./js/core/scoring/cantonese.js";
+import "./js/core/scoring/chinese-classical.js";
 
 const noop = () => {};
 const __console_debug = console.debug.bind(console);
@@ -126,9 +128,6 @@ if (currentConfig.WALL_HACK || currentConfig.PLAY_IMMEDIATELY) {
   currentConfig.FORCE_OPEN_BOT_PLAY = true;
   currentConfig.USE_SOUND = true;
 }
-
-// The simple config is for settings I personally change a lot during development.
-const simple = {};
 
 // Constants used during play, for determining
 // claim types on discarded tiles.
@@ -370,11 +369,7 @@ const config = Object.assign(
 // bind console.debug correctly.
 config.set({ DEBUG: currentConfig.DEBUG });
 
-// in we running in node context?
-if (typeof process !== "undefined") {
-  module.exports = config;
-  playlog = require("./js/core/utils/logger.js");
-}
-
 config.log = playlog.log;
 config.flushLog = playlog.flush;
+
+export { config, CLAIM,  Constants, TILE_NAMES, TILE_GLYPHS, SUIT_NAMES };

@@ -1,6 +1,4 @@
-if (typeof process !== "undefined") {
-  random = require('./math').random;
-}
+import { random } from "./math.js";
 
 /**
  * Creates a pseudo-random value generator. The seed must be an integer.
@@ -56,7 +54,4 @@ Random.prototype.nextFloat = function (opt_minOrMax, opt_max) {
   return (this.next() - 1) / 2147483646;
 };
 
-
-if(typeof process !== "undefined") {
-  module.exports = Random;
-}
+export { Random };

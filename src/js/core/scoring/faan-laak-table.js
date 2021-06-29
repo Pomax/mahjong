@@ -36,6 +36,4 @@ class FaakLaakTable {
   }
 }
 
-if (typeof process !== "undefined") {
-  module.exports = FaakLaakTable;
-}
+export { FaakLaakTable };

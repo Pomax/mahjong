@@ -1,3 +1,10 @@
+import "../core/utils/utils.js";
+import { config } from "../../config.js";
+import { modal } from "../page/modal/modal.js";
+import { GameManager } from "../core/game/game-manager.js";
+
+// import { ClientUIMaster } from "../core/players/ui/client-ui-master.js";
+
 /**
  * This is the function that runs as the very first call
  * when the web page loads: do you want to play a game,

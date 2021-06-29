@@ -1,8 +1,7 @@
-if (typeof process !== "undefined") {
-  HumanPlayer = require('../players/human.js');
-  BotPlayer = require('../players/bot.js');
-  Game = require('./game.js');
-}
+import { HumanPlayer } from "../players/human.js";
+import { BotPlayer } from "../players/bot.js";
+import { Game } from "./game.js";
+import { config } from "../../../config.js";
 
 
 /**
@@ -34,11 +33,9 @@ class GameManager {
 
     let gameBoard = document.querySelector('.board');
     gameBoard.focus();
-    
+
     return game;
   }
 }
 
-if (typeof process !== "undefined") {
-  module.exports = GameManager;
-}
+export { GameManager };

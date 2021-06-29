@@ -1,6 +1,7 @@
-if (typeof process !== "undefined") {
-  ClientUIMaster = require('./client-ui-master.js');
-}
+import { config, CLAIM } from "../../../../config.js";
+import { modal } from "../../../page/modal/modal.js";
+import { ClientUIMaster } from "./client-ui-master.js";
+import { lock_vk_signal, vk_signal_lock, VK_LEFT, VK_RIGHT, VK_UP, VK_DOWN, VK_START, VK_END, VK_SIGNAL } from "../../../page/virtual-keys.js";
 
 
 /**
@@ -573,6 +574,4 @@ class ClientUI extends ClientUIMaster {
   }
 }
 
-if (typeof process !== "undefined") {
-  module.exports = ClientUI;
-}
+export { ClientUI };

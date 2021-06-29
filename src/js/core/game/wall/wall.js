@@ -1,3 +1,5 @@
+import { config } from "../../../../config.js";
+
 let base = [...new Array(34)].map((_,i) => i);
 const BASE = base.concat(base).concat(base).concat(base).concat([34,35,36,37,38,39,40,41]);
 
@@ -56,6 +58,4 @@ class Wall {
   }
 }
 
-if (typeof process !== "undefined") {
-  module.exports = Wall;
-}
+export { Wall };

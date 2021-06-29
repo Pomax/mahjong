@@ -1,10 +1,7 @@
-if (typeof process !== "undefined") {
-  let hp = require("./hash-printing.js");
-  hash = hp.hash;
-  unhash = hp.unhash;
-  Constants = require("../../../config.js").Constants;
-  PatternSet = require("./pattern-set.js");
-}
+import { unhash, hash } from "./hash-printing.js";
+import { Constants } from "../../../config.js";
+import { PatternSet } from "./pattern-set.js";
+
 
 /**
  * An analysis class for working with collections
@@ -277,8 +274,4 @@ class Pattern {
   }
 }
 
-
-// Node context
-if (typeof process !== "undefined") {
-  module.exports = Pattern;
-}
+export { Pattern };

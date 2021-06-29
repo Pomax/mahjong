@@ -212,7 +212,4 @@ const WallHack = {
   }
 };
 
-
-if (typeof process !== "undefined") {
-  module.exports = WallHack;
-}
+export { WallHack };

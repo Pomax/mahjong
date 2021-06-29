@@ -1,3 +1,5 @@
+import { create } from "../game/game-tile.js";
+
 Array.prototype.last = function last() {
   return this[this.length - 1];
 };
@@ -35,7 +37,4 @@ function unroll(list, seen = [], result = []) {
   return result;
 }
 
-if (typeof process !== "undefined") {
-  let create = require("../game/game-tile.js");
-  module.exports = { create, unroll };
-}
+export { create, unroll };

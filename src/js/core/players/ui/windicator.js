@@ -74,8 +74,4 @@ const rotateWinds = (function generateRotateWindsFunction() {
   return rotateWinds;
 })();
 
-
-if (typeof process !== "undefined") {
-  module.exports = rotateWinds;
-}
-
+export { rotateWinds };

@@ -228,6 +228,4 @@ class ThemeModal {
   }
 }
 
-if (typeof process !== "undefined") {
-  module.exports = ThemeModal;
-}
+export { ThemeModal };

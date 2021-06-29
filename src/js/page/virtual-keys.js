@@ -6,7 +6,7 @@
  * 'a' key, for those who are used to WASD controls.
  */
 
- const VK_LEFT = {
+const VK_LEFT = {
   "37": true, // left cursor
   "65": true  // 'a' key
 };
@@ -59,4 +59,17 @@ function unlock_vk_signal(evt) {
     vk_signal_lock = false;
     document.removeEventListener('keyup', unlock_vk_signal);
   }
+};
+
+export {
+  vk_signal_lock,
+  lock_vk_signal,
+  unlock_vk_signal,
+  VK_LEFT,
+  VK_RIGHT,
+  VK_UP,
+  VK_DOWN,
+  VK_START,
+  VK_END,
+  VK_SIGNAL
 };

@@ -1,6 +1,5 @@
-if (typeof process !== "undefined") {
-  document = require('../core/utils/dom-shim.js').document;
-}
+import { config } from "../../config.js";
+import { random } from "../core/utils/math.js";
 
 const filenames = {
   thud: [
@@ -74,6 +73,4 @@ function playClip(name, id) {
   // the first playback because it's the same <audio>
 }
 
-if (typeof process !== "undefined") {
-  module.exports = playClip;
-}
+export { playClip };
