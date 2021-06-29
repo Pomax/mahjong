@@ -1,3 +1,5 @@
+import { config } from "../../../config.js";
+
 const playlog = {
     lines: [],
     prefix: () => `${Date.now()}: `,
