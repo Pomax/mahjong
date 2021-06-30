@@ -10,6 +10,9 @@
  * `await`ed to effect a non-blocking "pause".
  */
 class TaskTimer {
+  static id = 0;
+  static timers = {};
+
   /**
    * Create a timed task monitor.
    *

@@ -27,42 +27,4 @@ const playlog = {
     }
 };
 
-/*
-if (typeof process !== "undefined") {
-    const noop = ()=>{};
-    const fs = require('fs');
-    const config = require('../../../config');
-
-    let lines = [];
-    let prefix = () => ''; // `${Date.now()}: `;
-
-    playlog.flush = (andThen=noop) => {
-        if (config.WRITE_GAME_LOG) {
-            let data = lines.slice().join('\n');
-            fs.writeFile(`play-log-${config.SEED}.log`, data, { flag: 'w', encoding: 'utf-8' }, andThen);
-        }
-        lines = [];
-    };
-
-    playlog.log = (...args) => {
-        args.forEach((text,i) => {
-            if (typeof text !== "string") text = JSON.stringify(text);
-            if (text) {
-                text.split('\n').forEach(line => {
-                    lines.push(`${prefix()}${line}`);
-                });
-            }
-        })
-    };
-
-    process.on('SIGINT', function() {
-        playlog.flush(() => {
-            process.exit();
-        });
-    });
-
-    module.exports = playlog;
-}
-*/
-
 export { playlog };

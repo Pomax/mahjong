@@ -32,17 +32,6 @@ let rollCount = 0;
  */
 Random.prototype.next = function () {
   rollCount++;
-
-//  if (!config) config = require('../../config.js')
-//  console.log(`PRNG ROLLOVER ${rollCount}`);
-//  if (typeof window !== "undefined") {
-//    console.log(`PRNG ROLLOVER ${rollCount}`);
-//  }
-//  if (rollCount>144 * 2 + 10) {
-//    console.trace();
-//    process.exit(-1);
-//  }
-
   return this.seed(this._seed * 16807 % 2147483647);
 };
 

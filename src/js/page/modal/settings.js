@@ -46,14 +46,14 @@ class SettingsModal {
         .filter((e) => e.value != e.default_value)
         .map((e) => `${e.key}=${e.value}`)
         .join("&");
-      window.location.search = suffix ? `?${suffix}` : ``;
+        globalThis.location.search = suffix ? `?${suffix}` : ``;
     });
 
     let ok = table.querySelector(`#ok`);
     panel.gainFocus = () => ok.focus();
 
     let reset = table.querySelector(`#reset`);
-    reset.addEventListener("click", (evt) => (window.location.search = ""));
+    reset.addEventListener("click", (evt) => (globalThis.location.search = ""));
   }
 
   getOptions() {
@@ -90,7 +90,7 @@ class SettingsModal {
         options: [true, false],
       },
       {
-        label: `♻️ Autostart bot play`,
+        label: `▶️ Start play immediately`,
         key: `play_immediately`,
         options: [true, false],
       },

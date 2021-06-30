@@ -49,8 +49,8 @@ class ClientUIMaster {
     // into the player`s UI. This is super bad, but for
     // development purposes, rather required.
     if (config.FORCE_OPEN_BOT_PLAY) {
-      window.PLAYER_BANKS = this.playerbanks;
-      window.PLAYER_BANKS.sortTiles = e => this.sortTiles(e);
+      globalThis.PLAYER_BANKS = this.playerbanks;
+      globalThis.PLAYER_BANKS.sortTiles = e => this.sortTiles(e);
     }
   }
 

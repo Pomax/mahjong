@@ -1,12 +1,14 @@
 import { create } from "../game/game-tile.js";
 
+/**
+ * We all know what this does.
+ */
 Array.prototype.last = function last() {
   return this[this.length - 1];
 };
 
 /**
- * Add this to the array prototype, but this is an array function
- * and I don't want to see some bs 'dothis(array, fn)' anywhere.
+ * More intentional Array prototype overloading.
  */
 Array.prototype.asyncAll = async function asyncAll(fn) {
   return await Promise.all(

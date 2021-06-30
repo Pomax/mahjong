@@ -43,7 +43,7 @@ class ThemeModal {
         e.parentNode.removeChild(e);
       }
     });
-    window.location.reload();
+    globalThis.location.reload();
   }
 
   loadBackground() {

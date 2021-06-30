@@ -1,32 +1,3 @@
-if (typeof process !== "undefined") {
-  let shim = require('../utils/dom-shim.js');
-  document = shim.document;
-  ClassList = shim.Classlist;
-  HTMLElement = class HTMLElement {
-    constructor() {
-        this.classList = new ClassList();
-        this.dataset = {};
-        this.attributes = {};
-    }
-    setAttribute(a,v) {
-      let _ = this.attributes[a];
-      this.attributes[a] = v;
-      this.attributeChangedCallback(a, _, v);
-    }
-    removeAttribute(a) { delete this.attributes[a]; }
-    cloneNode(Type=HTMLElement)  {
-      let dso = new Type();
-      dso.classList = this.classList.copy();
-      dso.dataset = JSON.parse(JSON.stringify(this.dataset));
-      dso.attributes = JSON.parse(JSON.stringify(this.attributes));
-      return dso;
-    }
-    attributeChangedCallback(name, oldVal, newVal) {
-      // overwritten
-    }
-  }
-}
-
 class GameTile extends HTMLElement {
   constructor(tile=-1) {
     super();
@@ -132,9 +103,7 @@ class GameTile extends HTMLElement {
   }
 }
 
-if (typeof window !== "undefined") {
-    window.customElements.define("game-tile", GameTile);
-}
+globalThis.customElements.define("game-tile", GameTile);
 
 /**
  * Create a <span data-tile="..."></span> element

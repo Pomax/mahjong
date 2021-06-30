@@ -107,6 +107,7 @@ class ClientUI extends ClientUIMaster {
    * (discardable) tiles in the player's tilebank.
    */
   addMouseEventsToTile(tile, suggestions, resolve) {
+    console.log(tile, suggestions);
     this.listen(tile, "mouseover", evt => this.highlightTile(tile));
     this.listen(tile, "click", evt => this.discardCurrentHighlightedTile(suggestions, resolve));
     this.listen(tile, "mousedown", evt => this.initiateLongPress(evt, suggestions, resolve));
@@ -222,8 +223,7 @@ class ClientUI extends ClientUIMaster {
    * The user can win with the tiles they currently have. Do they want to?
    */
   askForWinConfirmation(resolve) {
-
-    console.log('scent of claim?', this.id, ':', this.player.lastClaim);
+    // console.log('scent of claim?', this.id, ':', this.player.lastClaim);
 
     let cancel = () => resolve(undefined);
     modal.choiceInput("Declare win?", [
@@ -236,7 +236,7 @@ class ClientUI extends ClientUIMaster {
         }
         resolve(undefined);
       }
-      else this.listenForDiscard(resolve, false, false, true);
+      else this.listenForDiscard(resolve, undefined, undefined, true); // suggestions, lastClaim, winbypass
     }, cancel);
   }
 

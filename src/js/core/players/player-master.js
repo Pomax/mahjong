@@ -221,12 +221,6 @@ class PlayerMaster {
       face = tile.getTileFace();
     }
 
-    // if (typeof window !== "undefined") {
-    //   console.log(`${this.id} received tile ${face} (isbonus? ${tile.isBonus()})`);
-    // } else {
-    //   config.log(`${this.id} received tile ${face} (isbonus? ${tile.isBonus()})`);
-    // }
-
     this.latest = tile;
 
     if (tile.isBonus()) {
@@ -271,7 +265,7 @@ class PlayerMaster {
   meldKong(tile) {
     this.remove(tile);
     let set = this.locked.find(set => (set[0].getTileFace() === tile.getTileFace()));
-    let meld = set[0].copy();
+    let meld = set[0].cloneNode(true);
     meld.meld();
     set.push(meld);
     if (this.ui) this.ui.meldKong(tile);

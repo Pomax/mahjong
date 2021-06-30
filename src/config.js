@@ -107,20 +107,22 @@ const fromStorage = JSON.parse(localStorage.getItem("mahjongConfig") || "{}");
 let currentConfig = Object.assign(fromStorage, DEFAULT_CONFIG);
 
 // runtime overrides?
-if (typeof window !== "undefined") {
-  let queryArgs = window.location.search.replace(
-    /([a-z_]+)=/g,
-    (a, b) => b.toUpperCase() + "="
-  );
-  let params = new URLSearchParams(queryArgs);
-  let urlConfig = Object.fromEntries(params.entries());
-  currentConfig = Object.assign(currentConfig, urlConfig);
-  for (const [key, value] of Object.entries(currentConfig)) {
-    if (value === "true") currentConfig[key] = true;
-    if (value === "false") currentConfig[key] = false;
-    if (value == parseFloat(value)) currentConfig[key] = parseFloat(value); // note: == rather than ===
-  }
+let queryArgs = globalThis.location.search.replace(
+  /([a-z_]+)=/g,
+  (a, b) => b.toUpperCase() + "="
+);
+
+let params = new URLSearchParams(queryArgs);
+let urlConfig = Object.fromEntries(params.entries());
+
+currentConfig = Object.assign(currentConfig, urlConfig);
+
+for (const [key, value] of Object.entries(currentConfig)) {
+  if (value === "true") currentConfig[key] = true;
+  if (value === "false") currentConfig[key] = false;
+  if (value == parseFloat(value)) currentConfig[key] = parseFloat(value); // note: == rather than ===
 }
+
 
 console.log("playing with", currentConfig);
 
@@ -324,7 +326,7 @@ const config = Object.assign(
 
     // This setting determines which type of play
     // is initiated if PLAY_IMMEDIATELY is true
-    BOT_PLAY: true,
+    BOT_PLAY: false,
 
     // This value determines how long bots will
     // "wait" before discarding a tile. This is

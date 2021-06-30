@@ -9,11 +9,12 @@ import { config } from "../../../config.js";
  */
 class GameManager {
   constructor(players) {
+    const wallHack = config.WALL_HACK;
     this.players = players || [
-      new HumanPlayer(0, config.WALL_HACK),
-      new BotPlayer(1, config.WALL_HACK),
-      new BotPlayer(2, config.WALL_HACK),
-      new BotPlayer(3, config.WALL_HACK),
+      new HumanPlayer(0, wallHack),
+      new BotPlayer(1, wallHack),
+      new BotPlayer(2, wallHack),
+      new BotPlayer(3, wallHack),
     ];
   }
 
@@ -24,12 +25,10 @@ class GameManager {
   newGame() {
     let game = new Game(this.players);
 
-    if (typeof window !== "undefined") {
-      window.currentGame = {
-        game: game,
-        players: this.players
-      };
-    }
+    globalThis.currentGame = {
+      game: game,
+      players: this.players
+    };
 
     let gameBoard = document.querySelector('.board');
     gameBoard.focus();

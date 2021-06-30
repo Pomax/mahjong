@@ -1,7 +1,3 @@
-if (typeof process !== "undefined") {
-  document = require('../../utils/dom-shim.js').document;
-}
-
 /**
  * A dedicated bit of code for rotating the winds as hands are played.
  */

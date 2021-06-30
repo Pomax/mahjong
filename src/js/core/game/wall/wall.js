@@ -1,7 +1,12 @@
 import { config } from "../../../../config.js";
+import { WallHack } from "./wall-hack.js";
 
-let base = [...new Array(34)].map((_,i) => i);
-const BASE = base.concat(base).concat(base).concat(base).concat([34,35,36,37,38,39,40,41]);
+let base = [...new Array(34)].map((_, i) => i);
+const BASE = base
+  .concat(base)
+  .concat(base)
+  .concat(base)
+  .concat([34, 35, 36, 37, 38, 39, 40, 41]);
 
 /**
  * This basically represents a shuffled a pile of tiles
@@ -23,8 +28,8 @@ class Wall {
     list = list.slice();
     let shuffled = [];
     while (list.length) {
-      let pos = (config.PRNG.nextFloat() * list.length)|0;
-      shuffled.push( list.splice(pos,1)[0] );
+      let pos = (config.PRNG.nextFloat() * list.length) | 0;
+      shuffled.push(list.splice(pos, 1)[0]);
     }
     return shuffled;
   }
@@ -48,13 +53,13 @@ class Wall {
   /**
    * Get one or more tiles from this pile of tiles.
    */
-  get(howmany=1) {
-    let left = this.tiles.length - howmany;
+  get(howMany = 1) {
+    let left = this.tiles.length - howMany;
     this.remaining = left - this.deadSize;
-    this.players.forEach(p => p.markTilesLeft(this.remaining));
-    this.dead = (this.tiles.length - howmany <= this.deadSize);
-    if (howmany===1) return this.tiles.shift();
-    return this.tiles.splice(0, howmany);
+    this.players.forEach((p) => p.markTilesLeft(this.remaining));
+    this.dead = this.tiles.length - howMany <= this.deadSize;
+    if (howMany === 1) return this.tiles.shift();
+    return this.tiles.splice(0, howMany);
   }
 }
 

@@ -42,8 +42,8 @@ const VK_SIGNAL = {
 /**
  * In addition to the key maps, we also need to
  * make sure we put in the signal lock to prevent
- * OS/application-level keyrepeat from incorrectly
- * triggering click events:
+ * OS/application-level key-repeat from incorrectly
+ * triggering events:
  */
 
 let vk_signal_lock = false;

@@ -42,8 +42,8 @@ class BotPlayer extends Player {
   enableShowTilesAnyway() {
     this.showTilesAnyway = () => {
       if (!config.FORCE_OPEN_BOT_PLAY) return;
-      if (window.PLAYER_BANKS && this.id !== 0) {
-        let bank = window.PLAYER_BANKS[this.id];
+      if (globalThis.PLAYER_BANKS && this.id !== 0) {
+        let bank = globalThis.PLAYER_BANKS[this.id];
         bank.innerHTML = '';
         this.getTileFaces().forEach(t => { t = create(t); bank.appendChild(t); });
         this.locked.forEach((s,sid) => {
@@ -54,7 +54,7 @@ class BotPlayer extends Player {
         })
         this.bonus.forEach(t => { t = create(t); t.lock(); bank.appendChild(t); });
         if (this.waiting) bank.classList.add('waiting'); else bank.classList.remove('waiting');
-        window.PLAYER_BANKS.sortTiles(bank);
+        globalThis.PLAYER_BANKS.sortTiles(bank);
       }
     }
   }
