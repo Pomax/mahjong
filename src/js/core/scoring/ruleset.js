@@ -1,7 +1,8 @@
-if (typeof process !== "undefined") {
-  LimitHands = require('./limit-hands.js');
-  FaakLaakTable = require('./faan-laak-table.js');
-}
+import { config } from "../../../config.js";
+import { LimitHands } from "./limit-hands.js";
+import { FaakLaakTable } from "./faan-laak-table.js";
+import { tilesNeeded } from "../algorithm/tiles-needed.js";
+import { PatternSet } from "../algorithm/pattern-set.js";
 
 /**
  * The generic ruleset object that specific
@@ -553,11 +554,4 @@ Ruleset.POINTS_DOUBLES = Symbol();
 })();
 
 
-// Node context
-if (typeof process !== "undefined") {
-  module.exports = Ruleset;
-
-  // make sure all the actual rules are loaded.
-  require('./chinese-classical.js');
-  require('./cantonese.js');
-}
+export { Ruleset };

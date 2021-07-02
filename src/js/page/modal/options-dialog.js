@@ -1,3 +1,5 @@
+import { VK_UP, VK_DOWN, VK_START, VK_END } from "../virtual-keys.js";
+
 class OptionsDialog {
   constructor(modal) {
       this.modal = modal;
@@ -11,7 +13,7 @@ class OptionsDialog {
   show(label, options, resolve, cancel)  {
     let panel = this.modal.makePanel();
     if (options.fixed) panel.fixed = true;
-    panel.innerHTML = `<h1>${label}</h1>`;
+  panel.innerHTML = `<h1>${label}</h1>`;
 
     let bid = 0;
     let btns = [];
@@ -82,6 +84,4 @@ class OptionsDialog {
   }
 }
 
-if (typeof process !== "undefined") {
-  module.exports = OptionsDialog;
-}
+export { OptionsDialog };

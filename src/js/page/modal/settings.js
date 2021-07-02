@@ -1,3 +1,7 @@
+import { config } from "../../../config.js";
+import { Ruleset } from "../../core/scoring/ruleset.js";
+import { WallHack  } from "../../core/game/wall/wall-hack.js";
+
 class SettingsModal {
   constructor(modal) {
     this.modal = modal;
@@ -42,14 +46,14 @@ class SettingsModal {
         .filter((e) => e.value != e.default_value)
         .map((e) => `${e.key}=${e.value}`)
         .join("&");
-      window.location.search = suffix ? `?${suffix}` : ``;
+        globalThis.location.search = suffix ? `?${suffix}` : ``;
     });
 
     let ok = table.querySelector(`#ok`);
     panel.gainFocus = () => ok.focus();
 
     let reset = table.querySelector(`#reset`);
-    reset.addEventListener("click", (evt) => (window.location.search = ""));
+    reset.addEventListener("click", (evt) => (globalThis.location.search = ""));
   }
 
   getOptions() {
@@ -65,17 +69,17 @@ class SettingsModal {
       {
         label: `🀄 Always show everyone's tiles`,
         key: `force_open_bot_play`,
-        options: [true, false],
+        toggle: true,
       },
       {
         label: `✨ Highlight claimable discards`,
         key: `show_claim_suggestion`,
-        options: [true, false],
+        toggle: true,
       },
       {
         label: `💬 Show bot play suggestions`,
         key: `show_bot_suggestion`,
-        options: [true, false],
+        toggle: true,
       },
       {
         // additional boolean flags:
@@ -83,33 +87,33 @@ class SettingsModal {
       {
         label: `🎵 Play sounds`,
         key: `use_sound`,
-        options: [true, false],
+        toggle: true,
       },
       {
-        label: `♻️ Autostart bot play`,
+        label: `🟢 Start play immediately`,
         key: `play_immediately`,
-        options: [true, false],
+        toggle: true,
       },
       {
         label: `⏸️ Pause game unless focused`,
         key: `pause_on_blur`,
-        options: [true, false],
+        toggle: true,
       },
       {
         label: `💻 Turn on debug mode`,
         key: `debug`,
-        options: [true, false],
+        toggle: true,
       },
       {
-        label: `😐 Pretend previous round was a draw`,
+        label: `❌ Pretend previous round was a draw`,
         key: `force_draw`,
-        options: [true, false],
+        toggle: true,
         debug_only: true,
       },
       {
         label: `📃 Generate game log after play`,
         key: `write_game_log`,
-        options: [true, false],
+        toggle: true,
         debug_only: true,
       },
       {
@@ -162,6 +166,4 @@ class SettingsModal {
   }
 }
 
-if (typeof process !== "undefined") {
-  module.exports = SettingsModal;
-}
+export { SettingsModal };

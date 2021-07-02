@@ -1,6 +1,8 @@
-if (typeof process !== "undefined") {
-  Random = require("./js/core/utils/prng.js");
-}
+import { Random } from "./js/core/utils/prng.js";
+import { playlog } from "./js/core/utils/logger.js";
+
+import "./js/core/scoring/cantonese.js";
+import "./js/core/scoring/chinese-classical.js";
 
 const noop = () => {};
 const __console_debug = console.debug.bind(console);
@@ -105,20 +107,22 @@ const fromStorage = JSON.parse(localStorage.getItem("mahjongConfig") || "{}");
 let currentConfig = Object.assign(fromStorage, DEFAULT_CONFIG);
 
 // runtime overrides?
-if (typeof window !== "undefined") {
-  let queryArgs = window.location.search.replace(
-    /([a-z_]+)=/g,
-    (a, b) => b.toUpperCase() + "="
-  );
-  let params = new URLSearchParams(queryArgs);
-  let urlConfig = Object.fromEntries(params.entries());
-  currentConfig = Object.assign(currentConfig, urlConfig);
-  for (const [key, value] of Object.entries(currentConfig)) {
-    if (value === "true") currentConfig[key] = true;
-    if (value === "false") currentConfig[key] = false;
-    if (value == parseFloat(value)) currentConfig[key] = parseFloat(value); // note: == rather than ===
-  }
+let queryArgs = globalThis.location.search.replace(
+  /([a-z_]+)=/g,
+  (a, b) => b.toUpperCase() + "="
+);
+
+let params = new URLSearchParams(queryArgs);
+let urlConfig = Object.fromEntries(params.entries());
+
+currentConfig = Object.assign(currentConfig, urlConfig);
+
+for (const [key, value] of Object.entries(currentConfig)) {
+  if (value === "true") currentConfig[key] = true;
+  if (value === "false") currentConfig[key] = false;
+  if (value == parseFloat(value)) currentConfig[key] = parseFloat(value); // note: == rather than ===
 }
+
 
 console.log("playing with", currentConfig);
 
@@ -126,9 +130,6 @@ if (currentConfig.WALL_HACK || currentConfig.PLAY_IMMEDIATELY) {
   currentConfig.FORCE_OPEN_BOT_PLAY = true;
   currentConfig.USE_SOUND = true;
 }
-
-// The simple config is for settings I personally change a lot during development.
-const simple = {};
 
 // Constants used during play, for determining
 // claim types on discarded tiles.
@@ -325,7 +326,7 @@ const config = Object.assign(
 
     // This setting determines which type of play
     // is initiated if PLAY_IMMEDIATELY is true
-    BOT_PLAY: true,
+    BOT_PLAY: false,
 
     // This value determines how long bots will
     // "wait" before discarding a tile. This is
@@ -370,11 +371,7 @@ const config = Object.assign(
 // bind console.debug correctly.
 config.set({ DEBUG: currentConfig.DEBUG });
 
-// in we running in node context?
-if (typeof process !== "undefined") {
-  module.exports = config;
-  playlog = require("./js/core/utils/logger.js");
-}
-
 config.log = playlog.log;
 config.flushLog = playlog.flush;
+
+export { config, CLAIM,  Constants, TILE_NAMES, TILE_GLYPHS, SUIT_NAMES };

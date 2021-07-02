@@ -1,12 +1,9 @@
-if (typeof process !== "undefined") {
-  Player = require('../players/player.js');
-  Ruleset = require('../scoring/ruleset');
-  Wall = require('./wall/wall.js');
-  CLAIM = require('../../../config.js').CLAIM;
-  modal = require('../../page/modal/modal.js');
-  console = require('../utils/console-shim.js');
-}
-
+import { Player } from "../players/player.js";
+import { Ruleset } from "../scoring/ruleset.js";
+import { Wall } from "./wall/wall.js";
+import { CLAIM } from "../../../config.js";
+import { modal } from "../../page/modal/modal.js";
+import { config } from "../../../config.js";
 
 /**
  * This class models an entire game.
@@ -669,6 +666,4 @@ class Game {
   }
 }
 
-if (typeof process !== "undefined") {
-  module.exports = Game;
-}
+export { Game };

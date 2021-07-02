@@ -1,7 +1,7 @@
-if (typeof process !== "undefined") {
-  PlayerMaster = require('./player-master.js');
-  TaskTimer = require('../utils/task-timer.js');
-}
+import { config, CLAIM } from "../../../config.js";
+import { PlayerMaster } from "./player-master.js";
+import { TaskTimer } from "../utils/task-timer.js";
+
 
 // =========================================
 //        Let's define a Player class!
@@ -162,6 +162,4 @@ class Player extends PlayerMaster {
   }
 }
 
-if (typeof process !== "undefined") {
-  module.exports = Player;
-}
+export { Player };

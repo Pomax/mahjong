@@ -1,10 +1,14 @@
+import { create } from "../game/game-tile.js";
+
+/**
+ * We all know what this does.
+ */
 Array.prototype.last = function last() {
   return this[this.length - 1];
 };
 
 /**
- * Add this to the array prototype, but this is an array function
- * and I don't want to see some bs 'dothis(array, fn)' anywhere.
+ * More intentional Array prototype overloading.
  */
 Array.prototype.asyncAll = async function asyncAll(fn) {
   return await Promise.all(
@@ -35,7 +39,4 @@ function unroll(list, seen = [], result = []) {
   return result;
 }
 
-if (typeof process !== "undefined") {
-  let create = require("../game/game-tile.js");
-  module.exports = { create, unroll };
-}
+export { create, unroll };

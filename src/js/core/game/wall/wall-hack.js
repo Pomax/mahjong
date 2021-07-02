@@ -1,3 +1,5 @@
+import { config } from "../../../../config.js";
+
 /**
  * We need a way to debug play with specific walls, so...
  */
@@ -68,6 +70,19 @@ const WallHack = {
       5,  // p0 discard
       24, // p1 kong
       // p0 can win by robbing this kong.
+    ],
+
+    melded_kong: [
+      1,1,1,   2,2,2,   3,3,3,   4,5,    28,28, // p0
+      16,16,16,17,17,17,18,18,18,19,19,19,   28, // p1
+      11,11,11,12,12,12,13,13,13,14,20,14,  15, // p2
+      6,6,6,7,7,7,8,8,8,9,9,9,              10, // p3
+      30, // gets discarded by p0
+      27,  // discard by p1, pung by p0, discard 4
+      30, // gets discarded by p1
+      30, // gets discarded by p2
+      30, // gets discarded by p3
+      28, // melded kong for p0
     ],
 
     chow_by_player_1: [
@@ -212,7 +227,4 @@ const WallHack = {
   }
 };
 
-
-if (typeof process !== "undefined") {
-  module.exports = WallHack;
-}
+export { WallHack };

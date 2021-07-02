@@ -1,7 +1,3 @@
-if (typeof process !== "undefined") {
-  console = require('./console-shim.js');
-}
-
 /**
  * A resolver class that will run the function
  * passed as `startWaiting`, with a concurrent
@@ -14,6 +10,9 @@ if (typeof process !== "undefined") {
  * `await`ed to effect a non-blocking "pause".
  */
 class TaskTimer {
+  static id = 0;
+  static timers = {};
+
   /**
    * Create a timed task monitor.
    *
@@ -186,100 +185,4 @@ class TaskTimer {
 TaskTimer.id = 0;
 TaskTimer.timers = {};
 
-
-// ============
-// TESTING CODE
-// ============
-
-if (typeof process !== "undefined") {
-
-  module.exports = TaskTimer;
-
-  // shortcut if this wasn't our own invocation
-  let path = require('path');
-  let invocation = process.argv.join(' ');
-  let filename = path.basename(__filename)
-  if (invocation.indexOf(filename) > -1) {
-
-    let noop = () => {};
-    let start = Date.now();
-    console.log(Date.now(), 'started run');
-
-    new TaskTimer(
-      (timer) => {
-        // do nothing, so this will get cancelled.
-      },
-      () => {
-        console.log(Date.now(), 'cancelled 1 after 1000ms');
-        console.log(Date.now(), `TaskTimer knows of ${Object.keys(TaskTimer.timers).length} active timers`);
-      },
-      1000
-    );
-    console.log(Date.now(), `Built 1, TaskTimer knows of ${Object.keys(TaskTimer.timers).length} active timers`);
-
-
-    new TaskTimer(
-      (timer) => {
-        setTimeout(() =>{
-          timer.cancel();
-          console.log(Date.now(), 'ran 2 for 500ms');
-          console.log(Date.now(), `TaskTimer knows of ${Object.keys(TaskTimer.timers).length} active timers`);
-        }, 500);
-      },
-      noop,
-      1000
-    );
-    console.log(Date.now(), `Built 2, TaskTimer knows of ${Object.keys(TaskTimer.timers).length} active timers`);
-
-    let runtime;
-    new TaskTimer(
-      (timer) => {
-        setTimeout(async() => {
-          console.log(Date.now(), 'pausing 3');
-          let p = timer.pause();
-
-          setTimeout(() =>{
-            timer.resume();
-            runtime = Date.now() - 250;
-          }, 2000);
-
-          console.log(Date.now(), `2000ms await for 3 to resume`);
-          console.log(Date.now(), `TaskTimer knows of ${Object.keys(TaskTimer.timers).length} active timers`);
-          await p;
-          console.log(Date.now(), 'await for 3 resolved');
-        }, 250)
-      },
-      () => {
-        console.log(Date.now(), `cancelled 3 after ${Date.now() - runtime}ms of active runtime`);
-        console.log(Date.now(), `TaskTimer knows of ${Object.keys(TaskTimer.timers).length} active timers`);
-      },
-      1000
-    );
-    console.log(Date.now(), `Built 3, TaskTimer knows of ${Object.keys(TaskTimer.timers).length} active timers`);
-
-
-    new TaskTimer(
-      (timer) => {
-        setTimeout(() => {
-          timer.pause();
-          console.log(Date.now(), `paused 4 after 3 seconds`);
-          setTimeout(() => {
-            console.log(Date.now(), `resuming 4 after another 3 seconds`);
-            timer.resume();
-          }, 3000);
-      }, 3000);
-    },
-      () => {
-        console.log(Date.now(), `cancelled 4`);
-        console.log(Date.now(), `TaskTimer knows of ${Object.keys(TaskTimer.timers).length} active timers`);
-      },
-      10000,
-      (count) => {
-        console.log(Date.now(), `signal: ${count} out of 10`);
-      },
-      10
-    );
-    console.log(Date.now(), `Built 4, TaskTimer knows of ${Object.keys(TaskTimer.timers).length} active timers`);
-
-  }
-}
+export { TaskTimer };

@@ -1,8 +1,7 @@
-if (typeof process !== "undefined") {
-  HumanPlayer = require('../players/human.js');
-  BotPlayer = require('../players/bot.js');
-  Game = require('./game.js');
-}
+import { HumanPlayer } from "../players/human.js";
+import { BotPlayer } from "../players/bot.js";
+import { Game } from "./game.js";
+import { config } from "../../../config.js";
 
 
 /**
@@ -10,11 +9,12 @@ if (typeof process !== "undefined") {
  */
 class GameManager {
   constructor(players) {
+    const wallHack = config.WALL_HACK;
     this.players = players || [
-      new HumanPlayer(0, config.WALL_HACK),
-      new BotPlayer(1, config.WALL_HACK),
-      new BotPlayer(2, config.WALL_HACK),
-      new BotPlayer(3, config.WALL_HACK),
+      new HumanPlayer(0, wallHack),
+      new BotPlayer(1, wallHack),
+      new BotPlayer(2, wallHack),
+      new BotPlayer(3, wallHack),
     ];
   }
 
@@ -25,20 +25,16 @@ class GameManager {
   newGame() {
     let game = new Game(this.players);
 
-    if (typeof window !== "undefined") {
-      window.currentGame = {
-        game: game,
-        players: this.players
-      };
-    }
+    globalThis.currentGame = {
+      game: game,
+      players: this.players
+    };
 
     let gameBoard = document.querySelector('.board');
     gameBoard.focus();
-    
+
     return game;
   }
 }
 
-if (typeof process !== "undefined") {
-  module.exports = GameManager;
-}
+export { GameManager };

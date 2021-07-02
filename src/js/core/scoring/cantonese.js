@@ -1,6 +1,5 @@
-if (typeof process !== "undefined") {
-  Ruleset = require('./ruleset.js');
-}
+import { config } from "../../../config.js";
+import { Ruleset } from "./ruleset.js";
 
 /**
  * Cantonese rules.
@@ -31,17 +30,17 @@ class Cantonese extends Ruleset {
 
     if (tile > 26) {
       if (tile > 30) {
-        return { score: 1, log: [`1 faan for pung of dragons (${names[tile]})`] };
+        return { score: 1, log: [`1 faan for ${prefix}pung of dragons (${names[tile]})`] };
       }
 
       let scoreObject = { score: 0, log: [] };
       if (tile === windTile) {
         scoreObject.score += 1;
-        scoreObject.log.push(`1 faan for pung of player's own wind (${names[tile]})`);
+        scoreObject.log.push(`1 faan for ${prefix}pung of player's own wind (${names[tile]})`);
       }
       if (tile === windOfTheRoundTile) {
         scoreObject.score += 1;
-        scoreObject.log.push(`1 faan for pung of wind of the round (${names[tile]})`);
+        scoreObject.log.push(`1 faan for ${prefix}pung of wind of the round (${names[tile]})`);
       }
       return scoreObject;
     }
@@ -51,19 +50,21 @@ class Cantonese extends Ruleset {
    * What are considered point-scoring kongs in this ruleset?
    */
   getKongValue(tile, locked, concealed, names, windTile, windOfTheRoundTile) {
+    let prefix = (locked && !concealed) ? "" : "concealed ";
+
     if (tile > 26) {
       if (tile > 30) {
-        return { score: 1, log: [`1 faan for kong of dragons (${names[tile]})`] };
+        return { score: 1, log: [`1 faan for ${prefix}kong of dragons (${names[tile]})`] };
       }
 
       let scoreObject = { score: 0, log: [] };
       if (tile === windTile) {
         scoreObject.score += 1;
-        scoreObject.log.push(`1 faan for kong of player's own wind (${names[tile]})`);
+        scoreObject.log.push(`1 faan for ${prefix}kong of player's own wind (${names[tile]})`);
       }
       if (tile === windOfTheRoundTile) {
         scoreObject.score += 1;
-        scoreObject.log.push(`1 faan for kong of wind of the round (${names[tile]})`);
+        scoreObject.log.push(`1 faan for ${prefix}kong of wind of the round (${names[tile]})`);
       }
       return scoreObject;
     }
@@ -202,3 +203,5 @@ class Cantonese extends Ruleset {
 
 // register as a ruleset
 Ruleset.register(Cantonese);
+
+export { Cantonese };

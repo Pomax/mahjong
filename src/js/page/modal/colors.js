@@ -125,6 +125,4 @@ class ColorModal {
   }
 }
 
-if (typeof process !== "undefined") {
-  module.exports = ThemeModal;
-}
+export { ColorModal };

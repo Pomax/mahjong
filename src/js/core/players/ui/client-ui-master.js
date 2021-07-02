@@ -1,8 +1,10 @@
-if (typeof process !== `undefined`) {
-  playClip = require(`../../../page/audio.js`);
-  create = require(`../../utils/utils.js`).create;
-  rotateWinds = require(`./windicator.js`);
-}
+import { config, CLAIM } from "../../../../config.js";
+import { playClip } from "../../../page/audio.js";
+import { create } from "../../utils/utils.js";
+import { rotateWinds } from "./windicator.js";
+import { modal } from "../../../page/modal/modal.js";
+import { TaskTimer } from "../../../core/utils/task-timer.js";
+
 
 /**
  * This is a graphical interface that players can use
@@ -47,8 +49,8 @@ class ClientUIMaster {
     // into the player`s UI. This is super bad, but for
     // development purposes, rather required.
     if (config.FORCE_OPEN_BOT_PLAY) {
-      window.PLAYER_BANKS = this.playerbanks;
-      window.PLAYER_BANKS.sortTiles = e => this.sortTiles(e);
+      globalThis.PLAYER_BANKS = this.playerbanks;
+      globalThis.PLAYER_BANKS.sortTiles = e => this.sortTiles(e);
     }
   }
 
@@ -720,6 +722,4 @@ class ClientUIMaster {
   }
 }
 
-if (typeof process !== `undefined`) {
-  module.exports = ClientUIMaster;
-}
+export { ClientUIMaster };

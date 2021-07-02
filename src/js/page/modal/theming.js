@@ -43,7 +43,7 @@ class ThemeModal {
         e.parentNode.removeChild(e);
       }
     });
-    window.location.reload();
+    globalThis.location.reload();
   }
 
   loadBackground() {
@@ -228,6 +228,4 @@ class ThemeModal {
   }
 }
 
-if (typeof process !== "undefined") {
-  module.exports = ThemeModal;
-}
+export { ThemeModal };

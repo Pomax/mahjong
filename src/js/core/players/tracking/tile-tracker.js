@@ -48,6 +48,4 @@ class TileTracker {
   }
 }
 
-if (typeof process !== "undefined") {
-  module.exports = TileTracker;
-}
+export { TileTracker };

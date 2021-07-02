@@ -1,3 +1,5 @@
+import { Ruleset } from "../../core/scoring/ruleset.js";
+
 class ScoreModal {
   constructor(modal) {
     this.modal = modal;
@@ -176,6 +178,4 @@ class ScoreModal {
   }
 }
 
-if (typeof process !== "undefined") {
-  module.exports = ScoreModal;
-}
+export { ScoreModal };

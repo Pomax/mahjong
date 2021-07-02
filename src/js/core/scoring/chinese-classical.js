@@ -1,6 +1,5 @@
-if (typeof process !== "undefined") {
-  Ruleset = require('./ruleset.js');
-}
+import { config } from "../../../config.js";
+import { Ruleset } from "./ruleset.js";
 
 /**
  * Chinese Classical rules.
@@ -321,93 +320,4 @@ class ChineseClassical extends Ruleset {
 // register as a ruleset
 Ruleset.register(ChineseClassical);
 
-
-// ====================================
-//         TESTING CODE
-// ====================================
-
-
-if (typeof process !== "undefined") {
-
-  // shortcut if this wasn't our own invocation
-  let path = require('path');
-  let invocation = process.argv.join(' ');
-  let filename = path.basename(__filename)
-  if (invocation.indexOf(filename) !== -1) {
-
-    (function() {
-      config = require('../../../config.js');
-      tilesNeeded = require("../algorithm/tiles-needed.js");
-      create = require('../utils/utils.js').create;
-      Logger = console;
-
-      // shortcut if we're merely being required
-      let invocation = process.argv.join(" ");
-      if (invocation.indexOf("chinese-classical.j") === -1) return;
-
-      let rules = new ChineseClassical();
-
-      function lock(sets, win) {
-        console.log('lock', sets);
-        return sets.map((set, sid) => {
-          console.log('set', set);
-          return set.map(t => {
-            let tile = create(t);
-            tile.lock();
-            if (sid === win) tile.winning();
-            return tile;
-          })
-        });
-      }
-
-      let tests = [
-        /*
-        {
-          id: 0,
-          wotr: 0,
-          tilesLeft: 50,
-          winner: true,
-          selfdraw: false,
-          concealed: [32, 32, 32],
-          locked: lock([[1, 2, 3], [2, 3, 4], [3, 4, 5], [6, 6]], 3),
-          bonus: [],
-          wind: 1
-        },
-        {
-          id: 1,
-          wotr: 0,
-          tilesLeft: 50,
-          winner: true,
-          selfdraw: false,
-          concealed: [5,5,5, 11,12,13],
-          locked: lock([[20,21,22], [24,25,26], [11,11]], 3),
-          bonus: [],
-          wind: 1
-        },
-        */
-        {
-          id: 2,
-          wotr: 0,
-          tilesLeft: 50,
-          winner: true,
-          selfdraw: true,
-          selftile: create(18),
-          concealed: [18,18,18, 33,33],
-          locked: lock([[26,26,26], [28,28,28], [32,32,32]]),
-          bonus: [37],
-          wind: 1
-        },
-      ];
-
-      tests.forEach((test,id) => {
-        if (id < 0) return;
-
-        console.log(test.concealed)
-        console.log(test.locked.map(set => set.map(t => t.getTileFace())));
-        console.log(test.bonus);
-        let scores = rules.scoreTiles(test, test.id, test.wotr, test.tilesLeft);
-        console.log(scores);
-      });
-    })();
-  }
-}
+export { ChineseClassical };

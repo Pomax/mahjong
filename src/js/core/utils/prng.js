@@ -1,6 +1,4 @@
-if (typeof process !== "undefined") {
-  random = require('./math').random;
-}
+import { random } from "./math.js";
 
 /**
  * Creates a pseudo-random value generator. The seed must be an integer.
@@ -34,17 +32,6 @@ let rollCount = 0;
  */
 Random.prototype.next = function () {
   rollCount++;
-
-//  if (!config) config = require('../../config.js')
-//  console.log(`PRNG ROLLOVER ${rollCount}`);
-//  if (typeof window !== "undefined") {
-//    console.log(`PRNG ROLLOVER ${rollCount}`);
-//  }
-//  if (rollCount>144 * 2 + 10) {
-//    console.trace();
-//    process.exit(-1);
-//  }
-
   return this.seed(this._seed * 16807 % 2147483647);
 };
 
@@ -56,7 +43,4 @@ Random.prototype.nextFloat = function (opt_minOrMax, opt_max) {
   return (this.next() - 1) / 2147483646;
 };
 
-
-if(typeof process !== "undefined") {
-  module.exports = Random;
-}
+export { Random };
