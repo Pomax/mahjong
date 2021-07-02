@@ -92,7 +92,10 @@
   display: inline-block;
   width: 0;
   height: 0;
-  left: -1em;
+}
+
+.modal .settings .greyed {
+  filter: grayscale() opacity(0.5);
 }
 
 .modal .panel button:active,

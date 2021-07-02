@@ -5,7 +5,6 @@ import { ScoreModal } from "./scores.js";
 import { ThemeModal } from "./theming.js";
 import { ColorModal } from "./colors.js";
 
-
 /**
  * A modal dialog handling class. The actual dialog
  * content is written up in other files, this file
@@ -88,18 +87,9 @@ class Modal {
     this.panels.last().append(table);
 
     options.forEach((entry) => {
-      const {
-        label,
-        button_label,
-        key,
-        value,
-        default_value,
-        options,
-        type,
-        evtType,
-        handler,
-        debug_only,
-      } = entry;
+      const { label, button_label, key, value, default_value } = entry;
+      const { toggle, type, evtType, handler, debug_only } = entry;
+      let options = entry.options;
       let row;
 
       if (!label) {
@@ -117,7 +107,9 @@ class Modal {
         type || `text`
       }" value="${value}">`;
 
-      if (options) {
+      if (options || toggle) {
+        options = toggle ? [true, false] : options;
+
         field = `
           <select class="${key} field">
             ${options.map(
@@ -138,7 +130,10 @@ class Modal {
       }
 
       if (type === `color`) {
-        field = `<input class="${key} picker field" type="${type}" value="${value.substring(0,7)}">`;
+        field = `<input class="${key} picker field" type="${type}" value="${value.substring(
+          0,
+          7
+        )}">`;
         if (value.length === 9) {
           // HTML5 can't do opacity natively using <input type="color">...
           field += `<input class="${key} opacity" type="range" min="0" max="255" step="1" value="${parseInt(
@@ -149,20 +144,36 @@ class Modal {
       }
 
       row.innerHTML = `
-        <td style="white-space: nowrap">${label}</td>
-        <td${value != default_value ? ` class="custom"` : ``}>${field}</td>
+        <td style="white-space: nowrap;" data-toggle="${key}" ${
+        toggle && !value ? `class="greyed"` : ``
+      }>${label}</td>
+        <td ${value != default_value ? ` class="custom"` : ``}>${field}</td>
       `;
       table.appendChild(row);
 
-      row
-        .querySelector(`.field`)
-        .addEventListener(evtType || `input`, (evt) => {
-          if (handler) {
-            handler(entry, evt);
-          } else {
-            entry.value = evt.target.value;
-          }
-        });
+      const input = row.querySelector(`.field`);
+      input.addEventListener(evtType || `input`, (evt) => {
+        if (handler) {
+          handler(entry, evt);
+        } else {
+          entry.value = evt.target.value;
+        }
+      });
+
+      input.addEventListener(`input`, () => {
+        console.log(input.value, default_value);
+        if (input.value !== default_value.toString()) {
+          input.parentNode.classList.add(`custom`);
+        } else {
+          input.parentNode.classList.remove(`custom`);
+        }
+      });
+
+
+      if (toggle) {
+        const inputLabel = row.querySelector(`[data-toggle="${key}"]`);
+        input.addEventListener(`input`, () => inputLabel.classList.toggle(`greyed`));
+      }
 
       // make sure we get opacity changes set over as well.
       if (type === `color`) {

@@ -69,17 +69,17 @@ class SettingsModal {
       {
         label: `🀄 Always show everyone's tiles`,
         key: `force_open_bot_play`,
-        options: [true, false],
+        toggle: true,
       },
       {
         label: `✨ Highlight claimable discards`,
         key: `show_claim_suggestion`,
-        options: [true, false],
+        toggle: true,
       },
       {
         label: `💬 Show bot play suggestions`,
         key: `show_bot_suggestion`,
-        options: [true, false],
+        toggle: true,
       },
       {
         // additional boolean flags:
@@ -87,33 +87,33 @@ class SettingsModal {
       {
         label: `🎵 Play sounds`,
         key: `use_sound`,
-        options: [true, false],
+        toggle: true,
       },
       {
-        label: `▶️ Start play immediately`,
+        label: `🟢 Start play immediately`,
         key: `play_immediately`,
-        options: [true, false],
+        toggle: true,
       },
       {
         label: `⏸️ Pause game unless focused`,
         key: `pause_on_blur`,
-        options: [true, false],
+        toggle: true,
       },
       {
         label: `💻 Turn on debug mode`,
         key: `debug`,
-        options: [true, false],
+        toggle: true,
       },
       {
-        label: `😐 Pretend previous round was a draw`,
+        label: `❌ Pretend previous round was a draw`,
         key: `force_draw`,
-        options: [true, false],
+        toggle: true,
         debug_only: true,
       },
       {
         label: `📃 Generate game log after play`,
         key: `write_game_log`,
-        options: [true, false],
+        toggle: true,
         debug_only: true,
       },
       {
