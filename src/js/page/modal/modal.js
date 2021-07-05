@@ -280,21 +280,6 @@ class Modal {
     this.reveal();
     this.colors.show();
   }
-
-  /**
-   * Theminig/coloring utility function
-   */
-  setStyleSheet(id, css) {
-    let style = document.getElementById(id);
-    if (style) {
-      style.parentNode.removeChild(style);
-    } else {
-      style = document.createElement(`style`);
-    }
-    style.id = id;
-    style.textContent = css;
-    document.body.append(style);
-  }
 }
 
 let modal = new Modal();

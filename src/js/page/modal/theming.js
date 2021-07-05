@@ -1,3 +1,5 @@
+import { setStyleSheet, TileSetManager } from "../utils.js";
+
 function fileLoader(evt) {
   return new Promise((resolve, reject) => {
     const file = evt.target.files[0];
@@ -49,7 +51,7 @@ class ThemeModal {
   loadBackground() {
     const dataURL = localStorage.getItem("mahjongBackground");
     if (dataURL) {
-      this.modal.setStyleSheet(
+      setStyleSheet(
         `mahjongBackground`,
         `.board .discards { background-image: url(${dataURL}); }`
       );
@@ -64,7 +66,7 @@ class ThemeModal {
   loadSidebar() {
     const dataURL = localStorage.getItem("mahjongSidebar");
     if (dataURL) {
-      this.modal.setStyleSheet(
+      setStyleSheet(
         `mahjongSidebar`,
         `.board .sidebar { background-image: url(${dataURL}); }`
       );
@@ -79,7 +81,7 @@ class ThemeModal {
   loadPlayerBanks() {
     const dataURL = localStorage.getItem("mahjongPlayerBanks");
     if (dataURL) {
-      this.modal.setStyleSheet(
+      setStyleSheet(
         `mahjongPlayerBanks`,
         `.players .player { background-image: url(${dataURL}); }`
       );
@@ -94,64 +96,12 @@ class ThemeModal {
   async loadTileset() {
     const dataURL = localStorage.getItem("mahjongTileset");
     if (dataURL) {
-      this.modal.setStyleSheet(
+      setStyleSheet(
         `mahjongTileset`,
-        await this.createTileSetCSS(dataURL)
+        await TileSetManager.createTileSetCSS(dataURL)
       );
-    }
+    } else { TileSetManager.loadDefault(); }
     return !!dataURL;
-  }
-
-  createTileSetCSS(dataURL) {
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.src = dataURL;
-      img.onload = (evt) => {
-        const css = [];
-        const tileWidth = img.width / 9;
-        const tileHeight = img.height / 5;
-        const canvas = document.createElement(`canvas`);
-        canvas.width = img.width;
-        canvas.height = img.height;
-        const ctx = canvas.getContext(`2d`);
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        for (let r = 0; r < 5; r++) {
-          for (let c = 0; c < 9; c++) {
-            const tileNumber = this.getTileNumber(r, c);
-            if (tileNumber === false) continue;
-
-            const [x, y, w, h] = [
-              tileWidth * c + 1,
-              tileHeight * r + 1,
-              tileWidth - 2,
-              tileHeight - 2,
-            ];
-
-            const crop = document.createElement(`canvas`);
-            crop.width = w;
-            crop.height = h;
-            crop.getContext("2d").drawImage(canvas, x, y, w, h, 0, 0, w, h);
-            css.push(
-              `[tile="${tileNumber}"] { background-image: url(${crop.toDataURL()}); }`
-            );
-          }
-        }
-        resolve(css.join(`\n`));
-      };
-    });
-  }
-
-  getTileNumber(row, col) {
-    if (row < 3) return col + 9 * row;
-    if (row === 3) {
-      if (col < 4) return 27 + col;
-      if (col < 8) return 31 - 5 + col;
-    }
-    if (row === 4) {
-      if (col !== 8) return 34 + col;
-      return -1;
-    }
-    return false;
   }
 
   saveTileset(background) {
