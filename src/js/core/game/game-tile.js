@@ -1,6 +1,7 @@
 class GameTile extends HTMLElement {
-  constructor(tile=-1) {
+  constructor(tile) {
     super();
+    tile = tile ?? this.getAttribute("tile") ?? -1;
     this.values = { tile };
     this.setAttribute("tile", this.values.tile);
   }

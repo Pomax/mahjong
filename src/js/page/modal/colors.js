@@ -1,3 +1,5 @@
+import { setStyleSheet } from "../utils.js";
+
 class ColorModal {
   constructor(modal) {
     this.modal = modal;
@@ -24,13 +26,13 @@ class ColorModal {
       .join(`\n`)}}`;
 
     localStorage.setItem(`mahjongCSS`, colorCSS);
-    this.modal.setStyleSheet(`mahjongCSS`, colorCSS);
+    setStyleSheet(`mahjongCSS`, colorCSS);
   }
 
   loadColorScheme() {
     const colorCSS = localStorage.getItem("mahjongCSS");
     if (colorCSS) {
-      this.modal.setStyleSheet(`mahjongCSS`, colorCSS);
+      setStyleSheet(`mahjongCSS`, colorCSS);
     }
     return !!colorCSS;
   }
