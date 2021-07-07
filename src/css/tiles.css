@@ -1,4 +1,4 @@
-game-tile {
+[tile] {
   display: inline-block;
 
   --lw: calc(0.5 * var(--ph));
@@ -23,7 +23,7 @@ game-tile {
   background-repeat: no-repeat;
 }
 
-.player game-tile {
+.player [tile] {
   margin-top: calc(calc(var(--ph) / 6));
 }
 
@@ -57,7 +57,7 @@ game-tile.discard {
   box-shadow: 0 0 3px 0 var(--tile-discard);
 }
 
-game-tile + game-tile {
+game-tile + [tile] {
   margin-left: 1px;
 }
 
@@ -112,12 +112,12 @@ game-tile + game-tile {
 [tile="36"] { content: "chrysanthemum"; background-image: url("../../img/tiles/small/36.jpg");}
 [tile="37"] { content: "bamboo"; background-image: url("../../img/tiles/small/37.jpg");}
 
-game-tile[hidden] {
+[tile][hidden] {
   content: "unknown";
   background-image: url("../../img/tiles/small/concealed.jpg");
 }
 
-game-tile[locked] {
+[tile][locked] {
   margin-top: calc(0em - calc(var(--ph) / 6));
   margin-top: calc(0em - calc(var(--ph) / 6));
   width: calc(var(--lw) / 1.3);
@@ -126,16 +126,16 @@ game-tile[locked] {
   min-width: 0;
 }
 
-game-tile[bonus] {
+[tile][bonus] {
   border: 1px solid var(--tile-bonus);
 }
 
-game-tile[winning] {
+[tile][winning] {
   border-width: 5px 1px 1px 1px;
   border-top-color: var(--tile-winning);
 }
 
-game-tile[concealed] {
+[tile][concealed] {
   background-color: var(--tile-concealed);
   background-position: center calc(var(--lh) / 6);
 }
