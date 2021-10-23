@@ -14,6 +14,12 @@ Note that mostly due to "that's what we play in our house a lot", this implement
 
 ![A screenshot of what the live game looks like when set to autoplay](https://user-images.githubusercontent.com/177243/53316594-5767d200-387d-11e9-86e2-ed8957d7feb2.png)
 
+### What if I want a different look?
+
+Not a problem, since this is just a webpage, you can customize your look using [User Styles](https://userstyles.org/) as much as you like. In fact, if you want to try some of the other styles that other folks already made, have a look at any of the following to see if they suit your mood better!
+
+- https://userstyles.org/styles/217123/mahjong-woodsy-classic (by lexterror)
+
 ### This is a pure HTML, CSS, and JavaScript game
 
 That means there are no bundlers, no web app packaging, no CSS preprocessors or JS transpiling, just an index.html, a bunch of CSS files, and a bunch of JS files. If you can load the page, you now have a full copy of the game that you can save to your desktop and congratulations, you now have your own copy "installed" without doing anything beyond just downloading the page and its local page assets.
