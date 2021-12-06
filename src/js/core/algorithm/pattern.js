@@ -70,7 +70,7 @@ class Pattern {
     let t2 = this.tiles[tile + 2];
     if (t2 !== undefined && !this.matchSuit(tile + 2, suit)) t2 = undefined;
     let t3 = this.tiles[tile + 3];
-    if (t3 !== undefined && !this.matchSuit(tile + 2, suit)) t3 = undefined;
+    if (t3 !== undefined && !this.matchSuit(tile + 3, suit)) t3 = undefined;
     return { t1, t2, t3, suit };
   }
 
