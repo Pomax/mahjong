@@ -44,4 +44,4 @@ And for full gameplay debugging through play recordings, you can use `node src/j
 
 ### I have (a) question(s)!
 
-I'd be happy to answer them! Feel free to [tweet at me](https://twitter.com/TheRealPomax) for shallow engagement, or file an issue over on [the issue tracker](https://github.com/Pomax/mahjong/issues) if you need deeper engagement.
+I'd be happy to answer them! Feel free to [drop me a message](https://mastodon.social/@TheRealPomax) for shallow engagement, or file an issue over on [the issue tracker](https://github.com/Pomax/mahjong/issues) if you need deeper engagement.
